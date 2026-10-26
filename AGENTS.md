@@ -22,7 +22,9 @@ This CLI was made from [cli-template](https://github.com/WireCatLabs/cli-templat
 <!-- cli-template:reference-cli:start -->
 ## Reference CLI
 
-No reference CLI for this category yet: pick the nearest one with the owner from the Reference CLIs page.
+No calendar CLI exists yet. Chosen with the owner: [drive-cli](https://github.com/WireCatLabs/drive-cli) for the
+Google sign-in, the Google client, the store import and the command shape;
+[zoom-cli](https://github.com/WireCatLabs/zoom-cli) for events and meetings in the store.
 <!-- cli-template:reference-cli:end -->
 
 ## Template-owned files
