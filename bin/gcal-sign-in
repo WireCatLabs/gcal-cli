@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# The owner's live check: signs <profile> in to Google with his own OAuth client, then asks Google whether it worked.
+# gcal never prints a token or the client secret; the sign-in address on stderr holds neither.
+set -euo pipefail
+
+if [[ $# -ne 2 ]]; then
+  echo "usage: bin/gcal-sign-in <profile> <path to the Desktop app client JSON>" >&2
+  exit 2
+fi
+profile=$1
+client_file=$2
+root=$(cd "$(dirname "$0")/.." && pwd)
+
+(cd "$root" && pnpm --silent build >/dev/null)
+gcal() { node "$root/dist/bin/gcal.js" "$@"; }
+
+gcal "$profile" session start --client-file "$client_file"
+gcal "$profile" session status --check

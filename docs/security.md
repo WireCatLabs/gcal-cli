@@ -3,8 +3,16 @@
 What WireCat CLIs share — the keyring, permissions, MCP and what never reaches a log — is on the
 [shared security page](https://wirecat.dev/en/docs/security). This page keeps only what is particular to `gcal`.
 
-`gcal` keeps its settings in `config.json` and its state in the folders `gcal doctor` shows. It sends nothing
-to any service yet.
+`gcal` keeps its settings in `config.json` and its state in the folders `gcal doctor` shows. It talks only to Google,
+and asks for read access to Calendar and your email address: nothing more.
+
+The Google sign-in is kept in the system keyring, under the service `gcal-cli`, one entry per profile. That entry also
+holds your OAuth client's ID and secret, so refreshing the sign-in does not need the client file again. Google says a
+Desktop app's client secret is not confidential, but `gcal` still never prints it. No command, error, log or run record
+shows a token or the client secret; the address of the sign-in page holds neither. `session end` removes the entry.
+
+`gcal` refuses an OAuth client file that other users of the computer can read. The account's email address is saved in
+`gcal`'s state folder, readable by you only, so `session status` can answer without the network.
 
 A run record keeps the command line as you typed it, so `gcal runs show` tells you what was run. A secret is still
 stored as `[redacted]`: an option named like a token or password, a password in a link, a long opaque string. A
