@@ -201,7 +201,7 @@ describe("session start", () => {
     ]
     const printed = results.map(({ out, err }) => out + err).join("\n")
     const onDisk = filesUnder(tmpdir())
-      .filter((path) => !path.includes(`${tmpdir()}/client-`) && statSync(path).size < 50_000_000)
+      .filter((path) => !path.startsWith(join(tmpdir(), "client-")) && statSync(path).size < 50_000_000)
       .map((path) => readFileSync(path).toString("latin1"))
       .join("\n")
     expect(printed).toContain("owner@example.com")
