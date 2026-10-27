@@ -35,7 +35,7 @@ const update = appUpdate({
 
 export const definition = (): ProgramDefinition => ({
   app: IDENTITY,
-  configuration: { resolveSettings: configuration.resolveSettings },
+  configuration,
   commands: () => [
     commandsCommand(IDENTITY),
     sessionCommand(),

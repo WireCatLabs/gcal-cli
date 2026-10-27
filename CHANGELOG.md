@@ -16,6 +16,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   The methods that change Calendar fail with `permission_error` until a later `session start --grant write`.
   Google's change notifications (`watch`, `channels.stop`) are left out. `api call`, sharing (`acl`),
   `calendars.clear` and `calendars.transferOwnership` are never offered over MCP.
+- Each Google Calendar method has a permission key, `api.<method>`, for `config set permissions.<key>` and
+  `mcp --permission`. A method that changes Calendar asks first (`--yes` in a script); sharing, `calendars.clear` and
+  `calendars.transferOwnership` are denied until the owner allows that method. A key that names no method is refused,
+  and `gcal doctor` lists any saved in the file.
 
 ### Fixed
 

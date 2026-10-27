@@ -59,9 +59,9 @@ For now, `gcal` reads only. Google gives it read access to Calendar, and nothing
 - A method that changes Calendar fails with `permission_error`. The permission to write will come later, with
   `session start --grant write`.
 - The access-control methods (`calendar.acl.*`) need a permission `gcal` does not ask for, so `acl.list` fails too.
-- `api call` asks for `--allow-writes` before any method that changes data. It asks for `--allow-delete` as well
-  before a method that deletes for good: an event or calendar delete, `calendars.clear` (all events of the main
-  calendar) and `calendars.transferOwnership`.
+- A method that changes data asks first, and `--yes` answers for a script. Sharing a calendar (`acl`),
+  `calendars.clear` (all events of the main calendar) and `calendars.transferOwnership` are refused until you allow
+  that method in the profile's [permissions](configuration.md#permissions).
 - Google's change notifications (`watch` and `channels.stop`) are not offered. They need a public web address, and
   a program on your computer does not have one.
 

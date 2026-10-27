@@ -8,7 +8,7 @@ import { describeProgram } from "@wirecat/cli-base/commands"
 import { changesAuthorityAt } from "@wirecat/cli-core/cli"
 import { describe, expect, it, vi } from "vitest"
 import { apiMethods } from "./api-methods.js"
-import { configuration } from "./config.js"
+import { configuration, permissions } from "./config.js"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
 import { googleApi } from "./google-api.js"
 import { createMcpServer } from "./mcp.js"
@@ -80,7 +80,7 @@ const harness = (
     tokens: { accessToken: ACCESS, refreshToken: REFRESH, expiresAt, scopes },
     client: { clientId: "fixture-client.apps", clientSecret: SECRET },
   })
-  const gcal = async (argv: string[], fake = google()) => {
+  const gcal = async (argv: string[], fake = google(), answer?: string) => {
     const out: string[] = []
     const err: string[] = []
     const code = await run(argv, {
@@ -89,6 +89,7 @@ const harness = (
       env,
       keyring,
       fetch: fake.fetch,
+      ...(answer === undefined ? {} : { answer: () => answer }),
     })
     return { code, out: out.join("\n"), err: err.join("\n") }
   }
@@ -280,21 +281,69 @@ describe("checking a request before it leaves", () => {
 })
 
 describe("writes", () => {
-  it("asks for --allow-writes, then --allow-delete, before anything else", async () => {
+  it("asks before a write: --yes or a yes goes ahead, a no or nobody to answer does not", async () => {
     const { gcal } = harness()
+    const fake = google()
     const insert = ["personal", "api", "call", "calendar.events.insert", "--params", '{"calendarId":"primary"}']
-    expect(failure((await gcal([...insert, "--body", "{}", "--json"])).err).reason).toBe("write.not-allowed")
+    const unasked = failure((await gcal([...insert, "--body", "{}", "--json"], fake)).err)
+    expect(unasked).toMatchObject({
+      code: "confirmation_required",
+      details: { permission: "api.calendar.events.insert" },
+    })
+    expect((await gcal([...insert, "--body", "{}"], fake, "n")).err).toContain("the answer was no")
+    expect(failure((await gcal([...insert, "--body", "{}", "--yes", "--json"], fake)).err).reason).toBe(
+      "api.scope-missing",
+    )
+    expect((await gcal([...insert, "--body", "{}"], fake, "y")).err).toContain("session start --grant write")
+    expect(toCalendar(fake.requests)).toEqual([])
+  })
+
+  it("denies emptying a calendar, giving it away and sharing it until the owner allows that one method", async () => {
+    const { gcal } = harness()
     const clear = ["personal", "api", "call", "calendar.calendars.clear", "--params", '{"calendarId":"primary"}']
-    expect(failure((await gcal([...clear, "--allow-writes", "--json"])).err).reason).toBe("delete.not-allowed")
-    const both = await gcal([...clear, "--allow-writes", "--allow-delete", "--json"])
-    expect(failure(both.err).reason).toBe("api.scope-missing")
+    expect(failure((await gcal([...clear, "--yes", "--json"])).err)).toMatchObject({
+      code: "permission_error",
+      details: { permission: "api.calendar.calendars.clear" },
+    })
+    const share = ["personal", "api", "calendar-acl-insert", "--calendar-id", "primary", "--body", "{}", "--yes"]
+    expect(failure((await gcal([...share, "--json"])).err).code).toBe("permission_error")
+    expect((await gcal(["personal", "config", "set", "permissions.api", "allow"])).code).toBe(0)
+    expect(failure((await gcal([...clear, "--yes", "--json"])).err).code).toBe("permission_error")
+    expect((await gcal(["personal", "config", "set", "permissions.api.calendar.calendars.clear", "ask"])).code).toBe(0)
+    expect(failure((await gcal([...clear, "--yes", "--json"])).err).reason).toBe("api.scope-missing")
+  })
+
+  it("takes config set permissions.api deny, and then refuses api call and every generated method", async () => {
+    const { gcal } = harness()
+    const fake = google()
+    expect((await gcal(["personal", "config", "set", "permissions.api", "deny", "--json"])).code).toBe(0)
+    const called = await gcal(["personal", "api", "call", "calendar.events.list", "--json"], fake)
+    expect(failure(called.err)).toMatchObject({
+      code: "permission_error",
+      details: { permission: "api.calendar.events.list" },
+    })
+    const generated = await gcal(["personal", "api", "calendar-colors-get", "--json"], fake)
+    expect(failure(generated.err).code).toBe("permission_error")
+    expect((await gcal(["api", "list", "--json"], fake)).code).toBe(0)
+    expect(fake.fetch).not.toHaveBeenCalled()
+  })
+
+  it("refuses a permission key that names no method", async () => {
+    const { gcal } = harness()
+    for (const key of ["permissions.api.calendar.events.nope", "permissions.apis"]) {
+      const refused = await gcal(["personal", "config", "set", key, "deny", "--json"])
+      expect(failure(refused.err).code).toBe("validation_error")
+    }
   })
 
   it("refuses every write for want of the write scope, and names session start --grant write", async () => {
     const { gcal } = harness()
     const fake = google()
     const deleted = await gcal(
-      ["personal", "api", "calendar-events-delete", "--calendar-id", "primary", "--event-id", "evtfixture1", "--json"],
+      [
+        ...["personal", "api", "calendar-events-delete", "--calendar-id", "primary", "--event-id", "evtfixture1"],
+        ...["--yes", "--json"],
+      ],
       fake,
     )
     expect(failure(deleted.err)).toMatchObject({ code: "permission_error", reason: "api.scope-missing" })
@@ -302,7 +351,7 @@ describe("writes", () => {
     const called = await gcal(
       [
         ...["personal", "api", "call", "calendar.events.quickAdd", "--params"],
-        ...['{"calendarId":"primary","text":"Example lunch"}', "--allow-writes", "--json"],
+        ...['{"calendarId":"primary","text":"Example lunch"}', "--yes", "--json"],
       ],
       fake,
     )
@@ -320,6 +369,8 @@ describe("writes", () => {
     expect(refused.code).toBe(5)
     expect(failure(refused.err).message).toContain("read-only (GCAL_READ_ONLY)")
     expect((await gcal(["personal", "api", "calendar-colors-get", "--json"], fake)).code).toBe(0)
+    const read = ["personal", "api", "call", "calendar.events.list", "--params", '{"calendarId":"primary"}', "--json"]
+    expect((await gcal(read, fake)).code).toBe(0)
   })
 
   it("previews a write with --dry-run and sends nothing", async () => {
@@ -357,32 +408,43 @@ describe("writes", () => {
 })
 
 describe("over MCP", () => {
-  it("offers reads and generated writes, but not api call, sharing, clearing or giving a calendar away", async () => {
+  const serve = async (
+    readOnly = false,
+    levels = () => configuration.resolveSettings({ profile: "personal" }).permissions,
+  ) => {
     const program = createProgram()
     const server = createMcpServer({
       profile: "personal",
       commands: describeProgram(program),
-      levels: () => configuration.resolveSettings({ profile: "personal" }).permissions,
+      levels,
       authority: changesAuthorityAt(program),
+      permissions,
+      readOnly,
       run,
     })
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
     await server.connect(serverSide)
     const client = new Client({ name: "test", version: "1.0.0" })
     await client.connect(clientSide)
+    const search = async (query: string) =>
+      (
+        (await client.callTool({ name: "gcal_tools_search", arguments: { query } })).structuredContent as {
+          items: { command: string }[]
+        }
+      ).items
+    return { client, search }
+  }
+
+  it("offers reads and generated writes, but not api call, sharing, clearing or giving a calendar away", async () => {
+    const { client, search } = await serve()
     try {
-      const search = async (query: string) =>
-        (
-          (await client.callTool({ name: "gcal_tools_search", arguments: { query } })).structuredContent as {
-            items: { command: string }[]
-          }
-        ).items.map((item) => item.command)
-      expect(await search("returns events on the specified calendar")).toContain("api calendar-events-list")
-      expect(await search("deletes an event")).toContain("api calendar-events-delete")
+      const commands = async (query: string) => (await search(query)).map((item) => item.command)
+      expect(await commands("returns events on the specified calendar")).toContain("api calendar-events-list")
+      expect(await commands("deletes an event")).toContain("api calendar-events-delete")
       const offered = [
-        ...(await search("access control rule calendar acl sharing")),
-        ...(await search("clears a primary calendar transfers ownership")),
-        ...(await search("call one Google Calendar API method by name")),
+        ...(await commands("access control rule calendar acl sharing")),
+        ...(await commands("clears a primary calendar transfers ownership")),
+        ...(await commands("call one Google Calendar API method by name")),
       ]
       for (const command of offered)
         expect(command).not.toMatch(/^api (call|calendar-acl-|calendar-calendars-(clear|transfer))/)
@@ -393,6 +455,30 @@ describe("over MCP", () => {
       expect(refused.isError).toBe(true)
     } finally {
       await client.close()
+    }
+  })
+
+  it("lists a write as unavailable under the read-only lock, and a denied read as unavailable", async () => {
+    const locked = await serve(true)
+    const denied = await serve(false, () => ({ "api.calendar.events.list": "deny" }))
+    try {
+      const of = (items: { command: string }[], command: string) => items.find((item) => item.command === command)
+      expect(of(await locked.search("deletes an event"), "api calendar-events-delete")).toMatchObject({
+        availability: { available: false },
+      })
+      expect(
+        of(await locked.search("returns events on the specified calendar"), "api calendar-events-list"),
+      ).toMatchObject({
+        availability: { available: true },
+      })
+      expect(
+        of(await denied.search("returns events on the specified calendar"), "api calendar-events-list"),
+      ).toMatchObject({
+        availability: { available: false, permission: "api.calendar.events.list" },
+      })
+    } finally {
+      await locked.client.close()
+      await denied.client.close()
     }
   })
 })

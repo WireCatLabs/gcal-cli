@@ -22,8 +22,6 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
   ["api.unknown-method", "validation_error", "no Google Calendar method has this name"],
   ["api.scope-missing", "permission_error", "the sign-in lacks the Google permission this method needs"],
   ["api.disabled", "configuration_error", "the Google Calendar API is turned off for this OAuth project"],
-  ["write.not-allowed", "permission_error", "this method changes Google data and --allow-writes was not given"],
-  ["delete.not-allowed", "permission_error", "this method deletes Google data and --allow-delete was not given"],
 ]
 
 export const REASONS = defineReasons(ENTRIES.map(([reason, code, message]) => ({ reason, code, message, details: [] })))

@@ -159,8 +159,6 @@ gcal api call <method> [options]
 |---|---|
 | `--params <json>` | query and path parameters as a JSON object. Default: `[object Object]`. |
 | `--body <json>` | request body as a JSON object. |
-| `--allow-writes` | allow a method that changes Google data. |
-| `--allow-delete` | allow a method that deletes for good or gives a calendar away. |
 
 **Returns:** call one Google Calendar API method by name with JSON parameters
 
@@ -1089,8 +1087,12 @@ serve this profile's commands to an agent over MCP, on stdin and stdout, writes 
 **Changes something in the service.**
 
 ```sh
-gcal mcp
+gcal mcp [options]
 ```
+
+| Option | What it does |
+|---|---|
+| `--permission <key=level>` | make a permission stricter for this server only, like api.calendar.events.insert=deny; it never loosens the profile; repeat for more keys. |
 
 **Returns:** serve this profile's commands to an AI agent
 

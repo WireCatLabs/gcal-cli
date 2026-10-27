@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**70 ✅ · 336 ⛔ · 0 ❌** — 54 commands, 352 options.
+**72 ✅ · 333 ⛔ · 0 ❌** — 54 commands, 351 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -24,8 +24,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api call` |  | ✅ |  |
 | `api call` | `--params` | ✅ |  |
 | `api call` | `--body` | ✅ |  |
-| `api call` | `--allow-writes` | ✅ |  |
-| `api call` | `--allow-delete` | ✅ |  |
 | `api calendar-acl-delete` |  | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-delete` | `--alt` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-delete` | `--fields` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
@@ -42,15 +40,15 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-acl-get` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-get` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-get` | `--rule-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-insert` |  | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-insert` |  | ✅ |  |
 | `api calendar-acl-insert` | `--alt` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-insert` | `--fields` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-insert` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-insert` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-insert` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-insert` | `--send-notifications` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-insert` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-insert` | `--body` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-insert` | `--calendar-id` | ✅ |  |
+| `api calendar-acl-insert` | `--body` | ✅ |  |
 | `api calendar-acl-insert` | `--body-file` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-list` |  | ✅ |  |
 | `api calendar-acl-list` | `--alt` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
@@ -379,6 +377,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `skill install` | `--for` | ✅ |  |
 | `skill status` |  | ✅ |  |
 | `mcp` |  | ✅ |  |
+| `mcp` | `--permission` | ✅ |  |
 | `upgrade` |  | ✅ |  |
 | `upgrade` | `--check` | ✅ |  |
 | `config show` |  | ✅ |  |

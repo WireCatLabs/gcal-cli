@@ -3,7 +3,7 @@ import { join } from "node:path"
 import { expect, it } from "vitest"
 import { doctorReport } from "./commands/doctor.js"
 import { IDENTITY } from "./identity.js"
-import { run } from "./program.js"
+import { createProgram, run } from "./program.js"
 
 const ran = async (argv: string[]) => {
   const out: string[] = []
@@ -65,8 +65,23 @@ it("doctor reports an unknown setting with the command that removes it", async (
   )
 })
 
+it("doctor names a saved permission key no command checks", async () => {
+  await withConfig(
+    '{ "profiles": { "personal": { "permissions": { "api.calendar.events.nope": "deny" } } } }',
+    (config) =>
+      expect(config).toMatchObject({
+        issues: [
+          expect.objectContaining({
+            kind: "unknown_permission",
+            fix: "gcal personal config unset permissions.api.calendar.events.nope",
+          }),
+        ],
+      }),
+  )
+})
+
 it("doctor reports settings an environment variable breaks, and still answers", () => {
-  const { report } = doctorReport({ ...process.env, GCAL_EMBEDDING_DIMS: "many" })
+  const { report } = doctorReport({ ...process.env, GCAL_EMBEDDING_DIMS: "many" }, createProgram())
   expect(report).toMatchObject({ config: { issues: [] }, settings: { error: expect.any(String) }, profiles: null })
 })
 

@@ -34,9 +34,26 @@ the sign-in in the system keyring, so later commands work without the file.
 ## Permissions
 
 `permissions` decides what a command may do for this profile: `allow`, `ask`, `readonly` or `deny`, per permission
-key. Over MCP there is no one to ask, so `ask` lets the command run. `GCAL_READ_ONLY=1` refuses every write, whatever
-the permissions say; it also refuses each `api` method that changes Calendar. The `api` commands have no permission
-key of their own yet.
+key. Each Google Calendar method has its own key, `api.<method>`, such as `api.calendar.events.insert`; `api` and
+`api.calendar.events` name every method under them. The same key covers `api call <method>` and the method's own
+command, `api calendar-events-insert`.
+
+```sh
+gcal personal config set permissions.api readonly                        # reads only, every method
+gcal personal config set permissions.api.calendar.events.insert allow    # add events without the question
+```
+
+Without a setting of yours:
+
+- A method that changes Calendar is `ask`. At a terminal `gcal` asks before it calls Google; in a script, add `--yes`.
+  Over MCP there is no one to ask, so `ask` lets the command run.
+- Sharing a calendar (`calendar.acl.insert`, `patch`, `update`, `delete`), emptying it (`calendar.calendars.clear`) and
+  giving it to another account (`calendar.calendars.transferOwnership`) are `deny`.
+
+These defaults only become stricter against a broader key: `permissions.api allow` keeps both the question and the
+`deny`. To change one, set that method's own key, such as `permissions.api.calendar.calendars.clear ask`. A key that
+names no method is refused, and `gcal doctor` lists any in the file. `GCAL_READ_ONLY=1` refuses every write, whatever
+the permissions say. `gcal <profile> mcp --permission api=readonly` makes a key stricter for that server only.
 
 ## Run records
 
