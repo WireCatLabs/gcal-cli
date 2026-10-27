@@ -1,5 +1,4 @@
 import type { StoredCalendar } from "@wirecat/cli-core/calendar"
-import { CALENDAR_UNTRUSTED_FIELDS } from "@wirecat/cli-core/calendar/mcp"
 import { entryOf } from "./calendar-source.js"
 import type { CalendarEvents } from "./generated/types.js"
 import type { GoogleApi } from "./google-api.js"
@@ -60,6 +59,7 @@ export const searchGoogle = async (
     by: "google",
     hits: hits.slice(0, request.limit),
     has_more: more || hits.length > request.limit,
-    untrusted: CALENDAR_UNTRUSTED_FIELDS,
+    // The marker names fields by their path in this answer, as cli-core's local `search` does.
+    untrusted: ["hits.title", "hits.location"],
   }
 }

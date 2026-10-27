@@ -126,7 +126,7 @@ describe("calendar commands over Google", () => {
     google.requests.length = 0
     const found = (await json("personal", "search", "--remote", "writing", "--limit", "5", "--newest")).item
     expect(found).toMatchObject({ query: "writing", by: "google", has_more: false })
-    expect(found.untrusted).toContain("title")
+    expect(found.untrusted).toEqual(["hits.title", "hits.location"])
     expect(found.hits).toEqual([
       expect.objectContaining({
         provider: "google-calendar",
@@ -298,7 +298,7 @@ describe("calendar commands over MCP", () => {
       arguments: { command: "search", arguments: { words: ["ignore"], remote: true } },
     })) as { isError?: boolean; structuredContent: { item: { hits: { title: string }[]; untrusted: string[] } } }
     expect(remote.isError).toBeFalsy()
-    expect(remote.structuredContent.item.untrusted).toContain("title")
+    expect(remote.structuredContent.item.untrusted).toEqual(["hits.title", "hits.location"])
     expect(remote.structuredContent.item.hits.length).toBeGreaterThan(0)
     expect(remote.structuredContent.item.hits.map(({ title }) => title).join()).not.toContain("\u001b")
     const reviews = (await client.callTool({
