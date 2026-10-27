@@ -424,6 +424,80 @@ describe("writes", () => {
   })
 })
 
+// Shapes from the Calendar API reference (Event.conferenceData, ConferenceData.entryPoints[]); every value is made up.
+const CONFERENCE = {
+  conferenceSolution: { key: { type: "addOn" }, name: "Example Meetings" },
+  conferenceId: "fixture-conference-1",
+  entryPoints: [
+    {
+      entryPointType: "video",
+      uri: "https://meet.example.com/j/123456789?pwd=fixturepwd71#success",
+      label: "meet.example.com/j/123456789",
+      meetingCode: "123456789",
+      passcode: "fixturepass55",
+    },
+    {
+      entryPointType: "phone",
+      uri: "tel:+12345678900,,,123456789;fixturepin33",
+      label: "+1 234-567-8900",
+      pin: "fixturepin33",
+      regionCode: "US",
+    },
+    { entryPointType: "sip", uri: "sip:123456789@sip.example.com;passcode=fixturesip22", password: "fixturepw11" },
+    { entryPointType: "more", uri: "https://meet.example.com/more?code=fixturemore44", accessCode: "fixtureaccess66" },
+  ],
+}
+const SECRETS = ["fixturepwd71", "fixturepass55", "fixturepin33", "fixturesip22", "fixturepw11", "fixtureaccess66"]
+const MEETING = {
+  kind: "calendar#event",
+  id: "evtconference1",
+  status: "confirmed",
+  summary: "Example review",
+  start: { dateTime: "2026-11-02T10:00:00Z" },
+  end: { dateTime: "2026-11-02T11:00:00Z" },
+  conferenceData: CONFERENCE,
+}
+
+describe("conference secrets", () => {
+  it.each([
+    [["api", "calendar-events-list", "--calendar-id", "primary"], { kind: "calendar#events", items: [MEETING] }],
+    [
+      ["api", "calendar-events-instances", "--calendar-id", "primary", "--event-id", "evtseries1"],
+      { kind: "calendar#events", items: [MEETING] },
+    ],
+    [
+      ["api", "call", "calendar.events.get", "--params", '{"calendarId":"primary","eventId":"evtconference1"}'],
+      MEETING,
+    ],
+  ])("never leave Google through %j", async (words, answer) => {
+    const { gcal } = harness()
+    const shown = await gcal(
+      ["personal", ...words, "--json"],
+      google(() => json(answer)),
+    )
+    expect(shown.code).toBe(0)
+    for (const secret of SECRETS) expect(shown.out).not.toContain(secret)
+    const item = answerOf(shown.out).item
+    const points = (item.items?.[0] ?? item).conference_data.entry_points
+    expect(points.map((point: { uri: string }) => point.uri)).toEqual([
+      "https://meet.example.com/j/123456789",
+      "tel:+12345678900",
+      "sip:123456789@sip.example.com",
+      "https://meet.example.com/more",
+    ])
+    expect(points[0]).toMatchObject({ label: "meet.example.com/j/123456789", meeting_code: "123456789" })
+    expect(points[1]).toMatchObject({ region_code: "US" })
+  })
+
+  it("api show says an event's answer loses them; a calendar's answer has none to lose", async () => {
+    const { gcal } = harness()
+    expect(answerOf((await gcal(["api", "show", "calendar.events.get", "--json"])).out).item.answer).toContain(
+      "passcode",
+    )
+    expect(answerOf((await gcal(["api", "show", "calendar.calendars.get", "--json"])).out).item.answer).toBeUndefined()
+  })
+})
+
 describe("over MCP", () => {
   const serve = async (
     readOnly = false,

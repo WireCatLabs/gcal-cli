@@ -90,6 +90,10 @@ gcal personal api call calendar.freebusy.query --body '{"timeMin":"2026-11-02T00
 body. Each method also has its own command, such as `api calendar-events-list`, with one option per parameter.
 `gcal` checks the parameters and Google's answer against that description.
 
+An event's conference details lose what lets someone join without an invitation. `passcode`, `pin`, `accessCode` and
+`password` are removed from every entry point. A link loses its query string, and a phone or SIP address loses the
+dial sequence after the number. `api show` says so for each method that returns events.
+
 For now, `gcal` reads only. Google gives it read access to Calendar, and nothing more:
 
 - A method that changes Calendar fails with `permission_error`. The permission to write will come later, with
