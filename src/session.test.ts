@@ -5,7 +5,7 @@ import { memoryKeyring } from "@wirecat/cli-base"
 import { openStore, storePath } from "@wirecat/cli-core/store"
 import { describe, expect, it, vi } from "vitest"
 import { CALENDAR_READ_SCOPE, googleClient, sessionStorage } from "./google.js"
-import { EVENTS_SCOPE } from "./grants.js"
+import { ACLS_SCOPE, EVENTS_SCOPE } from "./grants.js"
 import { run } from "./program.js"
 
 const ACCESS = "fixture-access-token-7Qm2"
@@ -187,6 +187,17 @@ describe("session start", () => {
       scopes: expect.arrayContaining([EVENTS_SCOPE]),
       grants: ["write"],
     })
+  })
+
+  it("--grant sharing asks for calendar.acls only, never the scope that empties calendars", async () => {
+    const { gcal, opened } = harness()
+    const fake = google({ scope: `${GRANTED} ${ACLS_SCOPE}` })
+    const started = await gcal(
+      ["personal", "session", "start", "--client-file", clientFile(), "--grant", "sharing", "--json"],
+      fake,
+    )
+    expect(item(started.out)).toMatchObject({ grants: ["sharing"] })
+    expect(new URL(opened[0] ?? "").searchParams.get("scope")).toBe(`openid email ${CALENDAR_READ_SCOPE} ${ACLS_SCOPE}`)
   })
 
   it("refuses --grant write when the account unticked it, and an unknown grant", async () => {

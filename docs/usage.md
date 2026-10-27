@@ -22,10 +22,12 @@ gcal personal session start --client-file ~/client_secret.json
 ```
 
 To change events, sign in again with `--grant write`. Google then also grants `calendar.events`: events only, never
-sharing or whole calendars. If you untick it on the consent screen, the sign-in is refused and the old one stays.
+sharing or whole calendars. To see and change who can see a calendar, add `--grant sharing`: Google then also grants
+`calendar.acls`. If you untick one on the consent screen, the sign-in is refused and the old one stays.
 
 ```sh
 gcal personal session start --grant write
+gcal personal session start --grant write,sharing
 ```
 
 For now, `gcal` has no Google app of its own, so it needs yours: see
@@ -112,11 +114,13 @@ dial sequence after the number. `api show` says so for each method that returns 
 A profile signed in without `--grant write` reads only:
 
 - A method that changes events fails with `permission_error` and names `session start --grant write`.
-- `--grant write` covers events only. The methods that change calendars, the calendar list or settings, and the
-  access-control methods (`calendar.acl.*`, `acl.list` included), need a permission `gcal` does not ask for.
-- A method that changes data asks first, and `--yes` answers for a script. Sharing a calendar (`acl`),
-  `calendars.clear` (all events of the main calendar) and `calendars.transferOwnership` are refused until you allow
-  that method in the profile's [permissions](configuration.md#permissions).
+- `--grant write` covers events only. Sharing (`calendar.acl.*`) needs `--grant sharing`; `acl.get` alone works with
+  read access. The methods that change calendars, the calendar list or settings, `calendars.transferOwnership`
+  included, need a permission `gcal` does not ask for.
+- `calendars.transferOwnership` also needs a Google Workspace administrator with the Manage Calendars privilege and
+  `--use-admin-access true`. It moves a secondary calendar between users of one organization only.
+- A method that changes data asks first, and `--yes` answers for a script. `calendars.clear` (all events of the main
+  calendar) is refused until you allow it in the profile's [permissions](configuration.md#permissions).
 - Google's change notifications (`watch` and `channels.stop`) are not offered. They need a public web address, and
   a program on your computer does not have one.
 
@@ -166,6 +170,6 @@ claude mcp add gcal -- gcal personal mcp
 ```
 
 The server offers every command, the ones that write included. The profile's permissions decide what runs; see
-[settings](configuration.md#permissions). Some commands are never offered to an agent: `api call`, and the API
-methods that share a calendar (`acl`), empty it (`calendars.clear`) or give it to another account
-(`calendars.transferOwnership`). You run those yourself, in a terminal.
+[settings](configuration.md#permissions). That includes sharing a calendar (`acl`) and giving it to another account
+(`calendars.transferOwnership`): an agent can do both without a question. Two commands are never offered to an agent:
+`api call`, and `calendars.clear`, which empties a calendar. You run those yourself, in a terminal.

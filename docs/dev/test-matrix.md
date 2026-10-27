@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**159 ✅ · 330 ⛔ · 0 ❌** — 69 commands, 420 options.
+**166 ✅ · 323 ⛔ · 0 ❌** — 69 commands, 420 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -116,14 +116,14 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-acl-delete` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-delete` | `--rule-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-delete` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-get` |  | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-get` |  | ✅ |  |
 | `api calendar-acl-get` | `--alt` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-get` | `--fields` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-get` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-get` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-get` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-get` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-get` | `--rule-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-get` | `--calendar-id` | ✅ |  |
+| `api calendar-acl-get` | `--rule-id` | ✅ |  |
 | `api calendar-acl-insert` |  | ✅ |  |
 | `api calendar-acl-insert` | `--alt` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-insert` | `--fields` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
@@ -261,15 +261,15 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-calendars-patch` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-patch` | `--body` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-patch` | `--body-file` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-calendars-transfer-ownership` |  | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-calendars-transfer-ownership` |  | ✅ |  |
 | `api calendar-calendars-transfer-ownership` | `--alt` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-transfer-ownership` | `--fields` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-transfer-ownership` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-transfer-ownership` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-transfer-ownership` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-calendars-transfer-ownership` | `--use-admin-access` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-calendars-transfer-ownership` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-calendars-transfer-ownership` | `--new-data-owner` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-calendars-transfer-ownership` | `--use-admin-access` | ✅ |  |
+| `api calendar-calendars-transfer-ownership` | `--calendar-id` | ✅ |  |
+| `api calendar-calendars-transfer-ownership` | `--new-data-owner` | ✅ |  |
 | `api calendar-calendars-update` |  | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-update` | `--alt` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-update` | `--fields` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |

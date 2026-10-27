@@ -71,7 +71,7 @@ const startCommand = () =>
       examples: [
         `${IDENTITY.command} personal session start --client-file ~/client_secret.json`,
         `${IDENTITY.command} personal session start --no-browser`,
-        `${IDENTITY.command} personal session start --grant write`,
+        `${IDENTITY.command} personal session start --grant write,sharing`,
       ],
     }),
   )
@@ -80,7 +80,8 @@ const startCommand = () =>
     .option("--no-browser", "print the sign-in URL instead of opening a browser")
     .option(
       "--grant <scopes>",
-      "also ask for these, comma-separated: write (create, change and delete events, and answer invitations)",
+      "also ask for these, comma-separated: write (create, change and delete events, and answer invitations), " +
+        "sharing (see and change who can see a calendar)",
       grantList,
     )
     .action(async function (this: Command, args: { clientFile?: string; browser: boolean; grant?: Grant[] }) {
@@ -106,8 +107,8 @@ const startCommand = () =>
           showUrl: (url) => {
             steps.openUrl(
               url,
-              args.grant?.includes("write")
-                ? "Choose the Google account and allow access to Calendar and its events"
+              args.grant?.length
+                ? "Choose the Google account and allow read access to Calendar and the permissions it lists"
                 : "Choose the Google account and allow read access to Calendar",
             )
             streams.diagnostic(`Open Google sign-in: ${url}\n`)

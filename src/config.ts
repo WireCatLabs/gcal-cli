@@ -4,8 +4,11 @@ import type { Level } from "@wirecat/cli-core/sends"
 import { operations } from "./generated/manifest.js"
 import { IDENTITY } from "./identity.js"
 
-/** Sharing a calendar, emptying it and giving it away stay with the owner at a terminal (NEED-1857). */
-export const OWNER_ONLY = /^calendar\.(acl\.|calendars\.clear$|calendars\.transferOwnership$)/
+/**
+ * Deleting every event of the main calendar stays with the owner at a terminal. Sharing and giving a calendar away are
+ * offered to agents at `ask`, which over MCP runs without a question: the owner chose that (NEED-1857).
+ */
+export const OWNER_ONLY = /^calendar\.calendars\.clear$/
 
 export const apiKey = (method: string): string => `api.${method}`
 
