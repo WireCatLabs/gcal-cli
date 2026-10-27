@@ -4,11 +4,10 @@ import {
   changesAuthorityAt,
   environmentOf,
   type GlobalFlags,
-  knownPermissionKeys,
   REMOTE_WRITE,
   readOnlyLockOf,
+  refuseUnknownPermissionKeys,
   rootOf,
-  unknownPermissionKeys,
 } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
 import { configuration, permissions } from "../config.js"
@@ -36,20 +35,15 @@ export const mcpCommand = (): Command =>
         throw new CliError("validation_error", "MCP over stdio controls its own output; leave out --json and --jsonl")
       const environment = environmentOf(this)
       const env = environment.env ?? process.env
-      const { profile } = configuration.resolveSettings(flags, { env })
-      // mcp itself has no key, so the shared check before a run never looks at the keys this flag names.
-      const [unknown] = unknownPermissionKeys(
-        Object.fromEntries((flags.permission ?? []).map((entry) => [entry.split("=")[0] ?? "", true])),
-        knownPermissionKeys(this, permissions),
-      )
-      if (unknown !== undefined)
-        throw new CliError("validation_error", `--permission ${unknown} names no command`, { permission: unknown })
+      const settings = configuration.resolveSettings(flags, { env })
+      // mcp has no key of its own, so the shared check before a run never looks at the keys --permission names.
+      refuseUnknownPermissionKeys(this, settings, IDENTITY.command, permissions)
       const run = environment.runCommand
       if (!run) throw new Error("mcp runs inside the program's run(), which provides runCommand")
       const program = rootOf(this)
       const { serveMcp } = await import("../mcp.js")
       await serveMcp({
-        profile,
+        profile: settings.profile,
         commands: describeProgram(program),
         levels: () => configuration.resolveSettings(flags, { env }).permissions,
         authority: changesAuthorityAt(program),

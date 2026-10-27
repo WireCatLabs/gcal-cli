@@ -19,7 +19,7 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - Each Google Calendar method has a permission key, `api.<method>`, for `config set permissions.<key>` and
   `mcp --permission`. A method that changes Calendar asks first (`--yes` in a script); sharing, `calendars.clear` and
   `calendars.transferOwnership` are denied until the owner allows that method. A key that names no method is refused,
-  and `gcal doctor` lists any saved in the file.
+  and `gcal doctor` lists any saved in the file. `gcal <profile> mcp` refuses to start while the file holds one.
 
 ### Fixed
 

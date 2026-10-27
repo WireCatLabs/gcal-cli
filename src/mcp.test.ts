@@ -1,3 +1,5 @@
+import { mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { Client } from "@modelcontextprotocol/client"
 import { InMemoryTransport } from "@modelcontextprotocol/server"
 import { describeProgram } from "@wirecat/cli-base/commands"
@@ -99,6 +101,23 @@ it("gcal <profile> mcp refuses a --permission that names no command", async () =
   })
   expect(code).toBe(2)
   expect(err.join("")).toContain("api.calendar.events.nope")
+})
+
+it("gcal <profile> mcp refuses to start while the config file saves a key that names no command", async () => {
+  const file = join(process.env.GCAL_CONFIG_DIR ?? "", "config.json")
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, JSON.stringify({ defaults: { permissions: { "api.calendar.events.nope": "deny" } } }))
+  const err: string[] = []
+  try {
+    const code = await run(["personal", "mcp"], {
+      tty: false,
+      streams: { data: () => {}, diagnostic: (text) => err.push(text) },
+    })
+    expect(code).not.toBe(0)
+    expect(err.join("")).toContain("api.calendar.events.nope")
+  } finally {
+    rmSync(file, { force: true })
+  }
 })
 
 it("gcal <profile> mcp takes --permission api=readonly over the deny defaults under it", async () => {
