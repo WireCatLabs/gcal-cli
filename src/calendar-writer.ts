@@ -90,12 +90,6 @@ export const googleCalendarWriter = (api: GoogleApi): CalendarWriter => {
         })) as CalendarEvent,
     )
 
-  /** The event as Google holds it, only if that is the version the store holds: else the change would overwrite. */
-  const current = async (calendar: StoredCalendar, eventId: string, etag: string) => {
-    const event = await get(calendar, eventId)
-    if (event.etag !== etag) throw calendarConflict()
-    return event
-  }
   const replace = (calendar: StoredCalendar, event: CalendarEvent, etag: string, notify: boolean) =>
     guarded(
       async () =>
@@ -133,7 +127,8 @@ export const googleCalendarWriter = (api: GoogleApi): CalendarWriter => {
     async update(calendar, externalId, changes, { etag, notify }) {
       const dated = changes.startDate !== undefined
       if (dated || changes.startsAt !== undefined) {
-        const event = await current(calendar, externalId, etag)
+        // The replace still carries the synced etag, so an event that moved on since is a 412, never overwritten.
+        const event = await get(calendar, externalId)
         if (dated !== Boolean(event.start?.date)) {
           const recurring = changes.recurrence !== undefined || (event.recurrence?.length ?? 0) > 0
           return entryOf(await replace(calendar, { ...event, ...bodyOf(changes, recurring) }, etag, notify), calendar)

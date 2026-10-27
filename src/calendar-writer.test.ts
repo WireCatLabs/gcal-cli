@@ -184,6 +184,7 @@ describe("the Google calls behind each write", () => {
   it("a switch over an event that moved on since the sync is a conflict, and nothing is replaced", async () => {
     const { google, writer } = adapter()
     google.changeBehind("review1")
+    const before = structuredClone(google.event("review1"))
     await expect(
       writer.update(
         CALENDAR,
@@ -192,7 +193,39 @@ describe("the Google calls behind each write", () => {
         { scope: "this", etag: ETAG, notify: false },
       ),
     ).rejects.toMatchObject({ details: { reason: "event.conflict" } })
-    expect(google.requests.map(({ method }) => method)).toEqual(["GET"])
+    expect(google.event("review1")).toEqual(before)
+  })
+
+  it("a switch sends back the conference details, Drive files and description exactly as Google holds them", async () => {
+    const meeting = {
+      ...INVITATION,
+      id: "meeting1",
+      description: "Agenda\nPasscode: 123456",
+      conferenceData: {
+        conferenceSolution: { key: { type: "addOn" }, name: "Example Meet" },
+        entryPoints: [
+          { entryPointType: "video", uri: "https://meet.example.com/j/123?pwd=abc", passcode: "123456" },
+          { entryPointType: "phone", uri: "tel:+12345678900,,,123456789;1234", pin: "1234" },
+        ],
+      },
+      attachments: [{ fileUrl: "https://drive.google.com/file/d/1abc/view", title: "Agenda.pdf" }],
+    }
+    const google = fakeGoogleWrites([meeting])
+    const api = googleApi({
+      fetch: google.fetch as typeof fetch,
+      scopes: () => [CALENDAR_READ_SCOPE, EVENTS_SCOPE],
+      accessToken: async () => "fixture-access-token",
+    })
+    await googleCalendarWriter(api).update(
+      CALENDAR,
+      "meeting1",
+      { startDate: "2026-11-05", endDate: "2026-11-06", timezone: "Europe/Madrid" },
+      { scope: "this", etag: ETAG, notify: false },
+    )
+    const { start, end, ...sent } = google.requests.at(-1)?.body ?? {}
+    const { start: _start, end: _end, ...held } = meeting
+    expect(sent).toEqual(held)
+    expect([start, end]).toEqual([{ date: "2026-11-05" }, { date: "2026-11-06" }])
   })
 
   it("delete sends If-Match and returns nothing", async () => {
