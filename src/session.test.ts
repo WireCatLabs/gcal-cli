@@ -1,7 +1,7 @@
 import { chmodSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { memoryKeyring } from "@wirecat/cli-base"
+import { type KeyringStore, memoryKeyring } from "@wirecat/cli-base"
 import { openStore, storePath } from "@wirecat/cli-core/store"
 import { describe, expect, it, vi } from "vitest"
 import { CALENDAR_READ_SCOPE, googleClient, sessionStorage } from "./google.js"
@@ -61,8 +61,7 @@ const clientFile = (mode = 0o600) => {
   return file
 }
 
-const harness = () => {
-  const keyring = memoryKeyring()
+const harness = (keyring: KeyringStore = memoryKeyring()) => {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     GCAL_CONFIG_DIR: mkdtempSync(join(tmpdir(), "config-")),
@@ -117,6 +116,7 @@ describe("session start", () => {
       account: "owner@example.com",
       scopes: GRANTED.split(" "),
       grants: [],
+      credential_storage: "keyring",
     })
 
     const authorize = new URL(opened[0] ?? "")
@@ -237,6 +237,7 @@ describe("session start", () => {
       google({ email: "someone@example.com" }),
     )
     expect(failure(other.err).reason).toBe("profile.wrong-account")
+    expect(failure(other.err).message).not.toContain("session start")
     const twice = await gcal(["second", "session", "start", "--client-file", file, "--json"])
     expect(failure(twice.err).reason).toBe("profile.same-account")
   })
@@ -315,6 +316,7 @@ describe("the account lookup", () => {
       google({ email: "someone@example.com" }),
     )
     expect(failure(checked.err).reason).toBe("profile.wrong-account")
+    expect(failure(checked.err).message).toContain("run gcal personal session start")
   })
 
   it("drops the old client secret when signing in again with a client that has none", async () => {
@@ -403,5 +405,64 @@ describe("the owner's Google client", () => {
     const file = clientFile()
     writeFileSync(file, JSON.stringify({ web: { client_secret: SECRET } }))
     expect(() => googleClient({}, file)).toThrow(/^could not read a Desktop app OAuth client JSON[^{]*$/)
+  })
+})
+
+describe("session start --credential-storage file", () => {
+  const noKeyring: KeyringStore = {
+    get: () => {
+      throw new Error("no keyring here")
+    },
+    set: () => {
+      throw new Error("no keyring here")
+    },
+    delete: () => {
+      throw new Error("no keyring here")
+    },
+  }
+
+  it("keeps the sign-in in a private file under the state folder where no keyring works", async () => {
+    const { gcal, env } = harness(noKeyring)
+    const fake = google()
+    const start = ["personal", "session", "start", "--client-file", clientFile(), "--json"]
+    expect(failure((await gcal(start, fake)).err).code).toBe("configuration_error")
+    const started = await gcal([...start, "--credential-storage", "file"], fake)
+    expect(started.code).toBe(0)
+    expect(item(started.out)).toMatchObject({ signed_in: true, credential_storage: "file" })
+    const file = join(env.GCAL_STATE_DIR ?? "", "credentials.json")
+    expect(statSync(file).mode & 0o777).toBe(0o600)
+    expect(JSON.parse(readFileSync(file, "utf8"))).toHaveProperty(["oauth:google:personal"])
+    const status = await gcal(["personal", "session", "status", "--check", "--json"], fake)
+    expect(item(status.out)).toMatchObject({ state: "saved", verified: true, credential_storage: "file" })
+    expect(item((await gcal(["doctor", "--json"])).out).credential_file).toEqual({
+      path: file,
+      found: true,
+      profiles: ["personal"],
+      private: true,
+    })
+    expect((await gcal(["personal", "session", "end", "--json"])).code).toBe(0)
+    expect(JSON.parse(readFileSync(file, "utf8"))).not.toHaveProperty(["oauth:google:personal"])
+  })
+
+  it("moves the sign-in back to the keyring on the next keyring sign-in", async () => {
+    const { gcal, env } = harness()
+    const fake = google()
+    const start = ["personal", "session", "start", "--client-file", clientFile(), "--json"]
+    expect((await gcal([...start, "--credential-storage", "file"], fake)).code).toBe(0)
+    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
+      credential_storage: "file",
+    })
+    expect((await gcal(start, fake)).code).toBe(0)
+    const file = JSON.parse(readFileSync(join(env.GCAL_STATE_DIR ?? "", "credentials.json"), "utf8"))
+    expect(file["oauth:google:personal"]).toBeUndefined()
+    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
+      credential_storage: "keyring",
+    })
+  })
+
+  it("refuses a storage it does not know", async () => {
+    const { gcal } = harness()
+    const refused = await gcal(["personal", "session", "start", "--credential-storage", "cloud", "--json"])
+    expect(failure(refused.err).code).toBe("validation_error")
   })
 })

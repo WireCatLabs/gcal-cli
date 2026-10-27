@@ -43,10 +43,11 @@ If this CLI defines a messenger, set its `speechModels` to `parakeet-v3`.
 - **Links:** attendees join people by address; Telegram, WhatsApp and MAX people only by the owner's
   `people link`; an event joins a Zoom meeting by join key and its other copies by iCalUID; an attached Drive file
   links the event to the stored document. Ambiguous links go to `links review`. Never by name or time alone.
-- **Secrets:** tokens in the system keyring through `@wirecat/cli-core/oauth` (WC-SECR). Passcodes, PINs and the
+- **Secrets:** tokens in the system keyring through `@wirecat/cli-core/oauth` (WC-SECR), or with
+  `--credential-storage file` in a mode-600 file in the state folder where no keyring works. Passcodes, PINs and the
   query string of a join link are never stored.
-- **Writes:** none in the first version (owner, 2026-10-26). Creating, changing and deleting events come later behind
-  `session start --grant write` and a permission.
+- **Writes:** creating, changing and deleting events, and answering an invitation, behind `session start --grant write`
+  and a permission per write (`events.*`); mailing attendees and deleting a whole series are denied by default.
 - **Google app:** during development the owner's own client (`GCAL_GOOGLE_CLIENT_ID`, `GCAL_GOOGLE_CLIENT_SECRET`);
   the shared WireCat app gets Calendar after Drive's Google review is approved.
 

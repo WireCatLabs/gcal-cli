@@ -40,7 +40,7 @@ export const googleError = ({ status, body, mutates, retryAfterMs }: GoogleFailu
   const reasons = reasonsOf(body)
   const wait = retryAfterMs === undefined ? {} : { retry_after_ms: retryAfterMs }
   if (status === 401)
-    return new CliError("authentication_error", "Google sign-in expired — run gcal <profile> session start again", {
+    return new CliError("authentication_error", "Google sign-in expired", {
       reason: "sign-in.expired",
       status,
     })
