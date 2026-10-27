@@ -111,13 +111,13 @@ describe("calendar commands over Google", () => {
       state: "partial",
       stopped: "requests",
       progress: { calendars: 1, calendars_done: 0, requests: 2 },
-      hint: "run sync again to continue",
+      hint: "run sync again to continue; see progress: gcal personal status",
     })
     expect(stopped.meta.complete).toBe(false)
     expect(stopped.next).toEqual([
       expect.objectContaining({ command: "sync", args: { max_pages: 2 }, line: "gcal personal sync --max-pages 2" }),
     ])
-    expect((await json("personal", "calendars", "status")).items).toMatchObject([
+    expect((await json("personal", "status")).items).toMatchObject([
       { external_id: "owner@example.com", state: "partial", profile: "personal", total: null },
     ])
     google.requests.length = 0
@@ -128,14 +128,14 @@ describe("calendar commands over Google", () => {
     const done = await json("personal", "sync")
     expect(done.item).toMatchObject({ state: "complete", complete: true })
     expect(done.next).toBeUndefined()
-    expect((await json("personal", "calendars", "status")).items).toMatchObject([{ state: "complete" }])
+    expect((await json("personal", "status")).items).toMatchObject([{ state: "complete" }])
   })
 
-  it("sync --full lists the window again", async () => {
+  it("sync --rescan lists the window again", async () => {
     const { json, google } = harness()
     await json("personal", "sync")
     google.requests.length = 0
-    await json("personal", "sync", "--full")
+    await json("personal", "sync", "--rescan")
     expect(lists(google.requests).every(({ query }) => !query.has("syncToken") && query.has("timeMin"))).toBe(true)
   })
 
@@ -240,6 +240,7 @@ describe("calendar commands over Google", () => {
       ["calendars", "unsync", "busy@group.calendar.example.com"],
       ["links", "review"],
       ["calendars", "busy", "today"],
+      ["status"],
     ]
     for (const words of reads) {
       const answer = await gcal("personal", ...words, "--jsonl")

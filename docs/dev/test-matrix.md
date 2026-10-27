@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**173 ✅ · 323 ⛔ · 0 ❌** — 70 commands, 426 options.
+**177 ✅ · 323 ⛔ · 0 ❌** — 71 commands, 429 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -37,8 +37,12 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `sync` |  | ✅ |  |
 | `sync` | `--json` | ✅ |  |
 | `sync` | `--jsonl` | ✅ |  |
-| `sync` | `--full` | ✅ |  |
+| `sync` | `--rescan` | ✅ |  |
+| `sync` | `--max-pages` | ✅ |  |
 | `sync` | `--embed` | ✅ |  |
+| `status` |  | ✅ |  |
+| `status` | `--json` | ✅ |  |
+| `status` | `--jsonl` | ✅ |  |
 | `events list` |  | ✅ |  |
 | `events list` | `--json` | ✅ |  |
 | `events list` | `--jsonl` | ✅ |  |

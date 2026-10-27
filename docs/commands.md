@@ -200,7 +200,7 @@ gcal calendars busy [words] [options]
 
 ## `gcal sync`
 
-bring the synced calendars up to date: what changed since the last sync, or everything with --full
+bring the synced calendars up to date: what changed since the last sync, or everything with --rescan; a run stops before its deadline or --max-pages and the next one goes on from there
 
 **Changes something on this computer only.**
 
@@ -212,12 +212,30 @@ gcal sync [options]
 |---|---|
 | `--json` | one JSON value. |
 | `--jsonl` | one JSON object per item. |
-| `--full` | list every synced calendar's window again instead of reading changes. |
+| `--rescan` | list every synced calendar's window again, dropping a round in progress. |
+| `--max-pages <pages>` | at most this many requests to the provider in this run; as many as fit the deadline if not given. |
 | `--embed` | also index new events for meaning search, with a model already downloaded. |
 
 **Returns:** bring the synced calendars up to date: what changed since the last sync, or…
 
-**Example:** `gcal personal sync`, `gcal personal sync --full --embed`
+**Example:** `gcal personal sync`, `gcal personal sync --rescan --embed`, `gcal personal sync --timeout 2m`
+
+## `gcal status`
+
+how far each synced calendar's sync is: entries done, partial or complete, and when it last moved
+
+```sh
+gcal status [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** how far each synced calendar's sync is: entries done, partial or complete,…
+
+**Example:** `gcal personal status --json`
 
 ## `gcal events`
 
@@ -1460,7 +1478,7 @@ the instructions an agent is given for this tool
 
 ### `gcal skill show`
 
-print SKILL.md — `gcal skill install` puts it where Claude Code, Codex and Gemini CLI look for it; --for prints the copy already there
+print SKILL.md — `gcal skill install` puts it where Claude Code, Codex, Gemini CLI and OpenClaw look for it, and where Hermes does on request; --for prints the copy already there
 
 ```sh
 gcal skill show [name] [options]

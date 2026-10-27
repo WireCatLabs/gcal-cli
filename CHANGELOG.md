@@ -6,17 +6,16 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Added
 
-- `sync` stops on its own before its time limit and goes on from there next run, so a big first sync no longer dies
-  at the deadline and loses the round. It saves after every page, and a partial answer says `state: "partial"`, how
-  far it got (`progress`) and the command to run next (`next`: `gcal <profile> sync`, the same flags). The limit is
-  5 minutes at a terminal and 45 s over MCP; the requests to Google are the limit, less a margin, divided by 1.5 s
-  (`requestMs`); `--max-pages <n>` lowers them. A page token Google refuses on resume (it states no lifetime for
-  one) starts that calendar's round over. cli-core's budgeted calendar sync.
-- `gcal <profile> calendars status`: each synced calendar's sync — entries done, `partial` or `complete`, and
+- `sync` stops on its own before its time limit and goes on from there next run, so a big first sync no longer dies at
+  the deadline and loses the round. It saves after every page, and a partial answer says `state: "partial"`, how far
+  it got (`progress`), the command to run next (`next`: `gcal <profile> sync`, the same flags) and where to watch it
+  (`gcal <profile> status`). The limit is 5 minutes at a terminal and 45 s over MCP; the requests to Google are the
+  limit, less a margin, divided by 1.5 s (`requestMs`); `--max-pages <n>` lowers them. A page token Google refuses on
+  resume (it states no lifetime for one) starts that calendar's round over. cli-core's budgeted calendar sync.
+- `gcal <profile> status`: each synced calendar's sync — entries done, `partial` or `complete`, and
   `cursor_age_ms`, which grows while nothing moves it.
 - `bin/gcal-live-check` runs `sync` until every calendar is complete, printing progress, at most 40 runs
   (`GCAL_LIVE_SYNC_RUNS`).
-
 - `gcal <profile> calendars busy [today|week|from: to:] [calendar:<id>] [person:<email>]`: Google's free/busy for the
   synced calendars and the people named (`freebusy.query`, which `calendar.readonly` allows). `--duration-minutes`
   adds the stretches free for all of them inside `--hours` (09:00-17:00 by default), Monday to Friday, in the
@@ -59,7 +58,7 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   `mcp --permission`. A method that changes Calendar asks first (`--yes` in a script), sharing and
   `calendars.transferOwnership` included; `calendars.clear` is denied until the owner allows it. A key that names no method is refused,
   and `gcal doctor` lists any saved in the file. `gcal <profile> mcp` refuses to start while the file holds one.
-- `gcal <profile> sync [--full] [--embed]`, `calendars list | sync | unsync`, `events list | show`, `search`,
+- `gcal <profile> sync [--rescan] [--max-pages <n>] [--embed]`, `calendars list | sync | unsync`, `events list | show`, `search`,
   `people list | link` and `links review | resolve`: cli-core's shared calendar commands over Google Calendar, read
   only. `sync` stores the calendars the owner owns from a year back to three months ahead, then asks Google only for
   what changed; a repeating event's slots come one by one, cancelled slots included. Join links lose their query

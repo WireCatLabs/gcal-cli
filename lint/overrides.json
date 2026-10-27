@@ -19,33 +19,5 @@
     "reason": "Chooses where the shared search looks: Google's own search instead of the local store, a scope of the same search (WC-CMD-6, WC-CMD-7). No vocabulary role names a remote scope yet. Review when cli-base's vocabulary names one.",
     "owner": "@WireCatLabs",
     "review_after": "2027-01-27"
-  },
-  {
-    "rule": "unknown-verb",
-    "target": "calendars busy",
-    "reason": "Added to the vocabulary in cli-base#381 (https://github.com/WireCatLabs/cli-base/pull/381), unreleased; remove at the cli-base 0.64.0 bump.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-01-27"
-  },
-  {
-    "rule": "option-role",
-    "target": "calendars busy --hours",
-    "reason": "Added to the vocabulary in cli-base#381 (https://github.com/WireCatLabs/cli-base/pull/381), unreleased; remove at the cli-base 0.64.0 bump.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-01-27"
-  },
-  {
-    "rule": "option-role",
-    "target": "events create --repeat",
-    "reason": "Added to the vocabulary in cli-base#381 (https://github.com/WireCatLabs/cli-base/pull/381), unreleased; remove at the cli-base 0.64.0 bump.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-01-27"
-  },
-  {
-    "rule": "option-role",
-    "target": "events update --repeat",
-    "reason": "Added to the vocabulary in cli-base#381 (https://github.com/WireCatLabs/cli-base/pull/381), unreleased; remove at the cli-base 0.64.0 bump.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-01-27"
   }
 ]

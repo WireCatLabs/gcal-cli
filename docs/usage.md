@@ -58,14 +58,14 @@ gcal personal sync                          # what changed since the last sync
 gcal personal calendars list                # every calendar of the account, and which of them sync
 gcal personal calendars sync <calendar>     # sync this calendar from now on; unsync stops it
 gcal personal sync --embed                  # also index new events for search by meaning
-gcal personal calendars status              # how far each calendar's sync is, and when it last moved
+gcal personal status                        # how far each calendar's sync is, and when it last moved
 ```
 
 A sync stops on its own before its time limit and saves every page as it goes, so nothing is lost. A big first sync
 may need several runs: the answer then says `state: "partial"` and ends with the command to run next, the same
 `sync` again, which goes on from where the last one stopped. The limit is 5 minutes at a terminal and 45 seconds
 when an agent runs it over MCP; `--timeout` changes it, and the number of requests to Google follows it.
-`--max-pages <n>` lowers that number further. `--full` starts every calendar over.
+`--max-pages <n>` lowers that number further. `--rescan` starts every calendar over.
 
 A repeating event's slots are read one by one, cancelled slots included. A deleted event in the past keeps its record;
 a deleted future event is marked cancelled. `--embed` needs the meaning model, which `gcal` never downloads by itself.
