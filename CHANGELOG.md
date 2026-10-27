@@ -11,3 +11,8 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   through your own Google OAuth client (`--client-file` or `GCAL_GOOGLE_CLIENT_ID` / `GCAL_GOOGLE_CLIENT_SECRET`).
   `session status --check` asks Google whether the sign-in still works. Each run that opens the shared store
   registers the `google-calendar` provider, so other WireCat tools know its events.
+- `gcal api list | show | call`, and one `gcal <profile> api <method>` command per method: every Google Calendar API
+  v3 method gcal can serve, generated from Google's description of the API. The answers are checked against it.
+  The methods that change Calendar fail with `permission_error` until a later `session start --grant write`.
+  Google's change notifications (`watch`, `channels.stop`) are left out. `api call`, sharing (`acl`),
+  `calendars.clear` and `calendars.transferOwnership` are never offered over MCP.

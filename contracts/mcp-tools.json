@@ -18,7 +18,7 @@
           "type": "object"
         },
         "command": {
-          "description": "a command gcal_tools_search returned: \"runs list\"",
+          "description": "a command gcal_tools_search returned: \"api list\"",
           "minLength": 1,
           "type": "string"
         }
@@ -492,7 +492,7 @@
           "type": "object"
         },
         "command": {
-          "description": "a command gcal_tools_search returned: \"runs list\"",
+          "description": "a command gcal_tools_search returned: \"api list\"",
           "minLength": 1,
           "type": "string"
         }

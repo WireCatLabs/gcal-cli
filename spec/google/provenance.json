@@ -1,0 +1,10 @@
+{
+  "calendar": {
+    "source": "https://calendar-json.googleapis.com/$discovery/rest?version=v3",
+    "revision": "20261021",
+    "version": "v3",
+    "sha256": "6cbd874b0c44cff67bf5de2b913d5fa1e9b7f0b5706bef3ef080c8d628303951",
+    "sourceSha256": "6cbd874b0c44cff67bf5de2b913d5fa1e9b7f0b5706bef3ef080c8d628303951",
+    "normalization": "none"
+  }
+}

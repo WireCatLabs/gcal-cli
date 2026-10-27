@@ -1,0 +1,85 @@
+import { CliError } from "@wirecat/cli-base"
+import { operations } from "./api-contract.js"
+import { metadata } from "./generated/metadata.js"
+
+const SCOPE = "https://www.googleapis.com/auth/"
+/** Narrowest first: the scope `api list` names is the one gcal would ask Google for. */
+const READ_PREFERENCE = ["calendar.readonly", "calendar.acls.readonly", "calendar"].map((name) => SCOPE + name)
+const WRITE_PREFERENCE = [
+  "calendar.events",
+  "calendar.calendarlist",
+  "calendar.calendars",
+  "calendar.acls",
+  "calendar",
+].map((name) => SCOPE + name)
+
+export interface ApiMethod {
+  name: string
+  mutates: boolean
+  destructive: boolean
+  scope: string
+}
+
+export const scopesOf = (name: string): readonly string[] =>
+  (metadata.scopes as Record<string, readonly string[]>)[name] ?? []
+
+/** The methods gcal can call; `service` keeps those of one Google service, as `api list service:calendar` asks. */
+export const apiMethods = (service?: string): ApiMethod[] => {
+  const chosen = service === undefined ? operations : operations.filter(({ id }) => id.startsWith(`${service}.`))
+  return chosen.map((operation) => {
+    const scopes = scopesOf(operation.id)
+    const preference = operation.effect === "read" ? READ_PREFERENCE : WRITE_PREFERENCE
+    const scope = preference.find((candidate) => scopes.includes(candidate))
+    if (!scope) throw new CliError("configuration_error", "generated method has no supported OAuth scope")
+    return {
+      name: operation.id,
+      mutates: operation.effect !== "read",
+      destructive: operation.effect === "destructive",
+      scope,
+    }
+  })
+}
+
+export const apiMethod = (name: string): ApiMethod => {
+  const found = apiMethods().find((method) => method.name === name)
+  if (!found)
+    throw new CliError("validation_error", "unknown Google Calendar method; run gcal api list", {
+      reason: "api.unknown-method",
+    })
+  return found
+}
+
+const forbidden = new Set([
+  "auth",
+  "key",
+  "access_token",
+  "oauth_token",
+  "context",
+  "options",
+  "rootUrl",
+  "baseURL",
+  "url",
+  "headers",
+  "requestBody",
+  "__proto__",
+  "prototype",
+  "constructor",
+])
+export const validateApiParams = (params: Record<string, unknown>): void => {
+  if (
+    !params ||
+    typeof params !== "object" ||
+    Array.isArray(params) ||
+    Object.entries(params).some(
+      ([key, value]) =>
+        forbidden.has(key) ||
+        (Array.isArray(value)
+          ? value.some((item) => item !== null && typeof item === "object")
+          : value !== null && typeof value === "object"),
+    )
+  )
+    throw new CliError(
+      "validation_error",
+      "API parameters must be scalar values or scalar arrays and cannot override authentication or transport",
+    )
+}
