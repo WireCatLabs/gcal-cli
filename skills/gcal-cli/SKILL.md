@@ -29,6 +29,8 @@ Find your way with the tool itself, not this file:
 
 - `gcal api list --json` lists every Google Calendar method; `gcal api show <method> --json` shows its parameters.
 - Run a method by its own command, such as `gcal <profile> api calendar-events-list --calendar-id primary --json`.
+- An event's conference entry points come without passcodes, PINs or access codes, and their links without query
+  strings; do not ask the owner for them.
 - gcal reads only for now: a method that changes Calendar fails with `permission_error`. Tell the owner; do not retry.
 
 ## Rules

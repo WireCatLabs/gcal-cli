@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**112 ✅ · 333 ⛔ · 0 ❌** — 65 commands, 380 options.
+**115 ✅ · 330 ⛔ · 0 ❌** — 65 commands, 380 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -289,19 +289,19 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-events-insert` | `--send-updates` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-insert` | `--body` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-insert` | `--body-file` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-events-instances` |  | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-events-instances` |  | ✅ |  |
 | `api calendar-events-instances` | `--alt` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-instances` | `--fields` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-instances` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-instances` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-instances` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-events-instances` | `--event-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-events-instances` | `--event-id` | ✅ |  |
 | `api calendar-events-instances` | `--time-min` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-instances` | `--page-token` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-instances` | `--always-include-email` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-instances` | `--max-results` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-instances` | `--max-attendees` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-events-instances` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-events-instances` | `--calendar-id` | ✅ |  |
 | `api calendar-events-instances` | `--show-deleted` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-instances` | `--time-zone` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-instances` | `--original-start` | ⛔ | generated from Google's Discovery document; src/api.test.ts runs generated commands and `api call` through the one executor they share |

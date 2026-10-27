@@ -31,10 +31,13 @@ import { Command } from "commander"
 import * as v from "valibot"
 import { jsonObject, operationOf, operations, schemas } from "../api-contract.js"
 import { type ApiMethod, apiMethod, apiMethods, validateApiParams } from "../api-methods.js"
+import { CONFERENCE_SECRETS_NOTE, withoutConferenceSecrets } from "../conference.js"
 import { apiKey, configuration, OWNER_ONLY, permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
 import { requestSchema } from "../schema.js"
 import { contextOf } from "./session.js"
+
+const EVENT_ANSWERS = new Set(["CalendarEvent", "CalendarEvents"])
 
 const API_METHOD_QUERY = {
   entity: "api_method",
@@ -103,7 +106,9 @@ const call = async (
         act,
       )
     : await act()
-  const shown = result === null || typeof result !== "object" || Array.isArray(result) ? { data: result } : result
+  // gcal's rule: a meeting's passcode never leaves Google through gcal, whichever method returned the event.
+  const safe = withoutConferenceSecrets(result)
+  const shown = safe === null || typeof safe !== "object" || Array.isArray(safe) ? { data: safe } : safe
   renderAnswer(
     command,
     outputFor(command),
@@ -138,7 +143,11 @@ const showCommand = () =>
       renderAnswer(
         this,
         outputFor(this),
-        itemOf({ operation: operationOf(method), request_schema: requestSchema(method) }),
+        itemOf({
+          operation: operationOf(method),
+          request_schema: requestSchema(method),
+          ...(EVENT_ANSWERS.has(operationOf(method).response?.schema ?? "") ? { answer: CONFERENCE_SECRETS_NOTE } : {}),
+        }),
       )
     })
 

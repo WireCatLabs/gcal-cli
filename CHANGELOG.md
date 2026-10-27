@@ -34,5 +34,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- `gcal <profile> api …` no longer prints a meeting's passcode, PIN, access code or password. Every event's
+  `conferenceData.entryPoints[]` loses those fields; its links lose their query string, and phone and SIP addresses
+  lose the dial sequence that carries the PIN. This covers `events.list`, `events.get`, `events.instances` and every
+  other answer that holds an event, in the terminal and over MCP. `api show` says so for those methods.
 - `session start`, `session status` and `session end` are now kept in the run log, with the Google account lookup as
   a request of the run: `gcal <profile> runs list` shows them. Before, a session run was never recorded.
