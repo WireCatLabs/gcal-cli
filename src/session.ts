@@ -163,6 +163,7 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
   if (account && live !== account)
     throw new CliError("authentication_error", "the saved sign-in belongs to another account", {
       reason: "profile.wrong-account",
+      next: "sign-in",
     })
   return { ...status, account: live, scopes: tokens.scopes, grants: grantsOf(tokens.scopes), verified: true }
 }

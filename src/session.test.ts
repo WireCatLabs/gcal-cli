@@ -237,6 +237,7 @@ describe("session start", () => {
       google({ email: "someone@example.com" }),
     )
     expect(failure(other.err).reason).toBe("profile.wrong-account")
+    expect(failure(other.err).message).not.toContain("session start")
     const twice = await gcal(["second", "session", "start", "--client-file", file, "--json"])
     expect(failure(twice.err).reason).toBe("profile.same-account")
   })
@@ -315,6 +316,7 @@ describe("the account lookup", () => {
       google({ email: "someone@example.com" }),
     )
     expect(failure(checked.err).reason).toBe("profile.wrong-account")
+    expect(failure(checked.err).message).toContain("run gcal personal session start")
   })
 
   it("drops the old client secret when signing in again with a client that has none", async () => {
@@ -438,6 +440,8 @@ describe("session start --credential-storage file", () => {
       profiles: ["personal"],
       private: true,
     })
+    expect((await gcal(["personal", "session", "end", "--json"])).code).toBe(0)
+    expect(JSON.parse(readFileSync(file, "utf8"))).not.toHaveProperty(["oauth:google:personal"])
   })
 
   it("moves the sign-in back to the keyring on the next keyring sign-in", async () => {
