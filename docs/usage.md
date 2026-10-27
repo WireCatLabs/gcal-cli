@@ -109,7 +109,9 @@ body. Each method also has its own command, such as `api calendar-events-list`, 
 
 An event's conference details lose what lets someone join without an invitation. `passcode`, `pin`, `accessCode` and
 `password` are removed from every entry point. A link loses its query string, and a phone or SIP address loses the
-dial sequence after the number. `api show` says so for each method that returns events.
+dial sequence after the number. An event's description and location lose each line that names a passcode, a
+password or a PIN, and every link loses its query string. `api show` says so for each method that returns events.
+An answer with events lists, under `untrusted`, the fields whoever sent the invitation wrote.
 
 A profile signed in without `--grant write` reads only:
 

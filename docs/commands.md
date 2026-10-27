@@ -540,6 +540,7 @@ gcal api call <method> [options]
 |---|---|
 | `--params <json>` | query and path parameters as a JSON object. Default: `[object Object]`. |
 | `--body <json>` | request body as a JSON object. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** call one Google Calendar API method by name with JSON parameters
 
@@ -564,6 +565,7 @@ gcal api calendar-acl-delete [options]
 | `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
 | `--rule-id <value>` | ACL rule identifier. |
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Deletes an access control rule. — destructive (DELETE…
 
@@ -612,6 +614,7 @@ gcal api calendar-acl-insert [options]
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Creates an access control rule. — write (POST calendars/{calendarId}/acl)
 
@@ -664,6 +667,7 @@ gcal api calendar-acl-patch [options]
 | `--send-notifications <value>` | Whether to send notifications about the calendar sharing change. Note that there are no notifications on access removal. Optional. The default is True. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Updates an access control rule. This method supports patch semantics. —…
 
@@ -691,6 +695,7 @@ gcal api calendar-acl-update [options]
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Updates an access control rule. — write (PUT…
 
@@ -714,6 +719,7 @@ gcal api calendar-calendar-list-delete [options]
 | `--pretty-print <value>` | Returns response with indentations and line breaks. |
 | `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Removes a calendar from the user's calendar list. — destructive (DELETE…
 
@@ -760,6 +766,7 @@ gcal api calendar-calendar-list-insert [options]
 | `--color-rgb-format <value>` | Whether to use the foregroundColor and backgroundColor fields to write the calendar colors (RGB). If this feature is used, the index-based colorId field will be set to the best matching option automatically. Optional. The default is False. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Inserts an existing calendar into the user's calendar list. — write (POST…
 
@@ -813,6 +820,7 @@ gcal api calendar-calendar-list-patch [options]
 | `--color-rgb-format <value>` | Whether to use the foregroundColor and backgroundColor fields to write the calendar colors (RGB). If this feature is used, the index-based colorId field will be set to the best matching option automatically. Optional. The default is False. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Updates an existing calendar on the user's calendar list. This method…
 
@@ -839,6 +847,7 @@ gcal api calendar-calendar-list-update [options]
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Updates an existing calendar on the user's calendar list. — write (PUT…
 
@@ -862,6 +871,7 @@ gcal api calendar-calendars-clear [options]
 | `--pretty-print <value>` | Returns response with indentations and line breaks. |
 | `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Clears a primary calendar. This operation deletes all events associated with…
 
@@ -885,6 +895,7 @@ gcal api calendar-calendars-delete [options]
 | `--pretty-print <value>` | Returns response with indentations and line breaks. |
 | `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Deletes a secondary calendar. Use calendars.clear for clearing all events on…
 
@@ -930,6 +941,7 @@ gcal api calendar-calendars-insert [options]
 | `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Creates a secondary calendar. — write (POST calendars)
 
@@ -955,6 +967,7 @@ gcal api calendar-calendars-patch [options]
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Updates metadata for a calendar. This method supports patch semantics. —…
 
@@ -980,6 +993,7 @@ gcal api calendar-calendars-transfer-ownership [options]
 | `--use-admin-access <value>` | When true, the method runs using the user's Google Workspace administrator privileges. The calling user must be a Google Workspace administrator with the Manage Calendars privilege. This method currently only supports admin access, thus only true is accepted for this field. |
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs, call the calendarList.list method. |
 | `--new-data-owner <value>` | The email address of a user who will become the data owner of the calendar. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Transfers a secondary calendar between users within a Google Workspace…
 
@@ -1005,6 +1019,7 @@ gcal api calendar-calendars-update [options]
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Updates metadata for a calendar. — write (PUT calendars/{calendarId})
 
@@ -1051,6 +1066,7 @@ gcal api calendar-events-delete [options]
 | `--event-id <value>` | Event identifier. |
 | `--send-notifications <value>` | Deprecated. Please use sendUpdates instead. |
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Deletes an event. — destructive (DELETE calendars/{calendarId}/events/{eventId})
 
@@ -1104,6 +1120,7 @@ gcal api calendar-events-import [options]
 | `--conference-data-version <value>` | Version number of conference data supported by the API client. Version 0 assumes no conference data support and ignores conference data in the event's body. Version 1 enables support for copying of ConferenceData as well as for creating new conferences using the createRequest field of conferenceData. The default is 0. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Imports an event. This operation is used to add a private copy of an…
 
@@ -1135,6 +1152,7 @@ gcal api calendar-events-insert [options]
 | `--send-updates <value>` | Whether to send notifications about the creation of the new event. Note that some emails might still be sent. The default is false. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Creates an event. — write (POST calendars/{calendarId}/events)
 
@@ -1232,6 +1250,7 @@ gcal api calendar-events-move [options]
 | `--event-id <value>` | Event identifier. |
 | `--destination <value>` | Calendar identifier of the target calendar where the event is to be moved to. |
 | `--calendar-id <value>` | Calendar identifier of the source calendar where the event currently is on. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Moves an event to another calendar, i.e. changes an event's organizer. Note…
 
@@ -1265,6 +1284,7 @@ gcal api calendar-events-patch [options]
 | `--conference-data-version <value>` | Version number of conference data supported by the API client. Version 0 assumes no conference data support and ignores conference data in the event's body. Version 1 enables support for copying of ConferenceData as well as for creating new conferences using the createRequest field of conferenceData. The default is 0. |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Updates an event. This method supports patch semantics. — write (PATCH…
 
@@ -1291,6 +1311,7 @@ gcal api calendar-events-quick-add [options]
 | `--send-notifications <value>` | Deprecated. Please use sendUpdates instead. |
 | `--text <value>` | The text describing the event to be created. |
 | `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Creates an event based on a simple text string. — write (POST…
 
@@ -1324,6 +1345,7 @@ gcal api calendar-events-update [options]
 | `--always-include-email <value>` | Deprecated and ignored. A value will always be returned in the email field for the organizer, creator and attendees, even if no real email address is available (i.e. a generated, non-working value will be provided). |
 | `--body <json>` | the request body as JSON; - reads it from stdin. |
 | `--body-file <path>` | the request body from a JSON file; - is stdin. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** Updates an event. — write (PUT calendars/{calendarId}/events/{eventId})
 

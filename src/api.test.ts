@@ -11,7 +11,7 @@ import { apiMethods } from "./api-methods.js"
 import { configuration, permissions } from "./config.js"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
 import { googleApi } from "./google-api.js"
-import { ACLS_SCOPE } from "./grants.js"
+import { ACLS_SCOPE, EVENTS_SCOPE } from "./grants.js"
 import { createMcpServer } from "./mcp.js"
 import { createProgram, run } from "./program.js"
 
@@ -81,6 +81,7 @@ const harness = (
     tokens: { accessToken: ACCESS, refreshToken: REFRESH, expiresAt, scopes },
     client: { clientId: "fixture-client.apps", clientSecret: SECRET },
   })
+  const asked: string[] = []
   const gcal = async (argv: string[], fake = google(), answer?: string) => {
     const out: string[] = []
     const err: string[] = []
@@ -90,11 +91,18 @@ const harness = (
       env,
       keyring,
       fetch: fake.fetch,
-      ...(answer === undefined ? {} : { answer: () => answer }),
+      ...(answer === undefined
+        ? {}
+        : {
+            answer: (question: string) => {
+              asked.push(question)
+              return answer
+            },
+          }),
     })
     return { code, out: out.join("\n"), err: err.join("\n") }
   }
-  return { gcal, env }
+  return { gcal, env, keyring, asked }
 }
 
 const answerOf = (text: string) => JSON.parse(text)
@@ -699,5 +707,231 @@ describe("secrets", () => {
     expect(toCalendar(fake.requests)[0]?.authorization).toBe(`Bearer ${REFRESHED}`)
     const runs = await gcal(["--record", "personal", "runs", "list", "--limit", "5", "--json"])
     for (const marker of MARKERS) expect(listed.out + listed.err + runs.out + runs.err).not.toContain(marker)
+  })
+})
+
+// Shapes from the Calendar API reference (Events resource, Recurring events guide); every value is made up.
+const SERIES = {
+  kind: "calendar#event",
+  id: "evtseries1",
+  status: "confirmed",
+  summary: "Example weekly",
+  start: { dateTime: "2026-11-02T10:00:00Z" },
+  end: { dateTime: "2026-11-02T11:00:00Z" },
+  recurrence: ["RRULE:FREQ=WEEKLY;UNTIL=20270701T170000Z"],
+}
+const SINGLE = { ...SERIES, id: "evtsingle1", summary: "Example one-off", recurrence: undefined }
+
+describe("the calendar keys hold on api writes", () => {
+  const WRITER = ["openid", "email", CALENDAR_READ_SCOPE, EVENTS_SCOPE]
+  const writes = (event: unknown = SINGLE) =>
+    google((_url, init) => ((init?.method ?? "GET") === "DELETE" ? new Response(null, { status: 204 }) : json(event)))
+  const insert = ["personal", "api", "calendar-events-insert", "--calendar-id", "primary", "--body", "{}"]
+  const remove = ["personal", "api", "calendar-events-delete", "--calendar-id", "primary", "--event-id", "evtseries1"]
+  const methods = (fake: ReturnType<typeof google>) => toCalendar(fake.requests).map(({ method }) => method)
+
+  it.each([
+    [[...insert, "--send-updates", "all"]],
+    [[...insert, "--send-updates", "externalOnly"]],
+    [[...insert, "--send-notifications", "true"]],
+    [
+      [
+        ...["personal", "api", "call", "calendar.events.delete", "--params"],
+        '{"calendarId":"primary","eventId":"evtsingle1","sendUpdates":"all"}',
+      ],
+    ],
+    [
+      [
+        ...["personal", "api", "call", "calendar.events.quickAdd", "--params"],
+        '{"calendarId":"primary","text":"Example lunch","sendNotifications":true}',
+      ],
+    ],
+  ])("refuses mailing attendees through %j while events.notify is deny", async (words) => {
+    const { gcal } = harness(WRITER)
+    const fake = writes()
+    const refused = failure((await gcal([...words, "--yes", "--json"], fake)).err)
+    expect(refused).toMatchObject({ code: "permission_error", details: { permission: "events.notify" } })
+    expect(fake.fetch).not.toHaveBeenCalled()
+  })
+
+  it("asks one question naming both keys once events.notify is ask, and mails once it is allow", async () => {
+    const { gcal, asked } = harness(WRITER)
+    const fake = writes()
+    expect((await gcal(["personal", "config", "set", "permissions.events.notify", "ask"])).code).toBe(0)
+    expect((await gcal([...insert, "--send-updates", "all"], fake, "y")).code).toBe(0)
+    expect(asked).toHaveLength(1)
+    expect(asked[0]).toContain("api.calendar.events.insert and events.notify")
+    expect((await gcal(["personal", "config", "set", "permissions.events.notify", "allow"])).code).toBe(0)
+    expect((await gcal([...insert, "--send-updates", "all", "--yes", "--json"], fake)).code).toBe(0)
+    expect(toCalendar(fake.requests).map(({ url }) => url.searchParams.get("sendUpdates"))).toEqual(["all", "all"])
+  })
+
+  it("sends with sendUpdates=none under the default levels", async () => {
+    const { gcal } = harness(WRITER)
+    const fake = writes()
+    expect((await gcal([...insert, "--send-updates", "none", "--yes", "--json"], fake)).code).toBe(0)
+    expect(methods(fake)).toEqual(["POST"])
+  })
+
+  it.each([
+    [remove],
+    [
+      [
+        ...["personal", "api", "calendar-events-patch", "--calendar-id", "primary", "--event-id", "evtseries1"],
+        ...["--body", '{"status":"cancelled"}'],
+      ],
+    ],
+  ])("refuses removing a whole series through %j: Google is only read", async (words) => {
+    const { gcal } = harness(WRITER)
+    const fake = writes(SERIES)
+    const refused = failure((await gcal([...words, "--yes", "--json"], fake)).err)
+    expect(refused).toMatchObject({ code: "permission_error", details: { permission: "events.delete.series" } })
+    expect(methods(fake)).toEqual(["GET"])
+    expect(toCalendar(fake.requests)[0]?.url.pathname).toBe("/calendar/v3/calendars/primary/events/evtseries1")
+  })
+
+  it("deletes a single event after the look, and a series without one once events.delete.series is allow", async () => {
+    const { gcal } = harness(WRITER)
+    const single = writes(SINGLE)
+    expect((await gcal([...remove, "--yes", "--json"], single)).code).toBe(0)
+    expect(methods(single)).toEqual(["GET", "DELETE"])
+    expect((await gcal(["personal", "config", "set", "permissions.events.delete.series", "allow"])).code).toBe(0)
+    const series = writes(SERIES)
+    expect((await gcal([...remove, "--yes", "--json"], series)).code).toBe(0)
+    expect(methods(series)).toEqual(["DELETE"])
+  })
+
+  it("names the missing write sign-in before looking at the event", async () => {
+    const { gcal } = harness()
+    const fake = writes(SERIES)
+    expect(failure((await gcal([...remove, "--yes", "--json"], fake)).err).reason).toBe("api.scope-missing")
+    expect(fake.fetch).not.toHaveBeenCalled()
+  })
+
+  it("previews every key and its level with --dry-run, api call included, and sends nothing", async () => {
+    const { gcal } = harness(WRITER)
+    const fake = writes()
+    const called = await gcal(
+      [
+        ...["--dry-run", "personal", "api", "call", "calendar.events.delete", "--params"],
+        ...['{"calendarId":"primary","eventId":"evtseries1"}', "--json"],
+      ],
+      fake,
+    )
+    expect(answerOf(called.out).item.permissions).toEqual([
+      { key: "api.calendar.events.delete", level: "ask" },
+      { key: "events.delete.series", level: "deny", when: "the event repeats" },
+    ])
+    expect(answerOf(called.out).item.permission).toEqual({ key: "api.calendar.events.delete", level: "ask" })
+    expect(failure((await gcal(["--dry-run", ...insert, "--send-updates", "all", "--json"], fake)).err)).toMatchObject({
+      code: "permission_error",
+      details: { permission: "events.notify" },
+    })
+    expect((await gcal(["personal", "config", "set", "permissions.events.notify", "ask"])).code).toBe(0)
+    const mailing = await gcal([...insert, "--send-updates", "all", "--dry-run", "--json"], fake)
+    expect(answerOf(mailing.out).item.permissions).toEqual([
+      { key: "api.calendar.events.insert", level: "ask" },
+      { key: "events.notify", level: "ask" },
+    ])
+    expect(fake.fetch).not.toHaveBeenCalled()
+  })
+
+  it("holds over MCP: an agent cannot mail attendees or delete a series", async () => {
+    const { env, keyring } = harness(WRITER)
+    const fake = writes(SERIES)
+    const program = createProgram()
+    const server = createMcpServer({
+      profile: "personal",
+      commands: describeProgram(program),
+      levels: () => configuration.resolveSettings({ profile: "personal" }, { env }).permissions,
+      authority: changesAuthorityAt(program),
+      permissions,
+      readOnly: false,
+      run: (argv, environment) => run(argv, { ...environment, env, keyring, fetch: fake.fetch }),
+    })
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
+    await server.connect(serverSide)
+    const client = new Client({ name: "test", version: "1.0.0" })
+    await client.connect(clientSide)
+    try {
+      const write = async (command: string, args: Record<string, unknown>) =>
+        (await client.callTool({ name: "gcal_write", arguments: { command, arguments: args } })) as {
+          isError?: boolean
+          content: { text: string }[]
+        }
+      const mailed = await write("api calendar-events-insert", {
+        calendar_id: "primary",
+        send_updates: "all",
+        body: "{}",
+      })
+      expect(mailed.isError).toBe(true)
+      expect(mailed.content[0]?.text).toContain("events.notify")
+      expect(fake.fetch).not.toHaveBeenCalled()
+      const deleted = await write("api calendar-events-delete", { calendar_id: "primary", event_id: "evtseries1" })
+      expect(deleted.isError).toBe(true)
+      expect(deleted.content[0]?.text).toContain("events.delete.series")
+      expect(methods(fake)).toEqual(["GET"])
+    } finally {
+      await client.close()
+    }
+  })
+})
+
+// Shapes from the Calendar API reference (Events resource: description, location); every value is made up.
+const SECRET_TEXT = {
+  ...MEETING,
+  id: "evttext1",
+  description:
+    'Agenda<br>Join: <a href="https://meet.example.com/j/123?pwd=fixturelink92">meeting</a><br>Passcode: fixturedesc81',
+  location: "https://meet.example.com/j/123?pwd=fixtureloc73",
+  attendees: [{ email: "ana@example.com", displayName: "Ana Example", responseStatus: "needsAction" }],
+}
+const TEXT_SECRETS = ["fixturelink92", "fixturedesc81", "fixtureloc73"]
+
+describe("event text", () => {
+  it.each([
+    [["api", "calendar-events-list", "--calendar-id", "primary"], { kind: "calendar#events", items: [SECRET_TEXT] }],
+    [
+      ["api", "calendar-events-instances", "--calendar-id", "primary", "--event-id", "evtseries1"],
+      { kind: "calendar#events", items: [SECRET_TEXT] },
+    ],
+    [["api", "calendar-events-get", "--calendar-id", "primary", "--event-id", "evttext1"], SECRET_TEXT],
+    [
+      ["api", "calendar-events-insert", "--calendar-id", "primary", "--body", "{}", "--yes"],
+      SECRET_TEXT,
+      ["openid", "email", CALENDAR_READ_SCOPE, EVENTS_SCOPE],
+    ],
+  ])("loses passcodes and link queries, and is marked untrusted, through %j", async (words, answer, scopes?) => {
+    const { gcal } = harness(scopes)
+    const shown = await gcal(
+      ["personal", ...words, "--json"],
+      google(() => json(answer)),
+    )
+    expect(shown.code).toBe(0)
+    for (const secret of [...TEXT_SECRETS, ...SECRETS]) expect(shown.out).not.toContain(secret)
+    const item = answerOf(shown.out).item
+    const event = item.items?.[0] ?? item
+    expect(event.description).toBe("Agenda\nJoin: https://meet.example.com/j/123 meeting")
+    expect(event.location).toBe("https://meet.example.com/j/123")
+    const prefix = item.items ? "items." : ""
+    expect(item.untrusted).toEqual(
+      expect.arrayContaining(
+        ["summary", "description", "location", "attendees.display_name"].map((path) => prefix + path),
+      ),
+    )
+  })
+
+  it("leaves a calendar's answer unmarked", async () => {
+    const { gcal } = harness()
+    const calendar = { kind: "calendar#calendar", id: "primary", summary: "Example", description: "Passcode: kept" }
+    const shown = answerOf(
+      (
+        await gcal(
+          ["personal", "api", "calendar-calendars-get", "--calendar-id", "primary", "--json"],
+          google(() => json(calendar)),
+        )
+      ).out,
+    ).item
+    expect(shown.untrusted).toBeUndefined()
   })
 })
