@@ -18,8 +18,8 @@ importers:
         specifier: 0.63.0
         version: 0.63.0(commander@15.0.0)(typescript@7.0.2)(vitest@5.0.5)
       '@wirecat/cli-core':
-        specifier: 0.455.0
-        version: 0.455.0(@wirecat/cli-base@0.63.0(commander@15.0.0)(typescript@7.0.2)(vitest@5.0.5))(commander@15.0.0)(typescript@7.0.2)(zod@4.6.7)
+        specifier: file:/var/tmp/claude/claude-1000/-home-leemour-Projects-AI-cli-gcal/fde3ec23-bc44-4629-aeda-c16b76de2fb1/scratchpad/pack/wirecat-cli-core-0.455.0.tgz
+        version: file:../../../../../var/tmp/claude/claude-1000/-home-leemour-Projects-AI-cli-gcal/fde3ec23-bc44-4629-aeda-c16b76de2fb1/scratchpad/pack/wirecat-cli-core-0.455.0.tgz(@wirecat/cli-base@0.63.0(commander@15.0.0)(typescript@7.0.2)(vitest@5.0.5))(commander@15.0.0)(typescript@7.0.2)(zod@4.6.7)
       commander:
         specifier: 15.0.0
         version: 15.0.0
@@ -1030,8 +1030,9 @@ packages:
   '@wirecat/cli-core-sqlite@1.1.0':
     resolution: {integrity: sha512-GpGlh/dAIX/nblBYCdT6DfWSLFxav9mxxeELQAfEuw+QZdT9unKxbi5xa02s/s4JS1P7n0PQx2sCABj4FlMRNw==}
 
-  '@wirecat/cli-core@0.455.0':
-    resolution: {integrity: sha512-sFzkG77Xm5S8iMPSLEqqbKsB6uxE2AhyOBtIBuYK/l384ss1Mk5aHNhVkN2l7SsB8mmruU5r2nw2WZLtXXtOLg==}
+  '@wirecat/cli-core@file:../../../../../var/tmp/claude/claude-1000/-home-leemour-Projects-AI-cli-gcal/fde3ec23-bc44-4629-aeda-c16b76de2fb1/scratchpad/pack/wirecat-cli-core-0.455.0.tgz':
+    resolution: {integrity: sha512-iANOZr69S5VU4R22sIB+fX8vBk4/FyaClAY9fmxGfamwCbpmSE9espa4tWj/w8J7nwbjv3jTJPikXzJ8ZkKMEQ==, tarball: file:../../../../../var/tmp/claude/claude-1000/-home-leemour-Projects-AI-cli-gcal/fde3ec23-bc44-4629-aeda-c16b76de2fb1/scratchpad/pack/wirecat-cli-core-0.455.0.tgz}
+    version: 0.455.0
     engines: {node: ^22.16.0 || >=24}
     hasBin: true
     peerDependencies:
@@ -3232,7 +3233,7 @@ snapshots:
 
   '@wirecat/cli-core-sqlite@1.1.0': {}
 
-  '@wirecat/cli-core@0.455.0(@wirecat/cli-base@0.63.0(commander@15.0.0)(typescript@7.0.2)(vitest@5.0.5))(commander@15.0.0)(typescript@7.0.2)(zod@4.6.7)':
+  '@wirecat/cli-core@file:../../../../../var/tmp/claude/claude-1000/-home-leemour-Projects-AI-cli-gcal/fde3ec23-bc44-4629-aeda-c16b76de2fb1/scratchpad/pack/wirecat-cli-core-0.455.0.tgz(@wirecat/cli-base@0.63.0(commander@15.0.0)(typescript@7.0.2)(vitest@5.0.5))(commander@15.0.0)(typescript@7.0.2)(zod@4.6.7)':
     dependencies:
       '@anthropic-ai/sdk': 1.3.0(zod@4.6.7)
       '@bomb.sh/tab': 0.0.22(commander@15.0.0)

@@ -105,6 +105,262 @@ gcal session end
 
 **Example:** `gcal personal session end`
 
+## `gcal calendars`
+
+the account's calendars
+
+### `gcal calendars list`
+
+list the account's calendars from the provider, and which of them sync
+
+**Changes something on this computer only.**
+
+```sh
+gcal calendars list [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** list the account's calendars from the provider, and which of them sync
+
+**Example:** `gcal personal calendars list --json`
+
+### `gcal calendars sync`
+
+sync this calendar from now on
+
+**Changes something on this computer only.**
+
+```sh
+gcal calendars sync <calendar> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `calendar` | required | the calendar's id, or the provider's id. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** sync this calendar from now on
+
+**Example:** `gcal personal calendars sync 3`
+
+### `gcal calendars unsync`
+
+stop syncing this calendar; what is stored stays
+
+**Changes something on this computer only.**
+
+```sh
+gcal calendars unsync <calendar> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `calendar` | required | the calendar's id, or the provider's id. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** stop syncing this calendar; what is stored stays
+
+**Example:** `gcal personal calendars unsync 3`
+
+## `gcal sync`
+
+bring the synced calendars up to date: what changed since the last sync, or everything with --full
+
+**Changes something on this computer only.**
+
+```sh
+gcal sync [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+| `--full` | list every synced calendar's window again instead of reading changes. |
+| `--embed` | also index new events for meaning search, with a model already downloaded. |
+
+**Returns:** bring the synced calendars up to date: what changed since the last sync, or…
+
+**Example:** `gcal personal sync`, `gcal personal sync --full --embed`
+
+## `gcal events`
+
+the account's stored events
+
+### `gcal events list`
+
+list stored events, earliest first
+
+```sh
+gcal events list [words] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `words` | optional | today, week, from:<date>, to:<date>, person:<who>, calendar:<id>. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+| `--limit <n>` | events at most, 1–1000. Default: `100`. |
+
+**Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 7 more; every field: gcal commands info events list
+
+**Example:** `gcal personal events list week --json`, `gcal personal events list from:2026-11-02 to:2026-11-06 person:ana@example.com`
+
+### `gcal events show`
+
+one event: its calendar copies, attendees with their person, Drive files and history
+
+```sh
+gcal events show <event> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `event` | required | the event's id, or event:<id>. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** one event: its calendar copies, attendees with their person, Drive files and…
+
+**Example:** `gcal personal events show event:42 --json`
+
+## `gcal search`
+
+find stored events by words, and by meaning when its model is downloaded
+
+```sh
+gcal search <words> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `words` | required | what to find in titles, descriptions, places and attendees. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+| `--limit <n>` | events per page. Default: `20`. |
+| `--cursor <cursor>` | continue from a page's next_offset. Default: `0`. |
+| `--exact` | every word as written, no word stems. |
+| `--newest` | latest start first instead of best first. |
+
+**Returns:** find stored events by words, and by meaning when its model is downloaded
+
+**Example:** `gcal personal search roadmap planning --json`
+
+## `gcal people`
+
+the people in the account's events
+
+### `gcal people list`
+
+one event's attendees, or everyone attending this week's events
+
+```sh
+gcal people list [event] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `event` | optional | the event's id, or event:<id>. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** one event's attendees, or everyone attending this week's events
+
+**Example:** `gcal personal people list --json`, `gcal personal people list event:42`
+
+### `gcal people link`
+
+join an attendee to a person the owner knows elsewhere
+
+**Changes something on this computer only.**
+
+```sh
+gcal people link <person> <other> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `person` | required | an attendee's address as email:<address>, or a person:<id>. |
+| `other` | required | the same person in another tool, as <provider>:<person>, or me. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** join an attendee to a person the owner knows elsewhere
+
+**Example:** `gcal personal people link email:ana@example.com telegram:12345`
+
+## `gcal links`
+
+calendar copies the rules could not join alone
+
+### `gcal links review`
+
+copies that fit two or more events equally well, waiting for the owner's choice
+
+```sh
+gcal links review [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** copies that fit two or more events equally well, waiting for the owner's choice
+
+**Example:** `gcal personal links review --json`
+
+### `gcal links resolve`
+
+join a copy to the event you choose, or keep it apart
+
+**Changes something on this computer only.**
+
+```sh
+gcal links resolve <review> <choice> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `review` | required | the review's id from links review. |
+| `choice` | required | one of its candidates, as event:<id>, or apart. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** join a copy to the event you choose, or keep it apart
+
+**Example:** `gcal personal links resolve 7 event:42`
+
 ## `gcal api`
 
 discover and call the official Google Calendar API methods

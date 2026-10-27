@@ -4,6 +4,7 @@ import { mcpErrorResult } from "@wirecat/cli-base"
 import type { CommandInfo } from "@wirecat/cli-base/commands"
 import type { CommandPermissions, RunOptions } from "@wirecat/cli-core/cli"
 import { type McpCommand, registerCommands, runCommandForAgent, toolsFromCommands } from "@wirecat/cli-core/mcp"
+import { agentBody, agentJson } from "@wirecat/cli-core/meetings/mcp"
 import type { Level } from "@wirecat/cli-core/sends"
 import { IDENTITY } from "./identity.js"
 
@@ -71,7 +72,8 @@ export const createMcpServer = (options: McpOptions): McpServer => {
           const answer = await runCommandForAgent(program, tool.path, input, context)
           if ("error" in answer) return mcpErrorResult(answer.error)
           const value = isObject(answer.result) ? answer.result : { result: answer.result }
-          return { content: [{ type: "text" as const, text: JSON.stringify(value) }], structuredContent: value }
+          // Event text is written by whoever sent the invitation: control characters reach the agent visible.
+          return { content: [{ type: "text" as const, text: agentJson(value) }], structuredContent: agentBody(value) }
         },
       },
     ]),

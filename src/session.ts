@@ -91,6 +91,26 @@ export const savedSession = (options: Common) => {
   return saved ? { saved, keeper: sessionKeeper({ ...options, client: saved.client ?? { clientId: "" } }) } : undefined
 }
 
+/** What `googleApi` needs from a profile's saved sign-in; a missing one fails only when a request needs a token. */
+export const apiAccess = (options: Common) => {
+  const session = savedSession(options)
+  return {
+    fetch: options.fetch ?? globalThis.fetch,
+    signal: options.signal,
+    scopes: () => session?.saved.tokens.scopes,
+    accessToken: async () => {
+      if (!session)
+        throw new CliError(
+          "authentication_error",
+          `not signed in to Google; run ${IDENTITY.command} ${options.profile} session start`,
+        )
+      const { accessToken } = await session.keeper.tokens()
+      if (!accessToken) throw new CliError("authentication_error", "Google returned no access token")
+      return accessToken
+    },
+  }
+}
+
 export const sessionStatus = async (options: Common & { check: boolean }) => {
   const { env, profile } = options
   const account = savedAccount(env, profile) ?? null
