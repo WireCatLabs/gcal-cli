@@ -105,6 +105,915 @@ gcal session end
 
 **Example:** `gcal personal session end`
 
+## `gcal api`
+
+discover and call the official Google Calendar API methods
+
+### `gcal api list`
+
+list the Google Calendar API methods gcal can call
+
+```sh
+gcal api list [query]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+**Returns:** api method — name, mutates, destructive, scope; every field: gcal commands info api list
+
+**Example:** `gcal personal api list`, `gcal personal api list service:calendar`
+
+### `gcal api show`
+
+show one method's request schema and contract, without calling Google
+
+```sh
+gcal api show <method>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `method` | required | Google method name, as api list prints it. |
+
+**Returns:** show one method's request schema and contract, without calling Google
+
+**Example:** `gcal personal api show calendar.events.list --json`
+
+### `gcal api call`
+
+call one Google Calendar API method by name with JSON parameters
+
+**Changes something in the service.**
+
+```sh
+gcal api call <method> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `method` | required | Google method name, as api list prints it. |
+
+| Option | What it does |
+|---|---|
+| `--params <json>` | query and path parameters as a JSON object. Default: `[object Object]`. |
+| `--body <json>` | request body as a JSON object. |
+
+**Returns:** call one Google Calendar API method by name with JSON parameters
+
+**Example:** `gcal personal api call calendar.events.list --params '{"calendarId":"primary","maxResults":10}'`, `gcal personal api call calendar.freebusy.query --body '{"timeMin":"2026-11-02T00:00:00Z","timeMax":"2026-11-03T00:00:00Z","items":[{"id":"primary"}]}'`
+
+### `gcal api calendar-acl-delete`
+
+Deletes an access control rule. — destructive (DELETE calendars/{calendarId}/acl/{ruleId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-acl-delete [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--rule-id <value>` | ACL rule identifier. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+
+**Returns:** Deletes an access control rule. — destructive (DELETE…
+
+**Example:** `gcal personal api calendar-acl-delete --rule-id <value> --calendar-id <value>`
+
+### `gcal api calendar-acl-get`
+
+Returns an access control rule. — read (GET calendars/{calendarId}/acl/{ruleId})
+
+```sh
+gcal api calendar-acl-get [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--rule-id <value>` | ACL rule identifier. |
+
+**Returns:** Returns an access control rule. — read (GET calendars/{calendarId}/acl/{ruleId})
+
+**Example:** `gcal personal api calendar-acl-get --calendar-id <value> --rule-id <value>`
+
+### `gcal api calendar-acl-insert`
+
+Creates an access control rule. — write (POST calendars/{calendarId}/acl)
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-acl-insert [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--send-notifications <value>` | Whether to send notifications about the calendar sharing change. Optional. The default is True. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Creates an access control rule. — write (POST calendars/{calendarId}/acl)
+
+**Example:** `gcal personal api calendar-acl-insert --calendar-id <value>`
+
+### `gcal api calendar-acl-list`
+
+Returns the rules in the access control list for the calendar. — read (GET calendars/{calendarId}/acl)
+
+```sh
+gcal api calendar-acl-list [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--max-results <value>` | Maximum number of entries returned on one result page. By default the value is 100 entries. The page size can never be larger than 250 entries. Optional. |
+| `--show-deleted <value>` | Whether to include deleted ACLs in the result. Deleted ACLs are represented by role equal to "none". Deleted ACLs will always be included if syncToken is provided. Optional. The default is False. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--sync-token <value>` | Token obtained from the nextSyncToken field returned on the last page of results from the previous list request. It makes the result of this list request contain only entries that have changed since then. All entries deleted since the previous list request will always be in the result set and it is not allowed to set showDeleted to False. |
+| `--page-token <value>` | Token specifying which result page to return. Optional. |
+
+**Returns:** Returns the rules in the access control list for the calendar. — read (GET…
+
+**Example:** `gcal personal api calendar-acl-list --calendar-id <value>`
+
+### `gcal api calendar-acl-patch`
+
+Updates an access control rule. This method supports patch semantics. — write (PATCH calendars/{calendarId}/acl/{ruleId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-acl-patch [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--rule-id <value>` | ACL rule identifier. |
+| `--send-notifications <value>` | Whether to send notifications about the calendar sharing change. Note that there are no notifications on access removal. Optional. The default is True. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Updates an access control rule. This method supports patch semantics. —…
+
+**Example:** `gcal personal api calendar-acl-patch --calendar-id <value> --rule-id <value>`
+
+### `gcal api calendar-acl-update`
+
+Updates an access control rule. — write (PUT calendars/{calendarId}/acl/{ruleId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-acl-update [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--rule-id <value>` | ACL rule identifier. |
+| `--send-notifications <value>` | Whether to send notifications about the calendar sharing change. Note that there are no notifications on access removal. Optional. The default is True. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Updates an access control rule. — write (PUT…
+
+**Example:** `gcal personal api calendar-acl-update --rule-id <value> --calendar-id <value>`
+
+### `gcal api calendar-calendar-list-delete`
+
+Removes a calendar from the user's calendar list. — destructive (DELETE users/me/calendarList/{calendarId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-calendar-list-delete [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+
+**Returns:** Removes a calendar from the user's calendar list. — destructive (DELETE…
+
+**Example:** `gcal personal api calendar-calendar-list-delete --calendar-id <value>`
+
+### `gcal api calendar-calendar-list-get`
+
+Returns a calendar from the user's calendar list. — read (GET users/me/calendarList/{calendarId})
+
+```sh
+gcal api calendar-calendar-list-get [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+
+**Returns:** Returns a calendar from the user's calendar list. — read (GET…
+
+**Example:** `gcal personal api calendar-calendar-list-get --calendar-id <value>`
+
+### `gcal api calendar-calendar-list-insert`
+
+Inserts an existing calendar into the user's calendar list. — write (POST users/me/calendarList)
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-calendar-list-insert [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--color-rgb-format <value>` | Whether to use the foregroundColor and backgroundColor fields to write the calendar colors (RGB). If this feature is used, the index-based colorId field will be set to the best matching option automatically. Optional. The default is False. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Inserts an existing calendar into the user's calendar list. — write (POST…
+
+**Example:** `gcal personal api calendar-calendar-list-insert`
+
+### `gcal api calendar-calendar-list-list`
+
+Returns the calendars on the user's calendar list. — read (GET users/me/calendarList)
+
+```sh
+gcal api calendar-calendar-list-list [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--show-hidden <value>` | Whether to show hidden entries. Optional. The default is False. |
+| `--show-own-organization-only <value>` | Whether to show only entries for calendars from the organization. This parameter is only applicable to Google Workspace users. Optional. The default is False. |
+| `--min-access-role <value>` | The minimum access role for the user in the returned entries. Optional. The default is no restriction. |
+| `--sync-token <value>` | Token obtained from the nextSyncToken field returned on the last page of results from the previous list request. It makes the result of this list request contain only entries that have changed since then. If only read-only fields such as calendar properties or ACLs have changed, the entry won't be returned. All entries deleted and hidden since the previous list request will always be in the result set and it is not allowed to set showDeleted neither showHidden to False. |
+| `--max-results <value>` | Maximum number of entries returned on one result page. By default the value is 100 entries. The page size can never be larger than 250 entries. Optional. |
+| `--page-token <value>` | Token specifying which result page to return. Optional. |
+| `--show-deleted <value>` | Whether to include deleted calendar list entries in the result. Optional. The default is False. |
+
+**Returns:** Returns the calendars on the user's calendar list. — read (GET…
+
+**Example:** `gcal personal api calendar-calendar-list-list`
+
+### `gcal api calendar-calendar-list-patch`
+
+Updates an existing calendar on the user's calendar list. This method supports patch semantics. — write (PATCH users/me/calendarList/{calendarId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-calendar-list-patch [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--color-rgb-format <value>` | Whether to use the foregroundColor and backgroundColor fields to write the calendar colors (RGB). If this feature is used, the index-based colorId field will be set to the best matching option automatically. Optional. The default is False. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Updates an existing calendar on the user's calendar list. This method…
+
+**Example:** `gcal personal api calendar-calendar-list-patch --calendar-id <value>`
+
+### `gcal api calendar-calendar-list-update`
+
+Updates an existing calendar on the user's calendar list. — write (PUT users/me/calendarList/{calendarId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-calendar-list-update [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--color-rgb-format <value>` | Whether to use the foregroundColor and backgroundColor fields to write the calendar colors (RGB). If this feature is used, the index-based colorId field will be set to the best matching option automatically. Optional. The default is False. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Updates an existing calendar on the user's calendar list. — write (PUT…
+
+**Example:** `gcal personal api calendar-calendar-list-update --calendar-id <value>`
+
+### `gcal api calendar-calendars-clear`
+
+Clears a primary calendar. This operation deletes all events associated with the primary calendar of an account. — destructive (POST calendars/{calendarId}/clear)
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-calendars-clear [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+
+**Returns:** Clears a primary calendar. This operation deletes all events associated with…
+
+**Example:** `gcal personal api calendar-calendars-clear --calendar-id <value>`
+
+### `gcal api calendar-calendars-delete`
+
+Deletes a secondary calendar. Use calendars.clear for clearing all events on primary calendars. — destructive (DELETE calendars/{calendarId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-calendars-delete [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+
+**Returns:** Deletes a secondary calendar. Use calendars.clear for clearing all events on…
+
+**Example:** `gcal personal api calendar-calendars-delete --calendar-id <value>`
+
+### `gcal api calendar-calendars-get`
+
+Returns metadata for a calendar. — read (GET calendars/{calendarId})
+
+```sh
+gcal api calendar-calendars-get [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+
+**Returns:** Returns metadata for a calendar. — read (GET calendars/{calendarId})
+
+**Example:** `gcal personal api calendar-calendars-get --calendar-id <value>`
+
+### `gcal api calendar-calendars-insert`
+
+Creates a secondary calendar. — write (POST calendars)
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-calendars-insert [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Creates a secondary calendar. — write (POST calendars)
+
+**Example:** `gcal personal api calendar-calendars-insert`
+
+### `gcal api calendar-calendars-patch`
+
+Updates metadata for a calendar. This method supports patch semantics. — write (PATCH calendars/{calendarId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-calendars-patch [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Updates metadata for a calendar. This method supports patch semantics. —…
+
+**Example:** `gcal personal api calendar-calendars-patch --calendar-id <value>`
+
+### `gcal api calendar-calendars-transfer-ownership`
+
+Transfers a secondary calendar between users within a Google Workspace organization. Requires user authentication with Manage Calendars administrator privilege, and one of the following authorization scopes:  — destructive (POST calendars/{calendarId}/transferOwnership)
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-calendars-transfer-ownership [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--use-admin-access <value>` | When true, the method runs using the user's Google Workspace administrator privileges. The calling user must be a Google Workspace administrator with the Manage Calendars privilege. This method currently only supports admin access, thus only true is accepted for this field. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs, call the calendarList.list method. |
+| `--new-data-owner <value>` | The email address of a user who will become the data owner of the calendar. |
+
+**Returns:** Transfers a secondary calendar between users within a Google Workspace…
+
+**Example:** `gcal personal api calendar-calendars-transfer-ownership --use-admin-access <value> --calendar-id <value> --new-data-owner <value>`
+
+### `gcal api calendar-calendars-update`
+
+Updates metadata for a calendar. — write (PUT calendars/{calendarId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-calendars-update [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Updates metadata for a calendar. — write (PUT calendars/{calendarId})
+
+**Example:** `gcal personal api calendar-calendars-update --calendar-id <value>`
+
+### `gcal api calendar-colors-get`
+
+Returns the color definitions for calendars and events. — read (GET colors)
+
+```sh
+gcal api calendar-colors-get [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+
+**Returns:** Returns the color definitions for calendars and events. — read (GET colors)
+
+**Example:** `gcal personal api calendar-colors-get`
+
+### `gcal api calendar-events-delete`
+
+Deletes an event. — destructive (DELETE calendars/{calendarId}/events/{eventId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-events-delete [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--send-updates <value>` | Guests who should receive notifications about the deletion of the event. |
+| `--event-id <value>` | Event identifier. |
+| `--send-notifications <value>` | Deprecated. Please use sendUpdates instead. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+
+**Returns:** Deletes an event. — destructive (DELETE calendars/{calendarId}/events/{eventId})
+
+**Example:** `gcal personal api calendar-events-delete --event-id <value> --calendar-id <value>`
+
+### `gcal api calendar-events-get`
+
+Returns an event based on its Google Calendar ID. To retrieve an event using its iCalendar ID, call the events.list method using the iCalUID parameter. — read (GET calendars/{calendarId}/events/{eventId})
+
+```sh
+gcal api calendar-events-get [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--time-zone <value>` | Time zone used in the response. Optional. The default is the time zone of the calendar. |
+| `--always-include-email <value>` | Deprecated and ignored. A value will always be returned in the email field for the organizer, creator and attendees, even if no real email address is available (i.e. a generated, non-working value will be provided). |
+| `--event-id <value>` | Event identifier. |
+| `--max-attendees <value>` | The maximum number of attendees to include in the response. If there are more than the specified number of attendees, only the participant is returned. Optional. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+
+**Returns:** Returns an event based on its Google Calendar ID. To retrieve an event using…
+
+**Example:** `gcal personal api calendar-events-get --event-id <value> --calendar-id <value>`
+
+### `gcal api calendar-events-import`
+
+Imports an event. This operation is used to add a private copy of an existing event to a calendar. Only events with an eventType of default may be imported. — write (POST calendars/{calendarId}/events/import)
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-events-import [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--supports-attachments <value>` | Whether API client performing operation supports event attachments. Optional. The default is False. |
+| `--event-label-version <value>` | Version number of the event label feature supported by the API client. Version 0 assumes no event label support and processes the colorId field for color management. Version 1 enables support for event labels, and processes the eventLabelId in the event's body. In this case, the colorId field is ignored. The default is 0. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--conference-data-version <value>` | Version number of conference data supported by the API client. Version 0 assumes no conference data support and ignores conference data in the event's body. Version 1 enables support for copying of ConferenceData as well as for creating new conferences using the createRequest field of conferenceData. The default is 0. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Imports an event. This operation is used to add a private copy of an…
+
+**Example:** `gcal personal api calendar-events-import --calendar-id <value>`
+
+### `gcal api calendar-events-insert`
+
+Creates an event. — write (POST calendars/{calendarId}/events)
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-events-insert [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--supports-attachments <value>` | Whether API client performing operation supports event attachments. Optional. The default is False. |
+| `--send-notifications <value>` | Deprecated. Please use sendUpdates instead. |
+| `--max-attendees <value>` | The maximum number of attendees to include in the response. If there are more than the specified number of attendees, only the participant is returned. Optional. |
+| `--event-label-version <value>` | Version number of the event label feature supported by the API client. Version 0 assumes no event label support and processes the colorId field for color management. Version 1 enables support for event labels, and processes the eventLabelId in the event's body. In this case, the colorId field is ignored. The default is 0. |
+| `--conference-data-version <value>` | Version number of conference data supported by the API client. Version 0 assumes no conference data support and ignores conference data in the event's body. Version 1 enables support for copying of ConferenceData as well as for creating new conferences using the createRequest field of conferenceData. The default is 0. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--send-updates <value>` | Whether to send notifications about the creation of the new event. Note that some emails might still be sent. The default is false. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Creates an event. — write (POST calendars/{calendarId}/events)
+
+**Example:** `gcal personal api calendar-events-insert --calendar-id <value>`
+
+### `gcal api calendar-events-instances`
+
+Returns instances of the specified recurring event. — read (GET calendars/{calendarId}/events/{eventId}/instances)
+
+```sh
+gcal api calendar-events-instances [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--event-id <value>` | Recurring event identifier. |
+| `--time-min <value>` | Lower bound (inclusive) for an event's end time to filter by. Optional. The default is not to filter by end time. Must be an RFC3339 timestamp with mandatory time zone offset. |
+| `--page-token <value>` | Token specifying which result page to return. Optional. |
+| `--always-include-email <value>` | Deprecated and ignored. A value will always be returned in the email field for the organizer, creator and attendees, even if no real email address is available (i.e. a generated, non-working value will be provided). |
+| `--max-results <value>` | Maximum number of events returned on one result page. By default the value is 250 events. The page size can never be larger than 2500 events. Optional. |
+| `--max-attendees <value>` | The maximum number of attendees to include in the response. If there are more than the specified number of attendees, only the participant is returned. Optional. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--show-deleted <value>` | Whether to include deleted events (with status equals "cancelled") in the result. Cancelled instances of recurring events will still be included if singleEvents is False. Optional. The default is False. |
+| `--time-zone <value>` | Time zone used in the response. Optional. The default is the time zone of the calendar. |
+| `--original-start <value>` | The original start time of the instance in the result. Optional. |
+| `--time-max <value>` | Upper bound (exclusive) for an event's start time to filter by. Optional. The default is not to filter by start time. Must be an RFC3339 timestamp with mandatory time zone offset. |
+
+**Returns:** Returns instances of the specified recurring event. — read (GET…
+
+**Example:** `gcal personal api calendar-events-instances --event-id <value> --calendar-id <value>`
+
+### `gcal api calendar-events-list`
+
+Returns events on the specified calendar. — read (GET calendars/{calendarId}/events)
+
+```sh
+gcal api calendar-events-list [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--time-zone <value>` | Time zone used in the response. Optional. The default is the time zone of the calendar. |
+| `--time-min <value>` | Lower bound (exclusive) for an event's end time to filter by. Optional. The default is not to filter by end time. Must be an RFC3339 timestamp with mandatory time zone offset, for example, 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. Milliseconds may be provided but are ignored. If timeMax is set, timeMin must be smaller than timeMax. |
+| `--sync-token <value>` | Token obtained from the nextSyncToken field returned on the last page of results from the previous list request. It makes the result of this list request contain only entries that have changed since then. All events deleted since the previous list request will always be in the result set and it is not allowed to set showDeleted to False. |
+| `--max-attendees <value>` | The maximum number of attendees to include in the response. If there are more than the specified number of attendees, only the participant is returned. Optional. |
+| `--show-hidden-invitations <value>` | Whether to include hidden invitations in the result. Optional. The default is False. |
+| `--event-types <value>` | Event types to return. Optional. This parameter can be repeated multiple times to return events of different types. If unset, returns all event types. |
+| `--time-max <value>` | Upper bound (exclusive) for an event's start time to filter by. Optional. The default is not to filter by start time. Must be an RFC3339 timestamp with mandatory time zone offset, for example, 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. Milliseconds may be provided but are ignored. If timeMin is set, timeMax must be greater than timeMin. |
+| `--always-include-email <value>` | Deprecated and ignored. |
+| `--q <value>` | Free text search terms to find events that match these terms in the following fields:. |
+| `--show-deleted <value>` | Whether to include deleted events (with status equals "cancelled") in the result. Cancelled instances of recurring events (but not the underlying recurring event) will still be included if showDeleted and singleEvents are both False. If showDeleted and singleEvents are both True, only single instances of deleted events (but not the underlying recurring events) are returned. Optional. The default is False. |
+| `--max-results <value>` | Maximum number of events returned on one result page. The number of events in the resulting page may be less than this value, or none at all, even if there are more events matching the query. Incomplete pages can be detected by a non-empty nextPageToken field in the response. By default the value is 250 events. The page size can never be larger than 2500 events. Optional. |
+| `--i-cal-uid <value>` | Specifies an event ID in the iCalendar format to be provided in the response. Optional. Use this if you want to search for an event by its iCalendar ID. |
+| `--order-by <value>` | The order of the events returned in the result. Optional. The default is an unspecified, stable order. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--updated-min <value>` | Lower bound for an event's last modification time (as a RFC3339 timestamp) to filter by. When specified, entries deleted since this time will always be included regardless of showDeleted. Optional. The default is not to filter by last modification time. |
+| `--shared-extended-property <value>` | Extended properties constraint specified as propertyName=value. Matches only shared properties. This parameter might be repeated multiple times to return events that match all given constraints. |
+| `--single-events <value>` | Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves. Optional. The default is False. |
+| `--private-extended-property <value>` | Extended properties constraint specified as propertyName=value. Matches only private properties. This parameter might be repeated multiple times to return events that match all given constraints. |
+| `--page-token <value>` | Token specifying which result page to return. Optional. |
+
+**Returns:** Returns events on the specified calendar. — read (GET…
+
+**Example:** `gcal personal api calendar-events-list --calendar-id <value>`
+
+### `gcal api calendar-events-move`
+
+Moves an event to another calendar, i.e. changes an event's organizer. Note that only default events can be moved; birthday, focusTime, fromGmail, outOfOffice and workingLocation events cannot be moved. — write (POST calendars/{calendarId}/events/{eventId}/move)
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-events-move [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--send-updates <value>` | Guests who should receive notifications about the change of the event's organizer. |
+| `--send-notifications <value>` | Deprecated. Please use sendUpdates instead. |
+| `--event-id <value>` | Event identifier. |
+| `--destination <value>` | Calendar identifier of the target calendar where the event is to be moved to. |
+| `--calendar-id <value>` | Calendar identifier of the source calendar where the event currently is on. |
+
+**Returns:** Moves an event to another calendar, i.e. changes an event's organizer. Note…
+
+**Example:** `gcal personal api calendar-events-move --event-id <value> --destination <value> --calendar-id <value>`
+
+### `gcal api calendar-events-patch`
+
+Updates an event. This method supports patch semantics. — write (PATCH calendars/{calendarId}/events/{eventId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-events-patch [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--max-attendees <value>` | The maximum number of attendees to include in the response. If there are more than the specified number of attendees, only the participant is returned. Optional. |
+| `--send-updates <value>` | Guests who should receive notifications about the event update (for example, title changes, etc.). |
+| `--supports-attachments <value>` | Whether API client performing operation supports event attachments. Optional. The default is False. |
+| `--event-label-version <value>` | Version number of the event label feature supported by the API client. Version 0 assumes no event label support and processes the colorId field for color management. Version 1 enables support for event labels, and processes the eventLabelId in the event's body. In this case, the colorId field is ignored. The default is 0. |
+| `--event-id <value>` | Event identifier. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--always-include-email <value>` | Deprecated and ignored. A value will always be returned in the email field for the organizer, creator and attendees, even if no real email address is available (i.e. a generated, non-working value will be provided). |
+| `--send-notifications <value>` | Deprecated. Please use sendUpdates instead. |
+| `--conference-data-version <value>` | Version number of conference data supported by the API client. Version 0 assumes no conference data support and ignores conference data in the event's body. Version 1 enables support for copying of ConferenceData as well as for creating new conferences using the createRequest field of conferenceData. The default is 0. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Updates an event. This method supports patch semantics. — write (PATCH…
+
+**Example:** `gcal personal api calendar-events-patch --event-id <value> --calendar-id <value>`
+
+### `gcal api calendar-events-quick-add`
+
+Creates an event based on a simple text string. — write (POST calendars/{calendarId}/events/quickAdd)
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-events-quick-add [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--send-updates <value>` | Guests who should receive notifications about the creation of the new event. |
+| `--send-notifications <value>` | Deprecated. Please use sendUpdates instead. |
+| `--text <value>` | The text describing the event to be created. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+
+**Returns:** Creates an event based on a simple text string. — write (POST…
+
+**Example:** `gcal personal api calendar-events-quick-add --text <value> --calendar-id <value>`
+
+### `gcal api calendar-events-update`
+
+Updates an event. — write (PUT calendars/{calendarId}/events/{eventId})
+
+**Changes something in the service.**
+
+```sh
+gcal api calendar-events-update [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--calendar-id <value>` | Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword. |
+| `--max-attendees <value>` | The maximum number of attendees to include in the response. If there are more than the specified number of attendees, only the participant is returned. Optional. |
+| `--supports-attachments <value>` | Whether API client performing operation supports event attachments. Optional. The default is False. |
+| `--event-id <value>` | Event identifier. |
+| `--send-notifications <value>` | Deprecated. Please use sendUpdates instead. |
+| `--conference-data-version <value>` | Version number of conference data supported by the API client. Version 0 assumes no conference data support and ignores conference data in the event's body. Version 1 enables support for copying of ConferenceData as well as for creating new conferences using the createRequest field of conferenceData. The default is 0. |
+| `--send-updates <value>` | Guests who should receive notifications about the event update (for example, title changes, etc.). |
+| `--event-label-version <value>` | Version number of the event label feature supported by the API client. Version 0 assumes no event label support and processes the colorId field for color management. Version 1 enables support for event labels, and processes the eventLabelId in the event's body. In this case, the colorId field is ignored. The default is 0. |
+| `--always-include-email <value>` | Deprecated and ignored. A value will always be returned in the email field for the organizer, creator and attendees, even if no real email address is available (i.e. a generated, non-working value will be provided). |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Updates an event. — write (PUT calendars/{calendarId}/events/{eventId})
+
+**Example:** `gcal personal api calendar-events-update --calendar-id <value> --event-id <value>`
+
+### `gcal api calendar-freebusy-query`
+
+Returns free/busy information for a set of calendars. — read (POST freeBusy)
+
+```sh
+gcal api calendar-freebusy-query [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--body <json>` | the request body as JSON; - reads it from stdin. |
+| `--body-file <path>` | the request body from a JSON file; - is stdin. |
+
+**Returns:** Returns free/busy information for a set of calendars. — read (POST freeBusy)
+
+**Example:** `gcal personal api calendar-freebusy-query`
+
+### `gcal api calendar-settings-get`
+
+Returns a single user setting. — read (GET users/me/settings/{setting})
+
+```sh
+gcal api calendar-settings-get [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--setting <value>` | The id of the user setting. |
+
+**Returns:** Returns a single user setting. — read (GET users/me/settings/{setting})
+
+**Example:** `gcal personal api calendar-settings-get --setting <value>`
+
+### `gcal api calendar-settings-list`
+
+Returns all user settings for the authenticated user. — read (GET users/me/settings)
+
+```sh
+gcal api calendar-settings-list [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--alt <value>` | Data format for the response. |
+| `--fields <value>` | Selector specifying which fields to include in a partial response. |
+| `--user-ip <value>` | Deprecated. Please use quotaUser instead. |
+| `--pretty-print <value>` | Returns response with indentations and line breaks. |
+| `--quota-user <value>` | An opaque string that represents a user for quota purposes. Must not exceed 40 characters. |
+| `--page-token <value>` | Token specifying which result page to return. Optional. |
+| `--sync-token <value>` | Token obtained from the nextSyncToken field returned on the last page of results from the previous list request. It makes the result of this list request contain only entries that have changed since then. |
+| `--max-results <value>` | Maximum number of entries returned on one result page. By default the value is 100 entries. The page size can never be larger than 250 entries. Optional. |
+
+**Returns:** Returns all user settings for the authenticated user. — read (GET…
+
+**Example:** `gcal personal api calendar-settings-list`
+
 ## `gcal doctor`
 
 check this installation: version, paths, config, profiles; no keyring or network
@@ -178,8 +1087,12 @@ serve this profile's commands to an agent over MCP, on stdin and stdout, writes 
 **Changes something in the service.**
 
 ```sh
-gcal mcp
+gcal mcp [options]
 ```
+
+| Option | What it does |
+|---|---|
+| `--permission <key=level>` | make a permission stricter for this server only, like api.calendar.events.insert=deny; it never loosens the profile; repeat for more keys. |
 
 **Returns:** serve this profile's commands to an AI agent
 

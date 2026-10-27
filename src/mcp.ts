@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server"
 import { StdioServerTransport } from "@modelcontextprotocol/server/stdio"
 import { mcpErrorResult } from "@wirecat/cli-base"
 import type { CommandInfo } from "@wirecat/cli-base/commands"
-import type { RunOptions } from "@wirecat/cli-core/cli"
+import type { CommandPermissions, RunOptions } from "@wirecat/cli-core/cli"
 import { type McpCommand, registerCommands, runCommandForAgent, toolsFromCommands } from "@wirecat/cli-core/mcp"
 import type { Level } from "@wirecat/cli-core/sends"
 import { IDENTITY } from "./identity.js"
@@ -13,6 +13,12 @@ export interface McpOptions {
   /** The profile's levels, read again on every call so a change in the config applies at once. */
   levels: () => Readonly<Record<string, Level>>
   authority: (path: readonly string[]) => boolean
+  /** gcal's own keys and defaults: `api.<method>` and the command paths. */
+  permissions: CommandPermissions
+  /** Whether the read-only lock is on, which makes every write to Google unavailable. */
+  readOnly: boolean
+  /** This server's `--permission` entries, which every command it runs applies too. */
+  overrides?: readonly string[]
   run: (argv: string[], environment: RunOptions) => Promise<number>
   signal?: AbortSignal
   transport?: Parameters<McpServer["connect"]>[0]
@@ -35,13 +41,22 @@ export const createMcpServer = (options: McpOptions): McpServer => {
     },
   )
   const program = { commands: options.commands, run: options.run }
-  const context = { profile: options.profile, levels: options.levels, authority: options.authority }
+  const context = {
+    profile: options.profile,
+    levels: options.levels,
+    authority: options.authority,
+    permissions: options.permissions,
+    readOnly: options.readOnly,
+    ...(options.overrides?.length ? { overrides: options.overrides } : {}),
+  }
   const tools = toolsFromCommands(options.commands, {
     includeUnavailable: true,
     currentLevels: options.levels,
     levels: options.levels(),
     exclude: EXCLUDED,
     authority: options.authority,
+    permissions: options.permissions,
+    readOnly: options.readOnly,
   })
   const commands: Record<string, McpCommand> = Object.fromEntries(
     tools.map((tool) => [

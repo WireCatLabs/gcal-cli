@@ -1,8 +1,17 @@
 import { CliError } from "@wirecat/cli-base"
 import { annotate, describeProgram } from "@wirecat/cli-base/commands"
-import { changesAuthorityAt, environmentOf, type GlobalFlags, REMOTE_WRITE, rootOf } from "@wirecat/cli-core/cli"
+import {
+  changesAuthorityAt,
+  environmentOf,
+  type GlobalFlags,
+  knownPermissionKeys,
+  REMOTE_WRITE,
+  readOnlyLockOf,
+  rootOf,
+  unknownPermissionKeys,
+} from "@wirecat/cli-core/cli"
 import { Command } from "commander"
-import { configuration } from "../config.js"
+import { configuration, permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
 
 export const mcpCommand = (): Command =>
@@ -16,6 +25,11 @@ export const mcpCommand = (): Command =>
     .description(
       `serve this profile's commands to an agent over MCP, on stdin and stdout, writes included; the profile's permissions decide — \`claude mcp add ${IDENTITY.command} -- ${IDENTITY.command} personal mcp\``,
     )
+    .option(
+      "--permission <key=level>",
+      "make a permission stricter for this server only, like api.calendar.events.insert=deny; it never loosens the profile; repeat for more keys",
+      (value: string, previous: string[] = []) => [...previous, value],
+    )
     .action(async function (this: Command) {
       const flags = this.optsWithGlobals<GlobalFlags>()
       if (flags.json || flags.jsonl)
@@ -23,6 +37,13 @@ export const mcpCommand = (): Command =>
       const environment = environmentOf(this)
       const env = environment.env ?? process.env
       const { profile } = configuration.resolveSettings(flags, { env })
+      // mcp itself has no key, so the shared check before a run never looks at the keys this flag names.
+      const [unknown] = unknownPermissionKeys(
+        Object.fromEntries((flags.permission ?? []).map((entry) => [entry.split("=")[0] ?? "", true])),
+        knownPermissionKeys(this, permissions),
+      )
+      if (unknown !== undefined)
+        throw new CliError("validation_error", `--permission ${unknown} names no command`, { permission: unknown })
       const run = environment.runCommand
       if (!run) throw new Error("mcp runs inside the program's run(), which provides runCommand")
       const program = rootOf(this)
@@ -32,6 +53,9 @@ export const mcpCommand = (): Command =>
         commands: describeProgram(program),
         levels: () => configuration.resolveSettings(flags, { env }).permissions,
         authority: changesAuthorityAt(program),
+        permissions,
+        readOnly: readOnlyLockOf(IDENTITY, env) !== undefined,
+        ...(flags.permission?.length ? { overrides: flags.permission } : {}),
         run,
         ...(environment.signal ? { signal: environment.signal } : {}),
       })

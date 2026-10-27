@@ -17,6 +17,8 @@ export default defineConfig({
         "src/testing/**",
         // The entry point: one line handing argv to run(), which the suite drives directly.
         "src/bin/**",
+        // Generated from Google's Discovery document (WC-LAY-6); src/api.test.ts drives it through gcal api.
+        "src/generated/**",
       ],
       reporter: ["text-summary", "json-summary"],
       thresholds: {

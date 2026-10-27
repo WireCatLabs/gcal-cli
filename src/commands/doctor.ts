@@ -11,9 +11,10 @@ import {
   profileFree,
   readOnlyLockOf,
   renderAnswer,
+  unknownPermissionIssues,
 } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
-import { configuration } from "../config.js"
+import { configuration, permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
 
 const failure = (error: unknown) => {
@@ -34,7 +35,7 @@ const configFiles = (path: string) => {
  * It is run when everything else is broken, so a problem in the config file is a field in the answer, never a throw.
  * `fixes` are the `chmod` commands that make the config private; they go to stderr, not into the answer.
  */
-export const doctorReport = (env: NodeJS.ProcessEnv) => {
+export const doctorReport = (env: NodeJS.ProcessEnv, command: Command) => {
   const paths = resolvePaths({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env })
   const common = {
     version: IDENTITY.version,
@@ -48,7 +49,14 @@ export const doctorReport = (env: NodeJS.ProcessEnv) => {
     return {
       report: {
         ...common,
-        config: { path: settings.configPath, found: settings.configFound, issues: settings.configIssues ?? [] },
+        config: {
+          path: settings.configPath,
+          found: settings.configFound,
+          issues: [
+            ...(settings.configIssues ?? []),
+            ...unknownPermissionIssues(command, settings, IDENTITY.command, permissions),
+          ],
+        },
         profiles: settings.configuredProfiles,
         read_only: readOnly,
         files,
@@ -82,7 +90,7 @@ export const doctorCommand = (): Command =>
     .description("check this installation: version, paths, config, profiles; no keyring or network")
     .action(function (this: Command) {
       const env = environmentOf(this).env ?? process.env
-      const { report, fixes } = doctorReport(env)
+      const { report, fixes } = doctorReport(env, this)
       const output = outputFor(this)
       renderAnswer(this, output, itemOf(report))
       for (const fix of fixes) output.renderer.note(`to make it private: ${fix}`)

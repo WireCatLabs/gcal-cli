@@ -28,7 +28,7 @@ export interface GcalEnvironment extends BaseEnvironment {
   openBrowser?: (url: string) => Promise<void>
 }
 
-const contextOf = (command: Command) => {
+export const contextOf = (command: Command) => {
   const environment = environmentOf<GcalEnvironment>(command)
   const env = environment.env ?? process.env
   const flags = command.optsWithGlobals<GlobalFlags>()

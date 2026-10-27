@@ -3,7 +3,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/server"
 import { describeProgram } from "@wirecat/cli-base/commands"
 import { changesAuthorityAt } from "@wirecat/cli-core/cli"
 import { afterEach, expect, it } from "vitest"
-import { configuration } from "./config.js"
+import { configuration, permissions } from "./config.js"
 import { createMcpServer, serveMcp } from "./mcp.js"
 import { createProgram, run } from "./program.js"
 
@@ -19,6 +19,8 @@ const connect = async () => {
     commands: describeProgram(program),
     levels: () => configuration.resolveSettings({ profile: "personal" }).permissions,
     authority: changesAuthorityAt(program),
+    permissions,
+    readOnly: false,
     run,
   })
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
@@ -65,6 +67,8 @@ it("serves until the command is stopped", async () => {
     commands: describeProgram(program),
     levels: () => ({}),
     authority: () => false,
+    permissions,
+    readOnly: false,
     run,
     signal: stop.signal,
     transport: serverSide,
@@ -79,6 +83,27 @@ it("serves until the command is stopped", async () => {
 it("gcal <profile> mcp starts the server and ends on a signal", async () => {
   const stop = new AbortController()
   const serving = run(["personal", "mcp"], {
+    signal: stop.signal,
+    tty: false,
+    streams: { data: () => {}, diagnostic: () => {} },
+  })
+  stop.abort()
+  expect(await serving).toBe(0)
+})
+
+it("gcal <profile> mcp refuses a --permission that names no command", async () => {
+  const err: string[] = []
+  const code = await run(["personal", "mcp", "--permission", "api.calendar.events.nope=deny"], {
+    tty: false,
+    streams: { data: () => {}, diagnostic: (text) => err.push(text) },
+  })
+  expect(code).toBe(2)
+  expect(err.join("")).toContain("api.calendar.events.nope")
+})
+
+it("gcal <profile> mcp takes --permission api=readonly over the deny defaults under it", async () => {
+  const stop = new AbortController()
+  const serving = run(["personal", "mcp", "--permission", "api=readonly"], {
     signal: stop.signal,
     tty: false,
     streams: { data: () => {}, diagnostic: () => {} },

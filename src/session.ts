@@ -85,14 +85,21 @@ export const signIn = async (options: SignInOptions) => {
   return { profile, signed_in: true, account, scopes }
 }
 
+/** A profile's saved sign-in with the keeper that refreshes it, made with the client it was signed in with. */
+export const savedSession = (options: Common) => {
+  const saved = sessionStorage(options.env, options.profile, options.keyring).read()
+  return saved ? { saved, keeper: sessionKeeper({ ...options, client: saved.client ?? { clientId: "" } }) } : undefined
+}
+
 export const sessionStatus = async (options: Common & { check: boolean }) => {
   const { env, profile } = options
   const account = savedAccount(env, profile) ?? null
-  const saved = sessionStorage(env, profile, options.keyring).read()
-  if (!saved) return { profile, state: "missing", account, verified: false }
+  const session = savedSession(options)
+  if (!session) return { profile, state: "missing", account, verified: false }
+  const { saved, keeper } = session
   const status = { profile, state: "saved", account, scopes: saved.tokens.scopes, verified: false }
   if (!options.check) return status
-  const tokens = await sessionKeeper({ ...options, client: saved.client ?? { clientId: "" } }).tokens()
+  const tokens = await keeper.tokens()
   if (!tokens.scopes.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
   const live = await accountEmail(
     tokens.accessToken ?? "",
@@ -108,8 +115,8 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
 }
 
 export const signOut = async (options: Common) => {
-  const saved = sessionStorage(options.env, options.profile, options.keyring).read()
-  if (!saved) return { profile: options.profile, ended: false, cached_data: "retained" }
-  await sessionKeeper({ ...options, client: saved.client ?? { clientId: "" } }).signOut()
+  const session = savedSession(options)
+  if (!session) return { profile: options.profile, ended: false, cached_data: "retained" }
+  await session.keeper.signOut()
   return { profile: options.profile, ended: true, cached_data: "retained" }
 }
