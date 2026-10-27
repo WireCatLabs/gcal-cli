@@ -22,7 +22,6 @@ for events and meetings in the store.
 ## Content languages
 
 Languages: en, ru.
-If this CLI defines a messenger, set its `speechModels` to `parakeet-v3`.
 
 ## Further answers
 
@@ -49,5 +48,6 @@ If this CLI defines a messenger, set its `speechModels` to `parakeet-v3`.
   and a permission per write (`events.*`); mailing attendees and deleting a whole series are denied by default.
 - **Google app:** during development the owner's own client (`GCAL_GOOGLE_CLIENT_ID`, `GCAL_GOOGLE_CLIENT_SECRET`);
   the shared WireCat app gets Calendar after Drive's Google review is approved.
-
-## Open questions for the owner
+- **Live checks:** `bin/gcal-live-check <profile> <word>` runs sign-in, calendars, two syncs, embedding and search
+  against real Google; `bin/gcal-write-check <profile> <calendar-id>` runs a create, an update and a delete on a test
+  calendar and refuses the primary one. Both print counts and ids only.

@@ -56,7 +56,7 @@ sync at first; `calendars list` shows the rest, and `calendars sync` adds one:
 ```sh
 gcal personal sync                          # what changed since the last sync
 gcal personal calendars list                # every calendar of the account, and which of them sync
-gcal personal calendars sync <calendar>     # sync this calendar from now on; unsync stops it
+gcal personal calendars sync 3             # sync calendar 3 of the list from now on; unsync stops it
 gcal personal sync --embed                  # also index new events for search by meaning
 ```
 
@@ -127,12 +127,12 @@ A profile signed in without `--grant write` reads only:
 ## Change events
 
 After `session start --grant write`, `events create | update | delete | respond` change Google Calendar and the store
-together. They are cli-core's shared calendar writes; Google is reached through the same generated methods as
-`gcal api`.
+together. A calendar is named by its id from `calendars list`, such as `3` below. They are cli-core's shared calendar
+writes; Google is reached through the same generated methods as `gcal api`.
 
 ```sh
-gcal personal events create <calendar> --title "Planning" --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00
-gcal personal events create <calendar> --title "Offsite" --start-date 2026-11-03 --end-date 2026-11-04
+gcal personal events create 3 --title "Planning" --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00
+gcal personal events create 3 --title "Offsite" --start-date 2026-11-03 --end-date 2026-11-04
 gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --no-notify
 gcal personal events respond event:42 accepted --notify
 gcal personal events delete event:42 --no-notify
@@ -150,9 +150,6 @@ gcal personal events delete event:42 --no-notify
 - `respond` changes only your own answer; the rest of the guest list stays as Google has it.
 - An event cannot switch between timed and all-day in one update: Google merges `start` and `end` on a change, so
   the old kind's field stays, and `gcal` cannot send the `null` that would clear it. Delete it and create it again.
-
-`bin/gcal-write-check <profile> <calendar-id>` runs a create, an update and a delete on a test calendar you name, and
-prints only ids and status. It refuses the account's primary calendar.
 
 ## Output for scripts
 

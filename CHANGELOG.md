@@ -2,7 +2,7 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
-## Unreleased
+## 0.1.0 — 27.10.2026
 
 The first release of `gcal`, a Google Calendar CLI for the terminal, scripts and AI agents.
 
@@ -46,5 +46,3 @@ The first release of `gcal`, a Google Calendar CLI for the terminal, scripts and
   Claude Code, Codex, Gemini CLI, OpenClaw and Hermes Agent.
 - **`gcal <profile> runs list | show` shows the runs gcal kept, sign-in and sign-out included.** Secrets are masked;
   `config set record_input false` keeps none of the words you type.
-- **`bin/gcal-live-check` and `bin/gcal-write-check` are the owner's live checks against real Google.** They print
-  counts and ids only; the write check refuses the account's primary calendar.
