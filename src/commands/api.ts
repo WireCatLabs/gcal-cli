@@ -196,7 +196,7 @@ export const apiCommand = (): Command => {
     if (operation && OWNER_ONLY.test(operation.id))
       overrideSharedContract(
         child,
-        "sharing a calendar, emptying it and giving it away stay with the owner at a terminal (NEED-1857)",
+        "emptying a calendar deletes every event in it, so it stays with the owner at a terminal",
         (command) => annotate(command, { mcp: false }),
       )
   }

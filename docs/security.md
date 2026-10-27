@@ -4,7 +4,16 @@ What WireCat CLIs share — the keyring, permissions, MCP and what never reaches
 [shared security page](https://wirecat.dev/en/docs/security). This page keeps only what is particular to `gcal`.
 
 `gcal` keeps its settings in `config.json` and its state in the folders `gcal doctor` shows. It talks only to Google,
-and asks for read access to Calendar and your email address: nothing more.
+and asks for read access to Calendar and your email address. `session start --grant write` adds the events, and
+`--grant sharing` adds who can see a calendar: nothing more.
+
+An agent connected through `gcal <profile> mcp` can change who sees your calendar without asking you. After
+`--grant sharing` it can share a calendar with any address, make it public, or remove someone. It can also call the
+method that gives a calendar to another account; that one works only for a Google Workspace administrator, and only
+when the sign-in has a permission `gcal` does not ask for. Over MCP no one is there to answer a question, so `ask`
+lets these run. To keep sharing with you, run
+`gcal personal config set permissions.api.calendar.acl deny`, or sign in without `--grant sharing`. Emptying a
+calendar is never offered to an agent.
 
 The Google sign-in is kept in the system keyring, under the service `gcal-cli`, one entry per profile. That entry also
 holds your OAuth client's ID and secret, so refreshing the sign-in does not need the client file again. Google says a

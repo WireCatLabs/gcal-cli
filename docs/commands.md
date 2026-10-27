@@ -70,11 +70,11 @@ gcal session start [options]
 |---|---|
 | `--client-file <file>` | your own Desktop app OAuth client JSON from Google Cloud Console. |
 | `--no-browser` | print the sign-in URL instead of opening a browser. |
-| `--grant <scopes>` | also ask for these, comma-separated: write (create, change and delete events, and answer invitations). |
+| `--grant <scopes>` | also ask for these, comma-separated: write (create, change and delete events, and answer invitations), sharing (see and change who can see a calendar). |
 
 **Returns:** sign in to Google in the browser; read-only unless you pass --grant write
 
-**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --no-browser`, `gcal personal session start --grant write`
+**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --no-browser`, `gcal personal session start --grant write,sharing`
 
 ### `gcal session status`
 

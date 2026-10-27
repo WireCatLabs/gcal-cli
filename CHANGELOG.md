@@ -7,7 +7,8 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 ### Added
 
 - `gcal <profile> session start --grant write` also asks Google for `calendar.events`; `session status` lists the
-  grants. Without it, a write still fails with `permission_error` and names the flag.
+  grants. Without it, a write still fails with `permission_error` and names the flag. `--grant sharing` asks for
+  `calendar.acls`, which the sharing methods (`calendar.acl.*`) need.
 - `gcal <profile> events create | update | delete | respond`: cli-core's shared calendar writes over Google Calendar
   (`events.insert`, `events.patch` and `events.delete` through the generated API). A change sends the synced version
   as `If-Match`, so an event changed in Google since is a conflict, never overwritten. A create retried with the id
@@ -29,11 +30,12 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - `gcal api list | show | call`, and one `gcal <profile> api <method>` command per method: every Google Calendar API
   v3 method gcal can serve, generated from Google's description of the API. The answers are checked against it.
   The methods that change Calendar fail with `permission_error` until a later `session start --grant write`.
-  Google's change notifications (`watch`, `channels.stop`) are left out. `api call`, sharing (`acl`),
-  `calendars.clear` and `calendars.transferOwnership` are never offered over MCP.
+  Google's change notifications (`watch`, `channels.stop`) are left out. `api call` and `calendars.clear` are never
+  offered over MCP; sharing (`acl`) and `calendars.transferOwnership` are, so an agent can change who sees a calendar
+  without a question.
 - Each Google Calendar method has a permission key, `api.<method>`, for `config set permissions.<key>` and
-  `mcp --permission`. A method that changes Calendar asks first (`--yes` in a script); sharing, `calendars.clear` and
-  `calendars.transferOwnership` are denied until the owner allows that method. A key that names no method is refused,
+  `mcp --permission`. A method that changes Calendar asks first (`--yes` in a script), sharing and
+  `calendars.transferOwnership` included; `calendars.clear` is denied until the owner allows it. A key that names no method is refused,
   and `gcal doctor` lists any saved in the file. `gcal <profile> mcp` refuses to start while the file holds one.
 - `gcal <profile> sync [--full] [--embed]`, `calendars list | sync | unsync`, `events list | show`, `search`,
   `people list | link` and `links review | resolve`: cli-core's shared calendar commands over Google Calendar, read

@@ -11,6 +11,7 @@ import { apiMethods } from "./api-methods.js"
 import { configuration, permissions } from "./config.js"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
 import { googleApi } from "./google-api.js"
+import { ACLS_SCOPE } from "./grants.js"
 import { createMcpServer } from "./mcp.js"
 import { createProgram, run } from "./program.js"
 
@@ -183,6 +184,14 @@ describe("reading through the API", () => {
     expect(toCalendar(fake.requests)).toEqual([])
   })
 
+  it("reads one sharing rule with read access alone, which Google lets calendar.readonly do", async () => {
+    const { gcal } = harness()
+    const fake = google(() => json({ kind: "calendar#aclRule", id: "user:a@example.com", role: "reader" }))
+    const read = ["personal", "api", "calendar-acl-get", "--calendar-id", "primary", "--rule-id", "user:a@example.com"]
+    expect((await gcal([...read, "--json"], fake)).code).toBe(0)
+    expect(toCalendar(fake.requests)).toHaveLength(1)
+  })
+
   it("refuses an answer that does not match the API contract", async () => {
     const { gcal } = harness()
     const refused = await gcal(
@@ -298,19 +307,69 @@ describe("writes", () => {
     expect(toCalendar(fake.requests)).toEqual([])
   })
 
-  it("denies emptying a calendar, giving it away and sharing it until the owner allows that one method", async () => {
+  it("denies emptying a calendar until the owner allows it, and asks before sharing or giving one away", async () => {
     const { gcal } = harness()
     const clear = ["personal", "api", "call", "calendar.calendars.clear", "--params", '{"calendarId":"primary"}']
     expect(failure((await gcal([...clear, "--yes", "--json"])).err)).toMatchObject({
       code: "permission_error",
       details: { permission: "api.calendar.calendars.clear" },
     })
-    const share = ["personal", "api", "calendar-acl-insert", "--calendar-id", "primary", "--body", "{}", "--yes"]
-    expect(failure((await gcal([...share, "--json"])).err).code).toBe("permission_error")
+    const share = ["personal", "api", "calendar-acl-insert", "--calendar-id", "primary", "--body", "{}", "--json"]
+    expect(failure((await gcal(share)).err).code).toBe("confirmation_required")
+    const shared = failure((await gcal([...share, "--yes"])).err)
+    expect(shared.reason).toBe("api.scope-missing")
+    expect(shared.message).toContain("session start --grant sharing")
+    const give = [
+      ...["personal", "api", "calendar-calendars-transfer-ownership", "--calendar-id", "team@example.com"],
+      "--use-admin-access",
+      "true",
+    ]
+    const given = failure((await gcal([...give, "--new-data-owner", "a@example.com", "--yes", "--json"])).err)
+    expect(given.reason).toBe("api.scope-missing")
+    expect(given.message).toContain("calendar.calendars")
     expect((await gcal(["personal", "config", "set", "permissions.api", "allow"])).code).toBe(0)
     expect(failure((await gcal([...clear, "--yes", "--json"])).err).code).toBe("permission_error")
     expect((await gcal(["personal", "config", "set", "permissions.api.calendar.calendars.clear", "ask"])).code).toBe(0)
     expect(failure((await gcal([...clear, "--yes", "--json"])).err).reason).toBe("api.scope-missing")
+  })
+
+  it("defaults sharing and giving a calendar away to ask, and emptying one to deny", () => {
+    for (const method of ["insert", "patch", "update", "delete"])
+      expect(permissions.defaults[`api.calendar.acl.${method}`]).toBe("ask")
+    expect(permissions.defaults["api.calendar.calendars.transferOwnership"]).toBe("ask")
+    expect(permissions.defaults["api.calendar.calendars.clear"]).toBe("deny")
+  })
+
+  it("shares a calendar after session start --grant sharing", async () => {
+    const { gcal } = harness(["openid", "email", CALENDAR_READ_SCOPE, ACLS_SCOPE])
+    const rule = { kind: "calendar#aclRule", id: "user:a@example.com", role: "reader" }
+    const fake = google(() => json(rule))
+    const body = JSON.stringify({ role: "reader", scope: { type: "user", value: "a@example.com" } })
+    const shared = await gcal(
+      ["personal", "api", "calendar-acl-insert", "--calendar-id", "primary", "--body", body, "--yes", "--json"],
+      fake,
+    )
+    expect(shared.code).toBe(0)
+    expect(answerOf(shared.out).item).toMatchObject({ id: "user:a@example.com", role: "reader" })
+    expect(toCalendar(fake.requests)[0]).toMatchObject({ method: "POST", body })
+  })
+
+  it("refuses sharing under permissions.api.calendar.acl deny, and giving a calendar away under api deny", async () => {
+    const { gcal } = harness(["openid", "email", CALENDAR_READ_SCOPE, ACLS_SCOPE])
+    const fake = google()
+    const share = ["personal", "api", "calendar-acl-insert", "--calendar-id", "primary", "--body", "{}", "--yes"]
+    expect((await gcal(["personal", "config", "set", "permissions.api.calendar.acl", "deny"])).code).toBe(0)
+    expect(failure((await gcal([...share, "--json"], fake)).err).code).toBe("permission_error")
+    expect((await gcal(["personal", "config", "set", "permissions.api", "deny"])).code).toBe(0)
+    expect(failure((await gcal([...share, "--json"], fake)).err).code).toBe("permission_error")
+    const give = [
+      ...["personal", "api", "calendar-calendars-transfer-ownership", "--calendar-id", "team@example.com"],
+      "--use-admin-access",
+      "true",
+    ]
+    const given = await gcal([...give, "--new-data-owner", "a@example.com", "--yes", "--json"], fake)
+    expect(failure(given.err).code).toBe("permission_error")
+    expect(fake.fetch).not.toHaveBeenCalled()
   })
 
   it("takes config set permissions.api deny, and then refuses api call and every generated method", async () => {
@@ -526,22 +585,39 @@ describe("over MCP", () => {
     return { client, search }
   }
 
-  it("offers reads and generated writes, but not api call, sharing, clearing or giving a calendar away", async () => {
+  it("offers reads, generated writes, sharing and giving a calendar away, but not api call or clearing", async () => {
     const { client, search } = await serve()
     try {
       const commands = async (query: string) => (await search(query)).map((item) => item.command)
       expect(await commands("returns events on the specified calendar")).toContain("api calendar-events-list")
       expect(await commands("deletes an event")).toContain("api calendar-events-delete")
+      const sharing = await commands("access control rule")
+      for (const method of ["insert", "patch", "update", "delete", "get", "list"])
+        expect(sharing).toContain(`api calendar-acl-${method}`)
+      expect(await commands("transfers a secondary calendar")).toContain("api calendar-calendars-transfer-ownership")
       const offered = [
-        ...(await commands("access control rule calendar acl sharing")),
-        ...(await commands("clears a primary calendar transfers ownership")),
+        ...(await commands("clears a primary calendar")),
         ...(await commands("call one Google Calendar API method by name")),
       ]
-      for (const command of offered)
-        expect(command).not.toMatch(/^api (call|calendar-acl-|calendar-calendars-(clear|transfer))/)
+      for (const command of offered) expect(command).not.toMatch(/^api (call|calendar-calendars-clear)/)
       const refused = await client.callTool({
         name: "gcal_write",
         arguments: { command: "api calendar-calendars-clear", arguments: { calendar_id: "primary" } },
+      })
+      expect(refused.isError).toBe(true)
+    } finally {
+      await client.close()
+    }
+  })
+
+  it("lists sharing as unavailable to an agent when the profile denies api", async () => {
+    const { client, search } = await serve(false, () => ({ api: "deny" }))
+    try {
+      const insert = (await search("access control rule")).find((item) => item.command === "api calendar-acl-insert")
+      expect(insert).toMatchObject({ availability: { available: false } })
+      const refused = await client.callTool({
+        name: "gcal_write",
+        arguments: { command: "api calendar-acl-insert", arguments: { calendar_id: "primary", body: "{}" } },
       })
       expect(refused.isError).toBe(true)
     } finally {
