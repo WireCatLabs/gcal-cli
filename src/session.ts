@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import { CliError, type KeyringStore } from "@wirecat/cli-base"
-import { accountFileFor, profilesHere, rememberAccount } from "@wirecat/cli-core/cli"
+import { accountFileFor, type EventSink, profilesHere, rememberAccount } from "@wirecat/cli-core/cli"
 import type { OAuthClient } from "@wirecat/cli-core/oauth"
 import { accountEmail, CALENDAR_READ_SCOPE, SIGN_IN_SCOPES, sessionKeeper, sessionStorage } from "./google.js"
 import { IDENTITY } from "./identity.js"
@@ -12,6 +12,7 @@ interface Common {
   keyring?: KeyringStore | undefined
   fetch?: typeof fetch | undefined
   signal?: AbortSignal | undefined
+  events?: EventSink | undefined
 }
 
 /** Which Google account a profile is, as its last sign-in left it; no keyring and no network. */
@@ -53,7 +54,12 @@ export const signIn = async (options: SignInOptions) => {
     accept: async (tokens) => {
       if (!tokens.scopes.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
       if (!tokens.accessToken) throw new CliError("authentication_error", "Google returned no access token")
-      account = await accountEmail(tokens.accessToken, options.fetch ?? globalThis.fetch, options.signal)
+      account = await accountEmail(
+        tokens.accessToken,
+        options.fetch ?? globalThis.fetch,
+        options.signal,
+        options.events,
+      )
       const previous = savedAccount(env, profile)
       if (previous && previous !== account)
         throw new CliError("authentication_error", "this profile belongs to another account; use a new profile", {
@@ -88,7 +94,12 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
   if (!options.check) return status
   const tokens = await sessionKeeper({ ...options, client: saved.client ?? { clientId: "" } }).tokens()
   if (!tokens.scopes.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
-  const live = await accountEmail(tokens.accessToken ?? "", options.fetch ?? globalThis.fetch, options.signal)
+  const live = await accountEmail(
+    tokens.accessToken ?? "",
+    options.fetch ?? globalThis.fetch,
+    options.signal,
+    options.events,
+  )
   if (account && live !== account)
     throw new CliError("authentication_error", "the saved sign-in belongs to another account; run session start", {
       reason: "profile.wrong-account",

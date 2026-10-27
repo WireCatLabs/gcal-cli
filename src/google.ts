@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import { CliError, type KeyringStore, pathsAreOverridden, resolvePaths, systemKeyring } from "@wirecat/cli-base"
-import { privateFiles, providerRequest } from "@wirecat/cli-core/cli"
+import { type EventSink, privateFiles, providerRequest } from "@wirecat/cli-core/cli"
 import {
   credentialStorage,
   type OAuthClient,
@@ -142,8 +142,13 @@ const UserInfo = v.object({ email: v.optional(v.string()), email_verified: v.opt
  * The signed-in account's address, from Google's OpenID Connect userinfo endpoint. The token goes in the header,
  * never the address, so no failure can print it.
  */
-export const accountEmail = async (accessToken: string, fetcher: typeof fetch, signal?: AbortSignal) => {
-  const answered = providerRequest("GET /v1/userinfo")
+export const accountEmail = async (
+  accessToken: string,
+  fetcher: typeof fetch,
+  signal?: AbortSignal,
+  events?: EventSink,
+) => {
+  const answered = providerRequest("GET /v1/userinfo", events)
   const timeout = AbortSignal.timeout(30_000)
   let response: Response
   try {
