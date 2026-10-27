@@ -4,62 +4,47 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ## Unreleased
 
+The first release of `gcal`, a Google Calendar CLI for the terminal, scripts and AI agents.
+
 ### Added
 
-- `gcal <profile> session start --grant write` also asks Google for `calendar.events`; `session status` lists the
-  grants. Without it, a write still fails with `permission_error` and names the flag. `--grant sharing` asks for
-  `calendar.acls`, which the sharing methods (`calendar.acl.*`) need.
-- `gcal <profile> events create | update | delete | respond`: cli-core's shared calendar writes over Google Calendar
-  (`events.insert`, `events.patch` and `events.delete` through the generated API). A change sends the synced version
-  as `If-Match`, so an event changed in Google since is a conflict, never overwritten. A create retried with the id
-  its `outcome_unknown` named finds the event. `--notify` maps to `sendUpdates=all`, `--no-notify` to `none`.
-  `respond` changes only the owner's own answer. The writes are MCP tools too.
-- Permission keys `events.create | update | delete | respond` (`ask`), `events.notify` and `events.delete.series`
-  (`deny`). An event write also checks its Google method's key, `api.calendar.events.insert | patch | delete`, so
-  denying `api` stops it.
-- `bin/gcal-write-check <profile> <calendar-id>`: the owner's live check of create, update and delete on a test
-  calendar.
-- `gcal <profile> search --remote <words>`: Google Calendar's own text search over the profile's synced calendars,
-  read only and kept nowhere. It finds events outside the synced span, too. The answer names the fields an
-  invitation's sender wrote under `untrusted`.
-- Started from `@wirecat/cli-template` 0.6.0.
-- `gcal <profile> session start | status | end`: sign in to Google in the browser with read-only Calendar access,
-  through your own Google OAuth client (`--client-file` or `GCAL_GOOGLE_CLIENT_ID` / `GCAL_GOOGLE_CLIENT_SECRET`).
-  `session status --check` asks Google whether the sign-in still works. Each run that opens the shared store
-  registers the `google-calendar` provider, so other WireCat tools know its events.
-- `gcal api list | show | call`, and one `gcal <profile> api <method>` command per method: every Google Calendar API
-  v3 method gcal can serve, generated from Google's description of the API. The answers are checked against it.
-  The methods that change Calendar fail with `permission_error` until a later `session start --grant write`.
-  Google's change notifications (`watch`, `channels.stop`) are left out. `api call` and `calendars.clear` are never
-  offered over MCP; sharing (`acl`) and `calendars.transferOwnership` are, so an agent can change who sees a calendar
-  without a question.
-- Each Google Calendar method has a permission key, `api.<method>`, for `config set permissions.<key>` and
-  `mcp --permission`. A method that changes Calendar asks first (`--yes` in a script), sharing and
-  `calendars.transferOwnership` included; `calendars.clear` is denied until the owner allows it. A key that names no method is refused,
-  and `gcal doctor` lists any saved in the file. `gcal <profile> mcp` refuses to start while the file holds one.
-- `gcal <profile> sync [--full] [--embed]`, `calendars list | sync | unsync`, `events list | show`, `search`,
-  `people list | link` and `links review | resolve`: cli-core's shared calendar commands over Google Calendar, read
-  only. `sync` stores the calendars the owner owns from a year back to three months ahead, then asks Google only for
-  what changed; a repeating event's slots come one by one, cancelled slots included. Join links lose their query
-  string, and passcodes and PINs are never stored. Google's words are stored in cli-core's neutral ones
-  (`needs-action`, `out-of-office`, `focus`, `free-busy`). Each command has its own permission key, its path.
-- `bin/gcal-live-check <profile> <word>`: the owner's first run against real Google, step by step — sign-in,
-  calendars, a sync and a second one that must read only the changes, embedding, search — printing counts only.
-  `--dry-run` lists the steps.
-- `gcal mcp` shows control characters in an answer visibly, so an invitation's text cannot hide anything from the
-  agent.
-
-### Fixed
-
-- `gcal_write` takes the event writes as the command line does (cli-core 0.459.0): `attendee` is a list, so one create
-  invites several people; `location` and `description` take `""` to clear them; `notify` is one boolean (`false`
-  sends `--no-notify`), and `no_notify` is gone. A write's `entry` names the event's `title`.
-- An event id is checked as Google's base32hex (`a-v`, `0-9`) by cli-core too, before the write is journaled.
-- `gcal <profile> api …` no longer prints a meeting's passcode, PIN, access code or password. Every event's
-  `conferenceData.entryPoints[]` loses those fields; its links lose their query string, and phone and SIP addresses
-  lose the dial sequence that carries the PIN. This covers `events.list`, `events.get`, `events.instances` and every
-  other answer that holds an event, in the terminal and over MCP. `api show` says so for those methods.
-- A calendar command for a profile that never signed in now fails with the registered reason
-  `profile.not-signed-in`; it had no entry in the error reasons.
-- `session start`, `session status` and `session end` are now kept in the run log, with the Google account lookup as
-  a request of the run: `gcal <profile> runs list` shows them. Before, a session run was never recorded.
+- **`gcal <profile> session start | status | end` signs in to Google in the browser, with read-only Calendar access.**
+  It uses your own Google OAuth client for now (`--client-file`, or `GCAL_GOOGLE_CLIENT_ID` and
+  `GCAL_GOOGLE_CLIENT_SECRET`); [settings](docs/configuration.md#your-own-google-client) says how to make one. The
+  sign-in is kept in the system keyring. `session status --check` asks Google whether it still works. One Google
+  account belongs to one profile.
+- **`gcal <profile> sync` copies your calendars into the local WireCat store, and the read commands work offline.**
+  `calendars list | sync | unsync`, `events list | show`, `search`, `people list | link` and `links review | resolve`
+  are cli-core's shared calendar commands, so other WireCat tools see the same events and people. The first sync
+  reads the calendars you own from a year back to three months ahead; each later one asks Google only for what
+  changed. `sync --embed` also indexes events for search by meaning. A join link is stored without its query
+  string, and a meeting's passcode or PIN is never stored.
+- **`gcal <profile> search --remote <words>` asks Google Calendar's own search.** It reads only, keeps nothing, and
+  also finds events outside the synced span. The answer names, under `untrusted`, the fields an invitation's sender
+  wrote.
+- **`gcal api list | show | call`, and one `gcal <profile> api <method>` command per method, reach every Google
+  Calendar API v3 method.** They are generated from Google's description of the API, and each answer is checked
+  against it. A meeting's passcode, PIN, access code and password never leave Google through them: every event's
+  conference entry points lose those fields, links lose their query string, and phone and SIP addresses lose the
+  dial sequence. Google's change notifications (`watch`, `channels.stop`) are not offered: they need a public web
+  address.
+- **Each Google Calendar method has its own permission key, `api.<method>`.** A method that changes Calendar asks
+  first (`--yes` in a script), sharing a calendar (`acl`) and `calendars.transferOwnership` included; over MCP no
+  one answers, so an agent can change who sees a calendar without a question. `calendars.clear` is denied until you
+  allow it and, like `api call`, is never offered over MCP. A key that names no method
+  is refused; `gcal doctor` lists any saved in the file, and `gcal <profile> mcp` will not start while one is there.
+- **`gcal <profile> events create | update | delete | respond` change Google Calendar after
+  `session start --grant write`.** That sign-in also asks Google for `calendar.events`; without it a write fails with
+  `permission_error` and names the flag. `--grant sharing` asks for `calendar.acls`, which sharing needs. Each write asks first (`events.create | update | delete | respond` are
+  `ask`) and also checks its Google method's key, so `permissions.api readonly` stops it. A change sends the synced
+  version, so an event changed in Google since is an `event.conflict`, never overwritten. `--notify` and
+  `--no-notify` say whether Google mails the attendees; `events.notify` is `deny` until you allow it, and so is
+  deleting a whole series (`events.delete.series`). The writes are MCP tools too, with the same options as the
+  command line.
+- **`gcal <profile> mcp` serves the profile's commands to an agent.** Control characters in an answer are shown
+  visibly, so an invitation's text cannot hide anything from the agent. `gcal skill install` adds the tool's skill for
+  Claude Code, Codex, Gemini CLI, OpenClaw and Hermes Agent.
+- **`gcal <profile> runs list | show` shows the runs gcal kept, sign-in and sign-out included.** Secrets are masked;
+  `config set record_input false` keeps none of the words you type.
+- **`bin/gcal-live-check` and `bin/gcal-write-check` are the owner's live checks against real Google.** They print
+  counts and ids only; the write check refuses the account's primary calendar.

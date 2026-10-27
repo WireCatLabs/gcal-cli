@@ -1,7 +1,7 @@
 {
   "name": "@wirecat/gcal-cli",
   "version": "0.0.0",
-  "description": "Start a new WireCat CLI: a working skeleton on cli-base and cli-core, copied by new and kept current by upgrade",
+  "description": "Google Calendar sync, search and event changes from the terminal and for AI agents",
   "license": "Apache-2.0",
   "author": "Viacheslav Ptsarev",
   "repository": {
