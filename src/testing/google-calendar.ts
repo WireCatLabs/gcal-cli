@@ -221,6 +221,18 @@ export const fakeGoogleCalendar = (extra: Record<string, unknown>[] = []) => {
       return json(query.get("pageToken") === "calendars-page-2" ? CALENDARS_2 : CALENDARS)
     const events = path.match(/^calendars\/([^/]+)\/events$/u)
     if (events) {
+      const words = query.get("q")
+      if (words !== null)
+        return json({
+          kind: "calendar#events",
+          items: [...FULL_1.items, ...FULL_2.items, ...extra].filter(
+            (one) =>
+              one.status !== "cancelled" &&
+              String((one as Record<string, unknown>).summary ?? "")
+                .toLowerCase()
+                .includes(words.toLowerCase()),
+          ),
+        })
       const token = query.get("syncToken")
       if (token && (query.has("timeMin") || query.has("timeMax")))
         return json({ error: { code: 400, message: "syncToken with a time bound" } }, 400)

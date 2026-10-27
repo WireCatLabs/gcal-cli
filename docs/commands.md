@@ -244,7 +244,7 @@ gcal events show <event> [options]
 
 ## `gcal search`
 
-find stored events by words, and by meaning when its model is downloaded
+find stored events by words, and by meaning when its model is downloaded; with --remote, ask Google instead
 
 ```sh
 gcal search <words> [options]
@@ -262,10 +262,11 @@ gcal search <words> [options]
 | `--cursor <cursor>` | continue from a page's next_offset. Default: `0`. |
 | `--exact` | every word as written, no word stems. |
 | `--newest` | latest start first instead of best first. |
+| `--remote` | ask Google Calendar's own search over the synced calendars instead of the store. |
 
-**Returns:** find stored events by words, and by meaning when its model is downloaded
+**Returns:** find stored events by words and meaning, or with --remote ask Google
 
-**Example:** `gcal personal search roadmap planning --json`
+**Example:** `gcal personal search roadmap planning --json`, `gcal personal search --remote quarterly review`
 
 ## `gcal people`
 
