@@ -1,5 +1,13 @@
 import { readFileSync } from "node:fs"
-import { CliError, type KeyringStore, pathsAreOverridden, resolvePaths, systemKeyring } from "@wirecat/cli-base"
+import { join } from "node:path"
+import {
+  CliError,
+  Credentials,
+  type KeyringStore,
+  pathsAreOverridden,
+  resolvePaths,
+  systemKeyring,
+} from "@wirecat/cli-base"
 import { type EventSink, privateFiles, providerRequest } from "@wirecat/cli-core/cli"
 import {
   credentialStorage,
@@ -59,21 +67,59 @@ export const sessionCodec: TokenCodec = {
 
 const paths = (env: NodeJS.ProcessEnv) => resolvePaths({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env })
 
-export const sessionStorage = (env: NodeJS.ProcessEnv, profile: string, keyring?: KeyringStore): TokenStorage =>
+export type CredentialStorage = "keyring" | "file"
+
+const credentialsOptions = (env: NodeJS.ProcessEnv, storage: CredentialStorage, keyring?: KeyringStore) => ({
+  // A sign-in kept in a file is state this computer holds, not configuration to copy elsewhere; cli-base writes it 600.
+  configDir: storage === "file" ? paths(env).state : paths(env).config,
+  service: IDENTITY.appName,
+  storage,
+  env,
+  isolated: pathsAreOverridden({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
+  keyring: keyring ?? systemKeyring,
+})
+
+const signInFile = (env: NodeJS.ProcessEnv) => new Credentials(credentialsOptions(env, "file"))
+
+/** Where `--credential-storage file` keeps every profile's sign-in. */
+export const signInFilePath = (env: NodeJS.ProcessEnv): string => join(paths(env).state, "credentials.json")
+
+/** The file when it holds this profile's sign-in, the keyring otherwise: `session start` leaves only one of them. */
+export const storageOf = (env: NodeJS.ProcessEnv, profile: string): CredentialStorage =>
+  signInFile(env).read(oauthAccount("google", profile)) ? "file" : "keyring"
+
+/** After a sign-in saved in `kept`: the other place loses its copy, so `storageOf` finds the new one. */
+export const forgetOtherStorage = (
+  env: NodeJS.ProcessEnv,
+  profile: string,
+  kept: CredentialStorage,
+  keyring?: KeyringStore,
+): void => {
+  const account = oauthAccount("google", profile)
+  if (kept === "keyring") signInFile(env).remove(account)
+  else
+    try {
+      new Credentials(credentialsOptions(env, "keyring", keyring)).remove(account)
+    } catch {
+      // No keyring on this computer is why the file was chosen; there is nothing in it to forget.
+    }
+}
+
+export const sessionStorage = (
+  env: NodeJS.ProcessEnv,
+  profile: string,
+  keyring?: KeyringStore,
+  storage: CredentialStorage = storageOf(env, profile),
+): TokenStorage =>
   credentialStorage({
-    credentials: {
-      configDir: paths(env).config,
-      service: IDENTITY.appName,
-      storage: "keyring",
-      env,
-      isolated: pathsAreOverridden({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
-      keyring: keyring ?? systemKeyring,
-    },
+    credentials: credentialsOptions(env, storage, keyring),
     account: oauthAccount("google", profile),
     codec: sessionCodec,
   })
 
 export interface KeeperOptions {
+  /** Where a new sign-in goes; a saved one is read from where `storageOf` finds it. */
+  storage?: CredentialStorage | undefined
   env: NodeJS.ProcessEnv
   profile: string
   client: OAuthClient
@@ -85,7 +131,7 @@ export interface KeeperOptions {
 export const sessionKeeper = (options: KeeperOptions): TokenKeeper =>
   tokenKeeper({
     provider: googleProvider(options.client),
-    storage: sessionStorage(options.env, options.profile, options.keyring),
+    storage: sessionStorage(options.env, options.profile, options.keyring, options.storage),
     lockDir: paths(options.env).config,
     fetch: options.fetch ?? globalThis.fetch,
     signInCommand: `${IDENTITY.command} ${options.profile} session start`,

@@ -44,8 +44,17 @@ gcal personal session end               # forget the sign-in on this computer
 ```
 
 `session status` gives the account's email address, the permissions Google granted (`scopes`, and `grants` in
-`--grant`'s words) and `state`: `saved` or `missing`. With `--check`, `verified: true` means Google accepted the sign-in just now. `session end` removes the
-sign-in from the keyring; it keeps which account the profile is, and your stored calendar data.
+`--grant`'s words), `state`: `saved` or `missing`, and `credential_storage`: `keyring` or `file`. With `--check`,
+`verified: true` means Google accepted the sign-in just now. `session end` removes the sign-in from where it is kept;
+it keeps which account the profile is, and your stored calendar data.
+
+On a computer with no keyring, such as a server without a desktop, keep the sign-in in a file instead. The file is
+`credentials.json` in `gcal`'s state folder, readable by you only. `gcal doctor` shows its path and the profiles in it.
+The next `session start` without the option moves the sign-in back to the keyring.
+
+```sh
+gcal personal session start --credential-storage file
+```
 
 ## Sync your calendars
 
@@ -56,7 +65,7 @@ sync at first; `calendars list` shows the rest, and `calendars sync` adds one:
 ```sh
 gcal personal sync                          # what changed since the last sync
 gcal personal calendars list                # every calendar of the account, and which of them sync
-gcal personal calendars sync <calendar>     # sync this calendar from now on; unsync stops it
+gcal personal calendars sync 3             # sync calendar 3 of the list from now on; unsync stops it
 gcal personal sync --embed                  # also index new events for search by meaning
 gcal personal status                        # how far each calendar's sync is, and when it last moved
 ```
@@ -153,13 +162,13 @@ A profile signed in without `--grant write` reads only:
 ## Change events
 
 After `session start --grant write`, `events create | update | delete | respond` change Google Calendar and the store
-together. They are cli-core's shared calendar writes; Google is reached through the same generated methods as
-`gcal api`.
+together. A calendar is named by its id from `calendars list`, such as `3` below. They are cli-core's shared calendar
+writes; Google is reached through the same generated methods as `gcal api`.
 
 ```sh
-gcal personal events create <calendar> --title "Planning" --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00
-gcal personal events create <calendar> --title "Offsite" --start-date 2026-11-03 --end-date 2026-11-04
-gcal personal events create <calendar> --title "Standup" --start-time 2026-11-02T09:30 --end-time 2026-11-02T09:45 \
+gcal personal events create 3 --title "Planning" --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00
+gcal personal events create 3 --title "Offsite" --start-date 2026-11-03 --end-date 2026-11-04
+gcal personal events create 3 --title "Standup" --start-time 2026-11-02T09:30 --end-time 2026-11-02T09:45 \
   --repeat "FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12"
 gcal personal events update event:42 --series --repeat "FREQ=WEEKLY;BYDAY=TU" --no-notify
 gcal personal events update event:42 --start-date 2026-11-02 --end-date 2026-11-02 --no-notify

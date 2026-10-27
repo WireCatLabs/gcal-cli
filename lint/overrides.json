@@ -19,5 +19,12 @@
     "reason": "Chooses where the shared search looks: Google's own search instead of the local store, a scope of the same search (WC-CMD-6, WC-CMD-7). No vocabulary role names a remote scope yet. Review when cli-base's vocabulary names one.",
     "owner": "@WireCatLabs",
     "review_after": "2027-01-27"
+  },
+  {
+    "rule": "option-role",
+    "target": "session start --credential-storage",
+    "reason": "Chooses where the sign-in is kept, keyring or a private file, for computers without a keyring; drive-cli has the same option in its baseline. Review when cli-base's vocabulary names a credential-storage role.",
+    "owner": "@WireCatLabs",
+    "review_after": "2027-01-27"
   }
 ]

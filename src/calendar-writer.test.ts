@@ -260,11 +260,15 @@ describe("the Google calls behind each write", () => {
     expect(google.requests.filter(({ method }) => method === "PATCH")).toEqual([])
   })
 
-  it("without the write grant nothing is sent, and the error names session start --grant write", async () => {
+  it("without the write grant nothing is sent, and the error names the grant, not a command", async () => {
     const { google, writer } = adapter([CALENDAR_READ_SCOPE])
     await expect(
       writer.create(CALENDAR, { title: "x", startsAt: AT, endsAt: AT + 1 }, { id: "abcde", notify: false }),
-    ).rejects.toMatchObject({ code: "permission_error", message: expect.stringContaining("--grant write") })
+    ).rejects.toMatchObject({
+      code: "permission_error",
+      message: expect.not.stringContaining("session start"),
+      details: { reason: "api.scope-missing", grant: "write" },
+    })
     expect(google.requests).toEqual([])
   })
 })

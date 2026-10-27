@@ -20,6 +20,7 @@ import { configuration, permissions, writeKeys } from "../config.js"
 import type { GoogleApi } from "../google-api.js"
 import { IDENTITY } from "../identity.js"
 import type { GcalEnvironment } from "./session.js"
+import { wordedApi } from "./words.js"
 
 interface Opened {
   profile: string
@@ -31,6 +32,7 @@ interface Opened {
   source: () => CalendarSource
   writer: () => CalendarWriter
   api: () => GoogleApi
+  close: () => Promise<void>
 }
 
 type Handler = Parameters<Command["action"]>[0]
@@ -99,6 +101,7 @@ const notOpen = () => new CliError("configuration_error", "the shared store is n
 export const calendarMount = () => {
   let action: Command | undefined
   let opened: Opened | undefined
+  const answers: (() => void)[] = []
   const commands = new Set<Command>()
   const need = () => {
     if (!opened) throw notOpen()
@@ -136,8 +139,10 @@ export const calendarMount = () => {
       return embedEvents(store, { maxChunks: max, env, command: IDENTITY.command })
     },
     write: (value) => {
-      if (!action) throw notOpen()
-      renderAnswer(action, outputFor(action), bodyOf(action, value))
+      const at = action
+      if (!at) throw notOpen()
+      const body = bodyOf(at, value)
+      answers.push(() => renderAnswer(at, outputFor(at), body))
     },
     writes: {
       get writer() {
@@ -185,7 +190,7 @@ export const calendarMount = () => {
       newest: opts.newest === true,
       account: account.account,
     })
-    renderAnswer(command, outputFor(command), itemOf(found))
+    answers.push(() => renderAnswer(command, outputFor(command), itemOf(found)))
   }
 
   const withRemote = (search: Recorded) => {
@@ -232,6 +237,11 @@ export const calendarMount = () => {
       program.hook("preAction", (_root, chosen) => {
         action = chosen
       })
+      // WC-LIFE-4: a close that fails can change the answer, so the store closes before anything is printed.
+      program.hook("postAction", async () => {
+        await opened?.close()
+        for (const answer of answers.splice(0)) answer()
+      })
     },
     /** After the shared checks passed: opens the store for a calendar command, for the profile's own account only. */
     prepare: async (_program: Command, environment: RunOptions) => {
@@ -260,14 +270,18 @@ export const calendarMount = () => {
           { reason: "profile.not-signed-in" },
         )
       const store = await openGcalStore(env)
-      gcalEnvironment.trackCloseable?.({ close: () => store.close() })
+      let closed: Promise<void> | undefined
+      const close = () => (closed ??= store.close())
+      // Still tracked: a command that fails never reaches postAction.
+      gcalEnvironment.trackCloseable?.({ close })
       const key = { provider: PROVIDER.name, account }
       const accountId = await store.accounts.saveAccount(key, { name: null })
       let source: CalendarSource | undefined
       let writer: CalendarWriter | undefined
       let api: GoogleApi | undefined
       const { keyring, fetch, signal } = gcalEnvironment
-      const googleOf = () => (api ??= googleApi(apiAccess({ env, profile, keyring, fetch, signal })))
+      const googleOf = () =>
+        (api ??= wordedApi(googleApi(apiAccess({ env, profile, keyring, fetch, signal })), profile))
       opened = {
         profile,
         store,
@@ -277,6 +291,7 @@ export const calendarMount = () => {
         api: googleOf,
         source: () => (source ??= googleCalendarSource(googleOf())),
         writer: () => (writer ??= googleCalendarWriter(googleOf())),
+        close,
       }
     },
   }

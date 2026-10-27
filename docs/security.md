@@ -20,6 +20,9 @@ holds your OAuth client's ID and secret, so refreshing the sign-in does not need
 Desktop app's client secret is not confidential, but `gcal` still never prints it. No command, error, log or run record
 shows a token or the client secret; the address of the sign-in page holds neither. `session end` removes the entry.
 
+With `session start --credential-storage file` the same entry goes to `credentials.json` in `gcal`'s state folder
+instead, mode 600: anyone who can read your files as you can read the sign-in. Use it only where no keyring works.
+
 `gcal` refuses an OAuth client file that other users of the computer can read. The account's email address is saved in
 `gcal`'s state folder, readable by you only, so `session status` can answer without the network.
 

@@ -2,7 +2,16 @@ import { readFileSync } from "node:fs"
 import { CliError, type KeyringStore } from "@wirecat/cli-base"
 import { accountFileFor, type EventSink, profilesHere, rememberAccount } from "@wirecat/cli-core/cli"
 import type { OAuthClient } from "@wirecat/cli-core/oauth"
-import { accountEmail, CALENDAR_READ_SCOPE, SIGN_IN_SCOPES, sessionKeeper, sessionStorage } from "./google.js"
+import {
+  accountEmail,
+  CALENDAR_READ_SCOPE,
+  type CredentialStorage,
+  forgetOtherStorage,
+  SIGN_IN_SCOPES,
+  sessionKeeper,
+  sessionStorage,
+  storageOf,
+} from "./google.js"
 import { GRANT_SCOPES, type Grant, grantsOf } from "./grants.js"
 import { IDENTITY } from "./identity.js"
 import { openGcalStore, PROVIDER } from "./store.js"
@@ -29,23 +38,21 @@ export const savedAccount = (env: NodeJS.ProcessEnv, profile: string): string | 
 }
 
 const scopeMissing = () =>
-  new CliError(
-    "permission_error",
-    "Google did not grant read access to Calendar; run session start again and allow it on the consent screen",
-    { reason: "sign-in.scope-missing" },
-  )
+  new CliError("permission_error", "Google did not grant read access to Calendar", {
+    reason: "sign-in.scope-missing",
+    grant: "read",
+  })
 
 const grantMissing = (grant: Grant) =>
-  new CliError(
-    "permission_error",
-    `Google did not grant the ${grant} permission; run session start --grant ${grant} again and leave it ticked ` +
-      "on the consent screen",
-    { reason: "sign-in.scope-missing" },
-  )
+  new CliError("permission_error", `Google did not grant the ${grant} permission`, {
+    reason: "sign-in.scope-missing",
+    grant,
+  })
 
 export interface SignInOptions extends Common {
   client: OAuthClient
   grants?: readonly Grant[] | undefined
+  storage: CredentialStorage
   openBrowser: (url: string) => Promise<void>
   showUrl: (url: string) => void
   timeoutMs?: number | undefined
@@ -88,6 +95,7 @@ export const signIn = async (options: SignInOptions) => {
       return undefined
     },
   })
+  forgetOtherStorage(env, profile, options.storage, options.keyring)
   rememberAccount(IDENTITY, profile, account, env)
   const store = await openGcalStore(env)
   try {
@@ -95,7 +103,14 @@ export const signIn = async (options: SignInOptions) => {
   } finally {
     await store.close()
   }
-  return { profile, signed_in: true, account, scopes, grants: grantsOf(scopes) }
+  return {
+    profile,
+    signed_in: true,
+    account,
+    scopes,
+    grants: grantsOf(scopes),
+    credential_storage: options.storage,
+  }
 }
 
 /** A profile's saved sign-in with the keeper that refreshes it, made with the client it was signed in with. */
@@ -113,10 +128,7 @@ export const apiAccess = (options: Common) => {
     scopes: () => session?.saved.tokens.scopes,
     accessToken: async () => {
       if (!session)
-        throw new CliError(
-          "authentication_error",
-          `not signed in to Google; run ${IDENTITY.command} ${options.profile} session start`,
-        )
+        throw new CliError("authentication_error", "not signed in to Google", { reason: "profile.not-signed-in" })
       const { accessToken } = await session.keeper.tokens()
       if (!accessToken) throw new CliError("authentication_error", "Google returned no access token")
       return accessToken
@@ -136,6 +148,7 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
     account,
     scopes: saved.tokens.scopes,
     grants: grantsOf(saved.tokens.scopes),
+    credential_storage: storageOf(env, profile),
     verified: false,
   }
   if (!options.check) return status
@@ -148,7 +161,7 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
     options.events,
   )
   if (account && live !== account)
-    throw new CliError("authentication_error", "the saved sign-in belongs to another account; run session start", {
+    throw new CliError("authentication_error", "the saved sign-in belongs to another account", {
       reason: "profile.wrong-account",
     })
   return { ...status, account: live, scopes: tokens.scopes, grants: grantsOf(tokens.scopes), verified: true }

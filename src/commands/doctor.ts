@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs"
-import { dirname } from "node:path"
+import { existsSync, readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { CliError, configFilePath, resolvePaths } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import {
@@ -31,6 +31,30 @@ const configFiles = (path: string) => {
   }
 }
 
+const ACCOUNT = "oauth:google:"
+
+/**
+ * Which profiles keep their sign-in in the file of `session start --credential-storage file`; the others use the
+ * keyring, which doctor never opens.
+ */
+const credentialFile = (state: string) => {
+  const path = join(state, "credentials.json")
+  if (!existsSync(path)) return { report: { path, found: false, profiles: [] }, fixes: [] }
+  const mode = privateFiles({ files: [path], dirs: [] })
+  let profiles: string[] | null
+  try {
+    profiles = Object.keys(JSON.parse(readFileSync(path, "utf8")) as object)
+      .filter((account) => account.startsWith(ACCOUNT))
+      .map((account) => account.slice(ACCOUNT.length))
+  } catch {
+    profiles = null
+  }
+  return {
+    report: { path, found: true, profiles, private: !mode.checked || mode.ok },
+    fixes: mode.checked ? mode.problems.map((problem) => problem.fix) : [],
+  }
+}
+
 /**
  * It is run when everything else is broken, so a problem in the config file is a field in the answer, never a throw.
  * `fixes` are the `chmod` commands that make the config private; they go to stderr, not into the answer.
@@ -43,6 +67,7 @@ export const doctorReport = (env: NodeJS.ProcessEnv, command: Command) => {
     paths: { config: paths.config, state: paths.state, cache: paths.cache },
   }
   const readOnly = readOnlyLockOf(IDENTITY, env) ?? null
+  const credentials = credentialFile(paths.state)
   try {
     const settings = configuration.resolveSettings({}, { env, readOnly: true, needsProfile: false, withIssues: true })
     const { files, fixes } = configFiles(settings.configPath)
@@ -58,10 +83,11 @@ export const doctorReport = (env: NodeJS.ProcessEnv, command: Command) => {
           ],
         },
         profiles: settings.configuredProfiles,
+        credential_file: credentials.report,
         read_only: readOnly,
         files,
       },
-      fixes,
+      fixes: [...fixes, ...credentials.fixes],
     }
   } catch (error) {
     const file = configFilePath(paths.config)
@@ -72,10 +98,11 @@ export const doctorReport = (env: NodeJS.ProcessEnv, command: Command) => {
         config: { path: file, found: existsSync(file), issues: [] },
         settings: { error: failure(error) },
         profiles: null,
+        credential_file: credentials.report,
         read_only: readOnly,
         files,
       },
-      fixes,
+      fixes: [...fixes, ...credentials.fixes],
     }
   }
 }

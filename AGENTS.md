@@ -6,18 +6,12 @@ file and over every other document in this repository. The handbook ships inside
 touches (`WC-<AREA>-<n>`) in the commit message and the pull request. The rules of this CLI alone are in
 [CLAUDE.md](CLAUDE.md).
 
-## Before building anything
+## Design
 
-This CLI was made from [cli-template](https://github.com/WireCatLabs/cli-template). Its first task is the design:
-
-1. Read [docs/dev/DESIGN.md](docs/dev/DESIGN.md). If the seven answers are not there, ask the owner the
-   [design interview](docs/dev/skills/design-interview/SKILL.md) and write them down.
-2. Learn from the reference CLI below. Copy its patterns for the provider, the store and the commands; the
-   template has no sample code on purpose.
-3. Ask the further questions in the interview that the reference CLI does not answer. Build only after the owner
-   has read `DESIGN.md`.
-4. When the first command reaches the service, rewrite `README.md`, `docs/index.md` and the description in
-   `skills/gcal-cli/SKILL.md` to say what the tool does and who it is for.
+[docs/dev/DESIGN.md](docs/dev/DESIGN.md) holds the owner's answers to the
+[design interview](docs/dev/skills/design-interview/SKILL.md) and the decisions made since. Read it before changing
+what a command does, and write a new decision there. Learn the patterns for the provider, the store and the commands
+from the reference CLI below; the template has no sample code on purpose.
 
 <!-- cli-template:reference-cli:start -->
 ## Reference CLI
@@ -29,5 +23,7 @@ Google sign-in, the Google client, the store import and the command shape;
 
 ## Template-owned files
 
-`template.json` names the files `npx @wirecat/cli-template upgrade` keeps in step with the template. Change one of
-them here only when this CLI needs to differ; `upgrade` asks before it touches your change.
+This CLI was made from [cli-template](https://github.com/WireCatLabs/cli-template). `template.json` names the files
+`npx @wirecat/cli-template upgrade` keeps in step with the template. Change one of them here only when this CLI needs
+to differ; `upgrade` asks before it touches your change. Text that holds for this CLI alone goes into the pages it
+owns, such as `DESIGN.md`, `CLAUDE.md` and `README.md`, not into a template-owned page.

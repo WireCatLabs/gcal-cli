@@ -45,6 +45,7 @@ import { apiKey, configuration, OWNER_ONLY, permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
 import { requestSchema } from "../schema.js"
 import { contextOf } from "./session.js"
+import { worded } from "./words.js"
 
 const EVENT_ANSWERS = new Set(["CalendarEvent", "CalendarEvents"])
 
@@ -144,7 +145,10 @@ const preview = (
   )
 }
 
-const call = async (
+const call = (command: Command, name: string, params: Record<string, unknown>, body?: Record<string, unknown>) =>
+  worded(contextOf(command).common.profile, () => callGoogle(command, name, params, body))
+
+const callGoogle = async (
   command: Command,
   name: string,
   params: Record<string, unknown>,

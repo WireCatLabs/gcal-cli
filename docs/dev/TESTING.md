@@ -12,7 +12,12 @@ How the tests run, and what they never touch. The rules are the handbook's
   `scripts/test-matrix-untested.ts`.
 - `pnpm contracts:check` runs the built CLI against `contracts/plan.json`: help, discovery, errors and the MCP tool
   list. `pnpm exec cli-contract contracts/plan.json --update` rewrites the snapshots; review the diff.
-- `pnpm contracts:upgrade` does not exist yet: the skeleton has no store of its own, and `.github/workflows/ci.yml`
-  skips the step. Add it with the first store, and remove the skip.
+- `pnpm contracts:upgrade` does not exist yet, and `.github/workflows/ci.yml` skips the step. It needs both local
+  state of the CLI's own (a store, a sync cursor, any other file its code writes and reads back) and a published
+  version to upgrade from. gcal keeps calendars and sync cursors in the shared WireCat store, but has no version on
+  npm yet; the config file and run records are cli-core's
+  ([WC-TEST-14](../../node_modules/@wirecat/cli-base/docs/standards/testing.md)). Once the CLI keeps such state and its
+  first version is on npm, add the script, as
+  [drive-cli does](https://github.com/WireCatLabs/drive-cli/blob/150b105569a98fbd0d4b66349305ad84128adfda/package.json#L37), and remove the skip.
 - `pnpm smoke` installs the packed package into a temporary folder and runs it offline.
 - `pnpm audit:commands` audits the command tree beside the latest published WireCat CLIs.

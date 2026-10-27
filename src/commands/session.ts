@@ -20,8 +20,10 @@ import {
 } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
 import { configuration } from "../config.js"
+import type { CredentialStorage } from "../google.js"
 import { GRANTS, type Grant } from "../grants.js"
 import { IDENTITY } from "../identity.js"
+import { worded } from "./words.js"
 
 /** What a test hands `run()` in place of Google and the system browser. */
 export interface GcalEnvironment extends BaseEnvironment {
@@ -60,6 +62,14 @@ const grantList = (raw: string): Grant[] => {
   return [...new Set(values as Grant[])]
 }
 
+const CREDENTIAL_STORAGES: readonly CredentialStorage[] = ["keyring", "file"]
+
+const credentialStorage = (raw: string): CredentialStorage => {
+  if (!(CREDENTIAL_STORAGES as readonly string[]).includes(raw))
+    throw new CliError("validation_error", `--credential-storage takes ${CREDENTIAL_STORAGES.join(" or ")}; got ${raw}`)
+  return raw as CredentialStorage
+}
+
 const answer = (command: Command, item: unknown) => renderAnswer(command, outputFor(command), itemOf(item))
 
 const startCommand = () =>
@@ -79,12 +89,21 @@ const startCommand = () =>
     .option("--client-file <file>", "your own Desktop app OAuth client JSON from Google Cloud Console")
     .option("--no-browser", "print the sign-in URL instead of opening a browser")
     .option(
+      "--credential-storage <storage>",
+      "where the sign-in is kept: keyring, or file for a private file where no keyring works",
+      credentialStorage,
+      "keyring",
+    )
+    .option(
       "--grant <scopes>",
       "also ask for these, comma-separated: write (create, change and delete events, and answer invitations), " +
         "sharing (see and change who can see a calendar)",
       grantList,
     )
-    .action(async function (this: Command, args: { clientFile?: string; browser: boolean; grant?: Grant[] }) {
+    .action(async function (
+      this: Command,
+      args: { clientFile?: string; browser: boolean; grant?: Grant[]; credentialStorage: CredentialStorage },
+    ) {
       const { environment, flags, common } = contextOf(this)
       refuseCommandName(common.profile, commandWords(rootOf(this)), IDENTITY.command)
       refuseOffline(flags)
@@ -98,22 +117,25 @@ const startCommand = () =>
       })
       const { signIn } = await import("../session.js")
       const signedIn = await baseContext(this, configuration.resolveSettings).run((events) =>
-        signIn({
-          ...common,
-          events,
-          client,
-          grants: args.grant,
-          openBrowser: args.browser ? (environment.openBrowser ?? (async () => {})) : async () => {},
-          showUrl: (url) => {
-            steps.openUrl(
-              url,
-              args.grant?.length
-                ? "Choose the Google account and allow read access to Calendar and the permissions it lists"
-                : "Choose the Google account and allow read access to Calendar",
-            )
-            streams.diagnostic(`Open Google sign-in: ${url}\n`)
-          },
-        }),
+        worded(common.profile, () =>
+          signIn({
+            ...common,
+            events,
+            client,
+            grants: args.grant,
+            storage: args.credentialStorage,
+            openBrowser: args.browser ? (environment.openBrowser ?? (async () => {})) : async () => {},
+            showUrl: (url) => {
+              steps.openUrl(
+                url,
+                args.grant?.length
+                  ? "Choose the Google account and allow read access to Calendar and the permissions it lists"
+                  : "Choose the Google account and allow read access to Calendar",
+              )
+              streams.diagnostic(`Open Google sign-in: ${url}\n`)
+            },
+          }),
+        ),
       )
       answer(this, signedIn)
     })
@@ -133,7 +155,7 @@ const statusCommand = () =>
       if (args.check) refuseOffline(flags)
       const { sessionStatus } = await import("../session.js")
       const status = await baseContext(this, configuration.resolveSettings).run((events) =>
-        sessionStatus({ ...common, events, check: args.check === true }),
+        worded(common.profile, () => sessionStatus({ ...common, events, check: args.check === true })),
       )
       answer(this, status)
     })
