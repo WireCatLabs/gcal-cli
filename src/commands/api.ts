@@ -8,7 +8,6 @@ import {
   checkApiParameter,
   environmentOf,
   generatedApiCommand,
-  issueMessage,
   itemOf,
   LOCAL_READ,
   listOf,
@@ -20,23 +19,14 @@ import {
   readApiBody,
   readOnlyLockOf,
   readOnlyRefusal,
+  refuseUnknownPermissionKeys,
   renderAnswer,
   snakeKeys,
   termField,
-  unknownPermissionIssues,
+  terminalAsker,
   withQuery,
 } from "@wirecat/cli-core/cli"
-import {
-  type Asker,
-  guardedWrite,
-  levelFor,
-  newOperationId,
-  RecipientList,
-  recipientsPathFor,
-  SendJournal,
-  sendGuard,
-  sendsPathFor,
-} from "@wirecat/cli-core/sends"
+import { guardedWrite, guardFor, levelFor, newOperationId } from "@wirecat/cli-core/sends"
 import { Command } from "commander"
 import * as v from "valibot"
 import { jsonObject, operationOf, operations, schemas } from "../api-contract.js"
@@ -52,25 +42,6 @@ const API_METHOD_QUERY = {
   fields: [termField("service", "enum", "service:calendar", { values: ["calendar"] })],
 } as const satisfies QueryRegistry
 
-/** Over MCP an `ask` goes ahead (NEED-773); at a terminal `--yes` or the owner's answer does. */
-const askOwner =
-  (command: Command): Asker =>
-  async (key) => {
-    const environment = environmentOf(command)
-    if (environment.agent) return
-    const given = command.optsWithGlobals<{ yes?: boolean; json?: boolean; jsonl?: boolean }>()
-    if (given.yes) return
-    const answer = given.json || given.jsonl ? null : ((await environment.answer?.(`Allow ${key}?`)) ?? null)
-    if (answer === null)
-      throw new CliError(
-        "confirmation_required",
-        `${key} asks before it acts (its permission level is ask), and nobody is at a terminal to answer — ` +
-          "add --yes to go ahead",
-        { permission: key },
-      )
-    if (!/^\s*y(es)?\s*$/i.test(answer)) throw new CliError("cancelled", `${key}: not done — the answer was no`)
-  }
-
 /**
  * The profile's level for api.<method>, as the shared check gives a keyed command before it runs: `api call` has no
  * key of its own, and the shared check never sees its method. A write's `deny`, `readonly` and `ask` are the guard's.
@@ -82,9 +53,7 @@ const permittedSettings = (command: Command, method: ApiMethod) => {
     overrides.length > 0 ? { ...flags, permission: [...overrides, ...(flags.permission ?? [])] } : flags,
     { env: common.env },
   )
-  const unknown = unknownPermissionIssues(command, settings, IDENTITY.command, permissions)
-  if (unknown.length > 0)
-    throw new CliError("configuration_error", issueMessage(unknown), { permission: unknown[0]?.key })
+  refuseUnknownPermissionKeys(command, settings, IDENTITY.command, permissions)
   const key = apiKey(method.name)
   const { level, key: named } = levelFor(settings.permissions, key, permissions.defaults)
   if (level === "deny" && !method.mutates)
@@ -97,26 +66,15 @@ const permittedSettings = (command: Command, method: ApiMethod) => {
   return settings
 }
 
-const writeGuard = (command: Command, settings: ReturnType<typeof configuration.resolveSettings>) => {
-  const env = environmentOf(command).env ?? process.env
-  return sendGuard({
-    profile: settings.profile,
-    command: IDENTITY.command,
-    permissions: settings.permissions,
-    permissionSources: settings.permissionSources,
-    permissionDefaults: permissions.defaults,
-    permissionFix: (_request, key) => `${IDENTITY.command} ${settings.profile} config set permissions.${key} allow`,
-    ask: askOwner(command),
+const writeGuard = (command: Command, settings: ReturnType<typeof configuration.resolveSettings>) =>
+  guardFor(
+    IDENTITY,
     // Google enforces its own quotas; the guard is here for the levels and the journal, not a send limit.
-    sendsPerHour: Number.MAX_SAFE_INTEGER,
-    journal: new SendJournal(sendsPathFor(IDENTITY, settings.profile, env), {
-      service: IDENTITY.command,
-      version: IDENTITY.version,
-    }),
-    recipients: new RecipientList(recipientsPathFor(IDENTITY, settings.profile, env), IDENTITY.command),
-    warn: outputFor(command).renderer.warn,
-  })
-}
+    { ...settings, sendsPerHour: Number.MAX_SAFE_INTEGER, permissionDefaults: permissions.defaults },
+    outputFor(command).renderer.warn,
+    environmentOf(command).env ?? process.env,
+    terminalAsker(command),
+  )
 
 const call = async (
   command: Command,
