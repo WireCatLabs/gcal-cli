@@ -52,6 +52,59 @@ gcal commands info [path]
 
 **Example:** `gcal commands info commands`
 
+## `gcal session`
+
+sign in to Google and manage this profile's sign-in
+
+### `gcal session start`
+
+sign in to Google in the browser with read-only access to Calendar
+
+**Changes something in the service.**
+
+```sh
+gcal session start [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--client-file <file>` | your own Desktop app OAuth client JSON from Google Cloud Console. |
+| `--no-browser` | print the sign-in URL instead of opening a browser. |
+
+**Returns:** sign in to Google in the browser with read-only access to Calendar
+
+**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --no-browser`
+
+### `gcal session status`
+
+show this profile's saved Google sign-in; tokens are never printed
+
+```sh
+gcal session status [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--check` | ask Google whether the sign-in still works and which account it is. |
+
+**Returns:** show this profile's saved Google sign-in; tokens are never printed
+
+**Example:** `gcal personal session status`, `gcal personal session status --check --json`
+
+### `gcal session end`
+
+sign this profile out of Google on this computer; stored calendar data stays
+
+**Changes something on this computer only.**
+
+```sh
+gcal session end
+```
+
+**Returns:** sign this profile out of Google on this computer; stored calendar data stays
+
+**Example:** `gcal personal session end`
+
 ## `gcal doctor`
 
 check this installation: version, paths, config, profiles; no keyring or network

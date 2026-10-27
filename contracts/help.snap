@@ -1,4 +1,4 @@
-gcal — a new WireCat CLI, started from cli-template
+gcal — read-only Google Calendar for the terminal, scripts and AI agents
 
 Usage: gcal <profile> <command> [options]
 Account commands start with your profile, a name you choose; none is ever assumed.

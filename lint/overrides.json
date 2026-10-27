@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "rule": "option-role",
+    "target": "session start --client-file",
+    "reason": "Names the owner's own Google OAuth client file while gcal bundles no app of its own; drive-cli has the same option in its baseline. Review when gcal ships the shared WireCat Google app or the vocabulary names an app-credential file.",
+    "owner": "@WireCatLabs",
+    "review_after": "2027-01-27"
+  }
+]
