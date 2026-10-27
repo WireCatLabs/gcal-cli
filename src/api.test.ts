@@ -16,8 +16,9 @@ import { createProgram, run } from "./program.js"
 
 const ACCESS = "fixture-access-token-4Rt9"
 const REFRESH = "fixture-refresh-token-8Wq2"
+const REFRESHED = "fixture-refreshed-token-6Jc3"
 const SECRET = "fixture-client-secret-2Hn6"
-const MARKERS = [ACCESS, REFRESH, SECRET]
+const MARKERS = [ACCESS, REFRESH, REFRESHED, SECRET]
 const HOLIDAYS = "en.example#holiday@group.v.calendar.google.com"
 const CALENDAR = "https://www.googleapis.com/calendar/v3/"
 
@@ -63,7 +64,11 @@ const google = (answer: Answer = () => json(EVENTS)) => {
   return { fetch, requests }
 }
 
-const harness = (scopes: string[] = ["openid", "email", CALENDAR_READ_SCOPE], extra: NodeJS.ProcessEnv = {}) => {
+const harness = (
+  scopes: string[] = ["openid", "email", CALENDAR_READ_SCOPE],
+  extra: NodeJS.ProcessEnv = {},
+  expiresAt = Date.now() + 3_600_000,
+) => {
   const keyring = memoryKeyring()
   const env: NodeJS.ProcessEnv = {
     ...process.env,
@@ -72,7 +77,7 @@ const harness = (scopes: string[] = ["openid", "email", CALENDAR_READ_SCOPE], ex
     ...extra,
   }
   sessionStorage(env, "personal", keyring).write({
-    tokens: { accessToken: ACCESS, refreshToken: REFRESH, expiresAt: Date.now() + 3_600_000, scopes },
+    tokens: { accessToken: ACCESS, refreshToken: REFRESH, expiresAt, scopes },
     client: { clientId: "fixture-client.apps", clientSecret: SECRET },
   })
   const gcal = async (argv: string[], fake = google()) => {
@@ -424,5 +429,22 @@ describe("secrets", () => {
       expect(onDisk).not.toContain(marker)
     }
     expect(onDisk).not.toContain(encodeURIComponent(HOLIDAYS))
+  })
+
+  it("refreshes an expired sign-in and keeps both tokens out of the output and the run records", async () => {
+    const { gcal } = harness(undefined, undefined, Date.now() - 60_000)
+    const fake = google((url) =>
+      url.href === "https://oauth2.googleapis.com/token"
+        ? json({ access_token: REFRESHED, expires_in: 3600, scope: CALENDAR_READ_SCOPE, token_type: "Bearer" })
+        : json(EVENTS),
+    )
+    const listed = await gcal(
+      ["--record", "personal", "api", "calendar-events-list", "--calendar-id", "primary", "--json"],
+      fake,
+    )
+    expect(listed.code).toBe(0)
+    expect(toCalendar(fake.requests)[0]?.authorization).toBe(`Bearer ${REFRESHED}`)
+    const runs = await gcal(["--record", "personal", "runs", "list", "--limit", "5", "--json"])
+    for (const marker of MARKERS) expect(listed.out + listed.err + runs.out + runs.err).not.toContain(marker)
   })
 })
