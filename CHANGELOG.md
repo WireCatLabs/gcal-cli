@@ -49,6 +49,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- `gcal_write` takes the event writes as the command line does (cli-core 0.459.0): `attendee` is a list, so one create
+  invites several people; `location` and `description` take `""` to clear them; `notify` is one boolean (`false`
+  sends `--no-notify`), and `no_notify` is gone. A write's `entry` names the event's `title`.
+- An event id is checked as Google's base32hex (`a-v`, `0-9`) by cli-core too, before the write is journaled.
 - `gcal <profile> api …` no longer prints a meeting's passcode, PIN, access code or password. Every event's
   `conferenceData.entryPoints[]` loses those fields; its links lose their query string, and phone and SIP addresses
   lose the dial sequence that carries the PIN. This covers `events.list`, `events.get`, `events.instances` and every

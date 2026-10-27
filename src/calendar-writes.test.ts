@@ -185,7 +185,7 @@ describe("event writes over Google", () => {
     expect(posts(google)).toEqual([])
   })
 
-  it("an agent creates through gcal_write; mailing attendees stays refused", async () => {
+  it("an agent writes through gcal_write as the command line does; mailing attendees stays refused", async () => {
     const { gcal, google, env, keyring, fetch } = harness()
     await gcal("personal", "sync")
     const program = createProgram()
@@ -214,15 +214,43 @@ describe("event writes over Google", () => {
       arguments: { command: "events create", arguments: fields },
     })) as { isError?: boolean; structuredContent: { item: { entry: Record<string, unknown> } } }
     expect(made.isError).toBeFalsy()
-    expect(made.structuredContent.item.entry).toMatchObject({ starts_at: "2026-11-02T09:00:00.000Z" })
+    expect(made.structuredContent.item.entry).toMatchObject({
+      title: "Example planning",
+      starts_at: "2026-11-02T09:00:00.000Z",
+    })
+    const attendee = ["ana@example.com", "bob@example.com"]
     const mailed = (await client.callTool({
       name: "gcal_write",
-      arguments: { command: "events create", arguments: { ...fields, attendee: "ana@example.com", notify: true } },
+      arguments: { command: "events create", arguments: { ...fields, attendee, notify: true } },
     })) as { isError?: boolean; content: { text: string }[] }
     expect(mailed.isError).toBe(true)
     expect(mailed.content[0]?.text).toContain("permission_error")
     expect(mailed.content[0]?.text).toContain("events.notify")
     expect(posts(google)).toHaveLength(1)
+    const quiet = (await client.callTool({
+      name: "gcal_write",
+      arguments: { command: "events create", arguments: { ...fields, location: "Room 2", attendee, notify: false } },
+    })) as { isError?: boolean; structuredContent: { item: { event: string } } }
+    expect(quiet.isError).toBeFalsy()
+    expect(posts(google).at(-1)?.body).toMatchObject({
+      attendees: [{ email: "ana@example.com" }, { email: "bob@example.com" }],
+    })
+    expect(posts(google).at(-1)?.query.get("sendUpdates")).toBe("none")
+    const cleared = (await client.callTool({
+      name: "gcal_write",
+      arguments: {
+        command: "events update",
+        arguments: { event: quiet.structuredContent.item.event, location: "", notify: false },
+      },
+    })) as { isError?: boolean }
+    expect(cleared.isError).toBeFalsy()
+    expect(posts(google).at(-1)?.body).toEqual({ location: "" })
+    const both = (await client.callTool({
+      name: "gcal_write",
+      arguments: { command: "events create", arguments: { ...fields, no_notify: true } },
+    })) as { isError?: boolean; content: { text: string }[] }
+    expect(both.isError).toBe(true)
+    expect(both.content[0]?.text).toContain("no_notify")
   })
 
   it("every field and choice of the write commands reaches Google in its own words", async () => {

@@ -33,14 +33,6 @@ const adapter = (scopes: string[] = [CALENDAR_READ_SCOPE, EVENTS_SCOPE]) => {
   return { google, writer: googleCalendarWriter(api) }
 }
 
-// cli-core's contract creates with "contract0example0id0001" (src/calendar/testing/writer-contract.ts:39); its x is
-// outside Google's base32hex, so these cases cannot pass over a faithful Google until cli-core changes that id.
-const BLOCKED_BY_CONTRACT_ID = new Set([
-  "a create returns the event with its etag",
-  "a create retried with the same id after a lost answer finds the event instead of making another",
-  "notify reaches the provider as given: false mails nobody",
-])
-
 describe("calendarWriterContract over hand-written Google answers", () => {
   for (const { name, run } of calendarWriterContract(() => {
     const { google, writer } = adapter()
@@ -54,7 +46,7 @@ describe("calendarWriterContract over hand-written Google answers", () => {
       at: AT,
     }
   }))
-    (BLOCKED_BY_CONTRACT_ID.has(name) ? it.fails : it)(name, run)
+    it(name, run)
 })
 
 describe("the Google calls behind each write", () => {

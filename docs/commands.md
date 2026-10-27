@@ -266,9 +266,9 @@ gcal events create <calendar> [options]
 | `--end-date <date>` | the last day of an all-day event. |
 | `--location <text>` | where; empty clears it. |
 | `--description <text>` | the details; empty clears it. |
-| `--attendee <email>` | an attendee; repeat for each. |
-| `--notify` | the provider mails the other attendees; needs events.notify allowed. |
-| `--no-notify` | the provider mails nobody; one of the two is required when there are other attendees. |
+| `--attendee <email>` | an attendee; repeat for each. Default: ``. |
+| `--notify` | the provider mails the other attendees; needs events.notify allowed; this or --no-notify is required when there are other attendees. |
+| `--no-notify` | the provider mails nobody. |
 | `--id <id>` | the id a create that ended in outcome_unknown named: a retry finds that event. |
 | `--json` | one JSON value. |
 | `--jsonl` | one JSON object per item. |
@@ -300,11 +300,11 @@ gcal events update <event> [options]
 | `--end-date <date>` | the last day of an all-day event. |
 | `--location <text>` | where; empty clears it. |
 | `--description <text>` | the details; empty clears it. |
-| `--attendee <email>` | an attendee; repeat for each, replacing the list. |
+| `--attendee <email>` | an attendee; repeat for each, replacing the list. Default: ``. |
 | `--calendar <id>` | the calendar, when the event is on more than one of the account's. |
 | `--series` | change the whole repeating event, not only this occurrence. |
-| `--notify` | the provider mails the other attendees; needs events.notify allowed. |
-| `--no-notify` | the provider mails nobody; one of the two is required when there are other attendees. |
+| `--notify` | the provider mails the other attendees; needs events.notify allowed; this or --no-notify is required when there are other attendees. |
+| `--no-notify` | the provider mails nobody. |
 | `--json` | one JSON value. |
 | `--jsonl` | one JSON object per item. |
 
@@ -330,8 +330,8 @@ gcal events delete <event> [options]
 |---|---|
 | `--calendar <id>` | the calendar, when the event is on more than one of the account's. |
 | `--series` | delete the whole repeating event, not only this occurrence. |
-| `--notify` | the provider mails the other attendees; needs events.notify allowed. |
-| `--no-notify` | the provider mails nobody; one of the two is required when there are other attendees. |
+| `--notify` | the provider mails the other attendees; needs events.notify allowed; this or --no-notify is required when there are other attendees. |
+| `--no-notify` | the provider mails nobody. |
 | `--json` | one JSON value. |
 | `--jsonl` | one JSON object per item. |
 
@@ -357,8 +357,8 @@ gcal events respond <event> <response> [options]
 | Option | What it does |
 |---|---|
 | `--calendar <id>` | the calendar, when the event is on more than one of the account's. |
-| `--notify` | the provider mails the other attendees; needs events.notify allowed. |
-| `--no-notify` | the provider mails nobody; one of the two is required when there are other attendees. |
+| `--notify` | the provider mails the other attendees; needs events.notify allowed; this or --no-notify is required when there are other attendees. |
+| `--no-notify` | the provider mails nobody. |
 | `--json` | one JSON value. |
 | `--jsonl` | one JSON object per item. |
 
