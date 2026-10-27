@@ -100,3 +100,14 @@ it("gcal <profile> mcp refuses a --permission that names no command", async () =
   expect(code).toBe(2)
   expect(err.join("")).toContain("api.calendar.events.nope")
 })
+
+it("gcal <profile> mcp takes --permission api=readonly over the deny defaults under it", async () => {
+  const stop = new AbortController()
+  const serving = run(["personal", "mcp", "--permission", "api=readonly"], {
+    signal: stop.signal,
+    tty: false,
+    streams: { data: () => {}, diagnostic: () => {} },
+  })
+  stop.abort()
+  expect(await serving).toBe(0)
+})

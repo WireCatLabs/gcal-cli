@@ -328,6 +328,23 @@ describe("writes", () => {
     expect(fake.fetch).not.toHaveBeenCalled()
   })
 
+  it("reads but never writes under permissions.api readonly", async () => {
+    const { gcal } = harness()
+    const fake = google()
+    expect((await gcal(["personal", "config", "set", "permissions.api", "readonly"])).code).toBe(0)
+    const read = ["personal", "api", "call", "calendar.events.list", "--params", '{"calendarId":"primary"}', "--json"]
+    expect((await gcal(read, fake)).code).toBe(0)
+    expect((await gcal(["personal", "api", "calendar-colors-get", "--json"], fake)).code).toBe(0)
+    const insert = ["personal", "api", "call", "calendar.events.insert", "--params", '{"calendarId":"primary"}']
+    expect(failure((await gcal([...insert, "--body", "{}", "--yes", "--json"], fake)).err)).toMatchObject({
+      code: "permission_error",
+      details: { permission: "api.calendar.events.insert" },
+    })
+    const generated = ["personal", "api", "calendar-events-delete", "--calendar-id", "primary", "--event-id", "e1"]
+    expect(failure((await gcal([...generated, "--yes", "--json"], fake)).err).code).toBe("permission_error")
+    expect(toCalendar(fake.requests)).toHaveLength(2)
+  })
+
   it("refuses a permission key that names no method", async () => {
     const { gcal } = harness()
     for (const key of ["permissions.api.calendar.events.nope", "permissions.apis"]) {
