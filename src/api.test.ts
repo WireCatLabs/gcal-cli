@@ -322,7 +322,10 @@ describe("writes", () => {
       code: "permission_error",
       details: { permission: "api.calendar.calendars.clear" },
     })
-    const share = ["personal", "api", "calendar-acl-insert", "--calendar-id", "primary", "--body", "{}", "--json"]
+    const share = [
+      ...["personal", "api", "calendar-acl-insert", "--calendar-id", "primary", "--body", "{}"],
+      ...["--send-notifications", "false", "--json"],
+    ]
     expect(failure((await gcal(share)).err).code).toBe("confirmation_required")
     const shared = failure((await gcal([...share, "--yes"])).err)
     expect(shared.reason).toBe("api.scope-missing")
@@ -354,12 +357,16 @@ describe("writes", () => {
     const fake = google(() => json(rule))
     const body = JSON.stringify({ role: "reader", scope: { type: "user", value: "a@example.com" } })
     const shared = await gcal(
-      ["personal", "api", "calendar-acl-insert", "--calendar-id", "primary", "--body", body, "--yes", "--json"],
+      [
+        ...["personal", "api", "calendar-acl-insert", "--calendar-id", "primary", "--body", body],
+        ...["--send-notifications", "false", "--yes", "--json"],
+      ],
       fake,
     )
     expect(shared.code).toBe(0)
     expect(answerOf(shared.out).item).toMatchObject({ id: "user:a@example.com", role: "reader" })
     expect(toCalendar(fake.requests)[0]).toMatchObject({ method: "POST", body })
+    expect(toCalendar(fake.requests)[0]?.url.searchParams.get("sendNotifications")).toBe("false")
   })
 
   it("refuses sharing under permissions.api.calendar.acl deny, and giving a calendar away under api deny", async () => {
@@ -871,6 +878,147 @@ describe("the calendar keys hold on api writes", () => {
       expect(deleted.isError).toBe(true)
       expect(deleted.content[0]?.text).toContain("events.delete.series")
       expect(methods(fake)).toEqual(["GET"])
+    } finally {
+      await client.close()
+    }
+  })
+})
+
+// Shape from the Calendar API reference (Acl resource); every value is made up.
+const RULE = { kind: "calendar#aclRule", id: "user:a@example.com", role: "reader" }
+
+describe("sharing.notify holds on api sharing writes", () => {
+  const SHARER = ["openid", "email", CALENDAR_READ_SCOPE, ACLS_SCOPE]
+  const body = JSON.stringify({ role: "reader", scope: { type: "user", value: "a@example.com" } })
+  const insert = ["personal", "api", "calendar-acl-insert", "--calendar-id", "primary", "--body", body]
+  const rule = ["--calendar-id", "primary", "--rule-id", "user:a@example.com", "--body", body]
+  const sharing = () =>
+    google((_url, init) => ((init?.method ?? "GET") === "DELETE" ? new Response(null, { status: 204 }) : json(RULE)))
+  const mailParam = (fake: ReturnType<typeof google>) =>
+    toCalendar(fake.requests).map(({ url }) => url.searchParams.get("sendNotifications"))
+
+  it.each([
+    [insert],
+    [[...insert, "--send-notifications", "true"]],
+    [["personal", "api", "calendar-acl-patch", ...rule]],
+    [["personal", "api", "calendar-acl-update", ...rule]],
+    [["personal", "api", "call", "calendar.acl.insert", "--params", '{"calendarId":"primary"}', "--body", body]],
+    [
+      [
+        ...["personal", "api", "call", "calendar.acl.patch", "--params"],
+        '{"calendarId":"primary","ruleId":"user:a@example.com","sendNotifications":"true"}',
+      ],
+    ],
+  ])("refuses sharing that mails through %j while sharing.notify is deny, before any request", async (words) => {
+    const { gcal } = harness(SHARER)
+    const fake = sharing()
+    const refused = failure((await gcal([...words, "--yes", "--json"], fake)).err)
+    expect(refused).toMatchObject({
+      code: "permission_error",
+      details: { permission: "sharing.notify" },
+    })
+    expect(refused.message).toContain("sharing.notify is deny")
+    expect(refused.message).toContain("--send-notifications false")
+    expect(fake.fetch).not.toHaveBeenCalled()
+  })
+
+  it("shares without mail when sendNotifications is false, and sends the request as given", async () => {
+    const { gcal } = harness(SHARER)
+    const fake = sharing()
+    expect((await gcal([...insert, "--send-notifications", "false", "--yes", "--json"], fake)).code).toBe(0)
+    const call = ["personal", "api", "call", "calendar.acl.insert", "--params"]
+    const params = '{"calendarId":"primary","sendNotifications":false}'
+    expect((await gcal([...call, params, "--body", body, "--yes", "--json"], fake)).code).toBe(0)
+    expect(mailParam(fake)).toEqual(["false", "false"])
+  })
+
+  it("removes access without sharing.notify: Google mails nobody on removal", async () => {
+    const { gcal } = harness(SHARER)
+    const fake = sharing()
+    const removed = await gcal(
+      [
+        ...["personal", "api", "calendar-acl-delete", "--calendar-id", "primary", "--rule-id", "user:a@example.com"],
+        ...["--yes", "--json"],
+      ],
+      fake,
+    )
+    expect(removed.code).toBe(0)
+    expect(toCalendar(fake.requests).map(({ method }) => method)).toEqual(["DELETE"])
+  })
+
+  it("asks one question naming both keys at ask, and leaves Google's default alone at allow", async () => {
+    const { gcal, asked } = harness(SHARER)
+    const fake = sharing()
+    expect((await gcal(["personal", "config", "set", "permissions.sharing.notify", "ask"])).code).toBe(0)
+    expect((await gcal(insert, fake, "y")).code).toBe(0)
+    expect(asked).toHaveLength(1)
+    expect(asked[0]).toContain("api.calendar.acl.insert and sharing.notify")
+    expect((await gcal(["personal", "config", "set", "permissions.sharing.notify", "allow"])).code).toBe(0)
+    expect((await gcal([...insert, "--yes", "--json"], fake)).code).toBe(0)
+    expect(mailParam(fake)).toEqual([null, null])
+  })
+
+  it("names the method, not the mail, when the method itself is denied", async () => {
+    const { gcal } = harness(SHARER)
+    expect((await gcal(["personal", "config", "set", "permissions.api.calendar.acl.insert", "deny"])).code).toBe(0)
+    expect(failure((await gcal([...insert, "--yes", "--json"])).err).details).toMatchObject({
+      permission: "api.calendar.acl.insert",
+    })
+  })
+
+  it("previews sharing.notify and its level with --dry-run, and refuses the preview at deny", async () => {
+    const { gcal } = harness(SHARER)
+    const fake = sharing()
+    expect(failure((await gcal([...insert, "--dry-run", "--json"], fake)).err)).toMatchObject({
+      code: "permission_error",
+      details: { permission: "sharing.notify" },
+      message: expect.stringContaining("sharing.notify is deny"),
+    })
+    expect((await gcal(["personal", "config", "set", "permissions.sharing.notify", "ask"])).code).toBe(0)
+    const previewed = await gcal([...insert, "--dry-run", "--json"], fake)
+    expect(answerOf(previewed.out).item.permissions).toEqual([
+      { key: "api.calendar.acl.insert", level: "ask" },
+      { key: "sharing.notify", level: "ask" },
+    ])
+    const quiet = await gcal([...insert, "--send-notifications", "false", "--dry-run", "--json"], fake)
+    expect(answerOf(quiet.out).item.permissions).toEqual([{ key: "api.calendar.acl.insert", level: "ask" }])
+    expect(fake.fetch).not.toHaveBeenCalled()
+  })
+
+  it("defaults sharing.notify to deny", () => {
+    expect(permissions.defaults["sharing.notify"]).toBe("deny")
+  })
+
+  it("holds over MCP: an agent cannot share a calendar with mail, and can without", async () => {
+    const { env, keyring } = harness(SHARER)
+    const fake = sharing()
+    const program = createProgram()
+    const server = createMcpServer({
+      profile: "personal",
+      commands: describeProgram(program),
+      levels: () => configuration.resolveSettings({ profile: "personal" }, { env }).permissions,
+      authority: changesAuthorityAt(program),
+      permissions,
+      readOnly: false,
+      run: (argv, environment) => run(argv, { ...environment, env, keyring, fetch: fake.fetch }),
+    })
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
+    await server.connect(serverSide)
+    const client = new Client({ name: "test", version: "1.0.0" })
+    await client.connect(clientSide)
+    try {
+      const share = async (args: Record<string, unknown>) =>
+        (await client.callTool({
+          name: "gcal_write",
+          arguments: { command: "api calendar-acl-insert", arguments: { calendar_id: "primary", body, ...args } },
+        })) as { isError?: boolean; content: { text: string }[] }
+      const mailed = await share({})
+      expect(mailed.isError).toBe(true)
+      expect(mailed.content[0]?.text).toContain("sharing.notify")
+      expect(fake.fetch).not.toHaveBeenCalled()
+      const quiet = await share({ send_notifications: "false" })
+      expect(quiet.isError).toBeFalsy()
+      expect(mailParam(fake)).toEqual(["false"])
     } finally {
       await client.close()
     }

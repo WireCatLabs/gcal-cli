@@ -72,6 +72,12 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- Sharing a calendar through `api calendar-acl-insert | patch | update` or `api call calendar.acl.*` no longer mails
+  the person it is shared with unless the new key `sharing.notify` allows it. Google mails them unless
+  `sendNotifications` is `false`, and over MCP the sharing methods run without a question. `sharing.notify` is `deny`
+  by default: such a call is refused before anything reaches Google, and the refusal says to pass
+  `--send-notifications false` or allow the key. gcal never changes the request itself. Removing access
+  (`calendar-acl-delete`) mails nobody and needs no new key. `--dry-run` lists `sharing.notify` with its level.
 - `gcal config set | unset` lists only the settings gcal uses: the messenger settings (`sends_per_hour`,
   `transcribe_with`, `phone_countries`, `task_*` and the others) are gone, and `gcal skill show` takes no skill name.
   Over MCP, `sync` and `calendars list` run through `gcal_read`, since they only save what they read from Google.

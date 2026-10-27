@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**192 ✅ · 331 ⛔ · 0 ❌** — 71 commands, 452 options.
+**205 ✅ · 318 ⛔ · 0 ❌** — 71 commands, 452 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -121,14 +121,14 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api call` | `--params` | ✅ |  |
 | `api call` | `--body` | ✅ |  |
 | `api call` | `--dry-run` | ✅ |  |
-| `api calendar-acl-delete` |  | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-delete` |  | ✅ |  |
 | `api calendar-acl-delete` | `--alt` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-delete` | `--fields` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-delete` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-delete` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-delete` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-delete` | `--rule-id` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-delete` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-delete` | `--rule-id` | ✅ |  |
+| `api calendar-acl-delete` | `--calendar-id` | ✅ |  |
 | `api calendar-acl-delete` | `--dry-run` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-get` |  | ✅ |  |
 | `api calendar-acl-get` | `--alt` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
@@ -144,11 +144,11 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-acl-insert` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-insert` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-insert` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-insert` | `--send-notifications` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-insert` | `--send-notifications` | ✅ |  |
 | `api calendar-acl-insert` | `--calendar-id` | ✅ |  |
 | `api calendar-acl-insert` | `--body` | ✅ |  |
 | `api calendar-acl-insert` | `--body-file` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-insert` | `--dry-run` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-insert` | `--dry-run` | ✅ |  |
 | `api calendar-acl-list` |  | ✅ |  |
 | `api calendar-acl-list` | `--alt` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-list` | `--fields` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
@@ -160,28 +160,28 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-acl-list` | `--calendar-id` | ✅ |  |
 | `api calendar-acl-list` | `--sync-token` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-list` | `--page-token` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-patch` |  | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-patch` |  | ✅ |  |
 | `api calendar-acl-patch` | `--alt` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-patch` | `--fields` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-patch` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-patch` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-patch` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-patch` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-patch` | `--rule-id` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-patch` | `--calendar-id` | ✅ |  |
+| `api calendar-acl-patch` | `--rule-id` | ✅ |  |
 | `api calendar-acl-patch` | `--send-notifications` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-patch` | `--body` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-patch` | `--body` | ✅ |  |
 | `api calendar-acl-patch` | `--body-file` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-patch` | `--dry-run` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-update` |  | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-update` |  | ✅ |  |
 | `api calendar-acl-update` | `--alt` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-update` | `--fields` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-update` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-update` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-update` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-update` | `--rule-id` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-update` | `--rule-id` | ✅ |  |
 | `api calendar-acl-update` | `--send-notifications` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-update` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-acl-update` | `--body` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-acl-update` | `--calendar-id` | ✅ |  |
+| `api calendar-acl-update` | `--body` | ✅ |  |
 | `api calendar-acl-update` | `--body-file` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-acl-update` | `--dry-run` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendar-list-delete` |  | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |

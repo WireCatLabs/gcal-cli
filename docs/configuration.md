@@ -50,6 +50,8 @@ Without a setting of yours:
 - Sharing a calendar (`calendar.acl.insert`, `patch`, `update`, `delete`) and giving it to another account
   (`calendar.calendars.transferOwnership`) are `ask`, like any other change. Over MCP that means an agent can share
   your calendar with anyone, or give it away, without a question. Set `permissions.api.calendar.acl deny` to stop it.
+- `sharing.notify`, letting Google mail the person a calendar is shared with, is `deny`. Google sends that mail
+  unless `sendNotifications` is `false`, so while the key is `deny` a share must say `--send-notifications false`.
 - Emptying a calendar (`calendar.calendars.clear`, every event of the main calendar) is `deny`, and never offered over
   MCP.
 - The event writes (`events create`, `update`, `delete`, `respond`) are `ask`, each under its own key, such as
@@ -65,10 +67,14 @@ An event write also needs the key of the Google method it calls: `api.calendar.e
 The `api` commands answer to the same keys. A method that has Google mail the attendees (`--send-updates` other than
 `none`, or `--send-notifications true`) also needs `events.notify`. Deleting an event, or patching it to `cancelled`,
 also needs `events.delete.series` when the event repeats: `gcal` reads the event from Google first to find out.
+Sharing a calendar (`calendar.acl.insert`, `patch`, `update`) also needs `sharing.notify` unless the call passes
+`--send-notifications false` (`"sendNotifications": false` in `api call --params`); `gcal` never adds it for you.
+Removing access (`calendar.acl.delete`) mails nobody, so it needs no extra key.
 `--dry-run` lists every key a call checks, with its level, and calls nothing.
 
 ```sh
 gcal personal config set permissions.events.notify allow     # let --notify mail attendees
+gcal personal config set permissions.sharing.notify allow    # let a share mail the person it is shared with
 gcal personal config set permissions.events.create allow     # add events without the question
 ```
 
