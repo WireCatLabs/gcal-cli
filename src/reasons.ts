@@ -18,6 +18,12 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
   ["sign-in.no-email", "authentication_error", "Google did not share a verified email address for this account"],
   ["profile.same-account", "validation_error", "this Google account is already signed in as another profile"],
   ["offline.refused", "permission_error", "this command needs Google; --offline was given"],
+  ["sign-in.expired", "authentication_error", "Google no longer accepts this profile's sign-in"],
+  ["api.unknown-method", "validation_error", "no Google Calendar method has this name"],
+  ["api.scope-missing", "permission_error", "the sign-in lacks the Google permission this method needs"],
+  ["api.disabled", "configuration_error", "the Google Calendar API is turned off for this OAuth project"],
+  ["write.not-allowed", "permission_error", "this method changes Google data and --allow-writes was not given"],
+  ["delete.not-allowed", "permission_error", "this method deletes Google data and --allow-delete was not given"],
 ]
 
 export const REASONS = defineReasons(ENTRIES.map(([reason, code, message]) => ({ reason, code, message, details: [] })))

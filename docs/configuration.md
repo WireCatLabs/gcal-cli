@@ -35,7 +35,8 @@ the sign-in in the system keyring, so later commands work without the file.
 
 `permissions` decides what a command may do for this profile: `allow`, `ask`, `readonly` or `deny`, per permission
 key. Over MCP there is no one to ask, so `ask` lets the command run. `GCAL_READ_ONLY=1` refuses every write, whatever
-the permissions say.
+the permissions say; it also refuses each `api` method that changes Calendar. The `api` commands have no permission
+key of their own yet.
 
 ## Run records
 
