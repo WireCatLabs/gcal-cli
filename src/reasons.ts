@@ -17,6 +17,8 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
   ["sign-in.lookup-refused", "authentication_error", "Google refused the account lookup"],
   ["sign-in.no-email", "authentication_error", "Google did not share a verified email address for this account"],
   ["profile.same-account", "validation_error", "this Google account is already signed in as another profile"],
+  ["profile.not-signed-in", "authentication_error", "this profile has no Google account yet; run session start"],
+  ["calendars.none-synced", "validation_error", "no calendar of this profile syncs yet"],
   ["offline.refused", "permission_error", "this command needs Google; --offline was given"],
   ["sign-in.expired", "authentication_error", "Google no longer accepts this profile's sign-in"],
   ["api.unknown-method", "validation_error", "no Google Calendar method has this name"],

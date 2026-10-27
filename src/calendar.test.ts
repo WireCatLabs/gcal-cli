@@ -120,6 +120,65 @@ describe("calendar commands over Google", () => {
     )
   })
 
+  it("search --remote asks Google over the synced calendars only, and stores nothing", async () => {
+    const { json, google } = harness()
+    await json("personal", "sync")
+    await json("personal", "calendars", "sync", "team@group.calendar.example.com")
+    google.requests.length = 0
+    const found = (await json("personal", "search", "--remote", "writing", "--limit", "5", "--newest")).item
+    expect(found).toMatchObject({ query: "writing", by: "google", has_more: false })
+    expect(found.untrusted).toContain("title")
+    expect(found.hits).toEqual([
+      expect.objectContaining({
+        provider: "google-calendar",
+        account: "owner@example.com",
+        calendar: expect.any(String),
+        external_id: "focus1",
+        title: "Writing",
+        found_by: "google",
+      }),
+      expect.objectContaining({ external_id: "focus1" }),
+    ])
+    const searched = google.requests.filter(({ query }) => query.has("q"))
+    expect(searched.map(({ path }) => path).sort()).toEqual([
+      "calendars/owner@example.com/events",
+      "calendars/team@group.calendar.example.com/events",
+    ])
+    expect(searched.every(({ query }) => query.get("q") === "writing" && query.get("maxResults") === "5")).toBe(true)
+    expect(google.requests.every(({ path }) => !path.startsWith("users/me/calendarList"))).toBe(true)
+  })
+
+  it("search --remote never stores what it found, and keeps passcodes out", async () => {
+    const { json } = harness()
+    await json("personal", "sync")
+    const remote = (await json("personal", "search", "--remote", "planning")).item
+    expect(JSON.stringify(remote)).not.toMatch(/998877|fixturepwd|123456789/u)
+    const before = (await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04")).items.length
+    await json("personal", "search", "--remote", "planning")
+    expect((await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04")).items.length).toBe(before)
+  })
+
+  it("search --remote refuses --offline, --exact and --cursor, and needs a synced calendar", async () => {
+    const { gcal, json, google } = harness()
+    const code = (answer: { err: string }) => JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
+    expect(code(await gcal("personal", "search", "--remote", "planning", "--json")).reason).toBe(
+      "calendars.none-synced",
+    )
+    await json("personal", "sync")
+    google.requests.length = 0
+    expect(code(await gcal("personal", "--offline", "search", "--remote", "planning", "--json")).reason).toBe(
+      "offline.refused",
+    )
+    expect(code(await gcal("personal", "search", "--remote", "planning", "--exact", "--json")).code).toBe(
+      "validation_error",
+    )
+    expect(code(await gcal("personal", "search", "--remote", "planning", "--cursor", "2", "--json")).code).toBe(
+      "validation_error",
+    )
+    expect(google.requests).toEqual([])
+    expect((await json("personal", "--offline", "search", "planning")).item.hits.length).toBeGreaterThan(0)
+  })
+
   it("turns a calendar's sync on and off, links a person, and reviews links", async () => {
     const { json, gcal } = harness()
     await json("personal", "sync")
@@ -177,6 +236,7 @@ describe("calendar commands over Google", () => {
     const answer = await gcal("personal", "events", "list", "--json")
     expect(answer.code).not.toBe(0)
     expect(answer.err).toContain("session start")
+    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("profile.not-signed-in")
     expect(google.requests).toEqual([])
   })
 
@@ -234,6 +294,14 @@ describe("calendar commands over MCP", () => {
     expect(injectedTitle).toBeDefined()
     expect(injectedTitle).not.toContain("\u001b")
     expect(listed.content[0]?.text).not.toMatch(/\\u001b/u)
+    const remote = (await client.callTool({
+      name: "gcal_read",
+      arguments: { command: "search", arguments: { words: ["ignore"], remote: true } },
+    })) as { isError?: boolean; structuredContent: { item: { hits: { title: string }[]; untrusted: string[] } } }
+    expect(remote.isError).toBeFalsy()
+    expect(remote.structuredContent.item.untrusted).toContain("title")
+    expect(remote.structuredContent.item.hits.length).toBeGreaterThan(0)
+    expect(remote.structuredContent.item.hits.map(({ title }) => title).join()).not.toContain("\u001b")
     const reviews = (await client.callTool({
       name: "gcal_read",
       arguments: { command: "links review", arguments: {} },

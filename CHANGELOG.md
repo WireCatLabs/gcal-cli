@@ -6,6 +6,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Added
 
+- `gcal <profile> search --remote <words>`: Google Calendar's own text search over the profile's synced calendars,
+  read only and kept nowhere. It finds events outside the synced span, too. The answer names the fields an
+  invitation's sender wrote under `untrusted`.
 - Started from `@wirecat/cli-template` 0.6.0.
 - `gcal <profile> session start | status | end`: sign in to Google in the browser with read-only Calendar access,
   through your own Google OAuth client (`--client-file` or `GCAL_GOOGLE_CLIENT_ID` / `GCAL_GOOGLE_CLIENT_SECRET`).
@@ -38,5 +41,7 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   `conferenceData.entryPoints[]` loses those fields; its links lose their query string, and phone and SIP addresses
   lose the dial sequence that carries the PIN. This covers `events.list`, `events.get`, `events.instances` and every
   other answer that holds an event, in the terminal and over MCP. `api show` says so for those methods.
+- A calendar command for a profile that never signed in now fails with the registered reason
+  `profile.not-signed-in`; it had no entry in the error reasons.
 - `session start`, `session status` and `session end` are now kept in the run log, with the Google account lookup as
   a request of the run: `gcal <profile> runs list` shows them. Before, a session run was never recorded.
