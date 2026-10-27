@@ -1,4 +1,5 @@
-// Shapes from the Calendar API reference (CalendarList: list, Events: list, Events: instances); every value is made up.
+// Shapes from the Calendar API reference (CalendarList: list, Events: list, Events: instances, Freebusy: query);
+// every value is made up.
 
 export const WINDOW = { from: Date.UTC(2026, 0, 1), to: Date.UTC(2027, 0, 1) }
 export const DEAD_TOKEN = "sync-fixture-dead"
@@ -42,7 +43,7 @@ const CALENDARS_2 = {
 
 const madrid = (dateTime: string) => ({ dateTime, timeZone: "Europe/Madrid" })
 
-const SERIES = {
+export const SERIES = {
   kind: "calendar#event",
   id: "weekly1",
   etag: '"3000000000000000"',
@@ -206,17 +207,55 @@ export interface FakeRequest {
   query: URLSearchParams
 }
 
+/** Busy times Google would show, by calendar or address; any other id is one Google cannot see. */
+export const BUSY: Record<string, { start: string; end: string }[]> = {
+  "owner@example.com": [{ start: "2026-11-02T09:00:00Z", end: "2026-11-02T10:00:00Z" }],
+  "ana@example.com": [
+    { start: "2026-11-01T23:00:00Z", end: "2026-11-02T08:30:00Z" },
+    { start: "2026-11-02T11:00:00Z", end: "2026-11-02T12:00:00Z" },
+  ],
+}
+
+const freeBusyOf = (body: { timeMin: string; timeMax: string; items: { id: string }[] }) => ({
+  kind: "calendar#freeBusy",
+  timeMin: body.timeMin,
+  timeMax: body.timeMax,
+  calendars: Object.fromEntries(
+    body.items.map(({ id }) => [
+      id,
+      BUSY[id]
+        ? {
+            busy: BUSY[id].filter(
+              ({ start, end }) =>
+                Date.parse(start) < Date.parse(body.timeMax) && Date.parse(end) > Date.parse(body.timeMin),
+            ),
+          }
+        : { errors: [{ domain: "global", reason: "notFound" }], busy: [] },
+    ]),
+  ),
+})
+
 /**
  * Google Calendar over hand-written answers. It refuses what Google refuses: a sync token beside a time bound, and a
  * full list that would leave deleted entries out. A cancelled slot is answered only with showDeleted, as Google does.
  */
+/** Google's error body for a parameter it does not accept, here a page token held too long. */
+const INVALID_ERROR = {
+  error: {
+    code: 400,
+    message: "Invalid Value",
+    errors: [{ domain: "global", reason: "invalid", message: "Invalid Value" }],
+  },
+}
+
 export const fakeGoogleCalendar = (extra: Record<string, unknown>[] = []) => {
   const requests: FakeRequest[] = []
-  const fetch = async (input: string | URL | Request): Promise<Response> => {
+  const fetch = async (input: string | URL | Request, init: RequestInit = {}): Promise<Response> => {
     const url = new URL(String(input))
     const path = decodeURIComponent(url.pathname.slice(PREFIX.length))
     const query = url.searchParams
     requests.push({ path, query })
+    if (path === "freeBusy" && init.method === "POST") return json(freeBusyOf(JSON.parse(String(init.body))))
     if (path === "users/me/calendarList")
       return json(query.get("pageToken") === "calendars-page-2" ? CALENDARS_2 : CALENDARS)
     const events = path.match(/^calendars\/([^/]+)\/events$/u)
@@ -243,9 +282,9 @@ export const fakeGoogleCalendar = (extra: Record<string, unknown>[] = []) => {
       if (token) return json({ kind: "calendar#events", items: [], nextSyncToken: token })
       if (!query.has("timeMin") || !query.has("timeMax"))
         return json({ error: { code: 400, message: "the fake expects a window" } }, 400)
-      return json(
-        query.get("pageToken") === "events-page-2" ? { ...FULL_2, items: [...FULL_2.items, ...extra] } : FULL_1,
-      )
+      const page = query.get("pageToken")
+      if (page !== null && page !== "events-page-2") return json(INVALID_ERROR, 400)
+      return json(page === "events-page-2" ? { ...FULL_2, items: [...FULL_2.items, ...extra] } : FULL_1)
     }
     const instances = path.match(/^calendars\/([^/]+)\/events\/([^/]+)\/instances$/u)
     if (instances?.[2] === "weekly1")

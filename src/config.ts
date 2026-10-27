@@ -13,14 +13,15 @@ export const OWNER_ONLY = /^calendar\.calendars\.clear$/
 export const apiKey = (method: string): string => `api.${method}`
 
 /** The generated method each shared write calls, so denying `api` cannot be bypassed through `events create`. */
-const WRITE_METHODS: Record<CalendarWrite, string> = {
-  create: "calendar.events.insert",
-  update: "calendar.events.patch",
-  delete: "calendar.events.delete",
-  respond: "calendar.events.patch",
+const WRITE_METHODS: Record<CalendarWrite, string[]> = {
+  create: ["calendar.events.insert"],
+  // A switch between timed and all-day replaces the event with events.update.
+  update: ["calendar.events.patch", "calendar.events.update"],
+  delete: ["calendar.events.delete"],
+  respond: ["calendar.events.patch"],
 }
 
-export const writeKeys = (write: CalendarWrite): string[] => [apiKey(WRITE_METHODS[write])]
+export const writeKeys = (write: CalendarWrite): string[] => WRITE_METHODS[write].map(apiKey)
 
 const apiDefault = (id: string): Level => (OWNER_ONLY.test(id) ? "deny" : "ask")
 

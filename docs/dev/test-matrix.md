@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**180 ✅ · 331 ⛔ · 0 ❌** — 69 commands, 442 options.
+**191 ✅ · 331 ⛔ · 0 ❌** — 71 commands, 451 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -29,11 +29,20 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `calendars unsync` |  | ✅ |  |
 | `calendars unsync` | `--json` | ✅ |  |
 | `calendars unsync` | `--jsonl` | ✅ |  |
+| `calendars busy` |  | ✅ |  |
+| `calendars busy` | `--json` | ✅ |  |
+| `calendars busy` | `--jsonl` | ✅ |  |
+| `calendars busy` | `--duration-minutes` | ✅ |  |
+| `calendars busy` | `--hours` | ✅ |  |
 | `sync` |  | ✅ |  |
 | `sync` | `--json` | ✅ |  |
 | `sync` | `--jsonl` | ✅ |  |
-| `sync` | `--full` | ✅ |  |
+| `sync` | `--rescan` | ✅ |  |
+| `sync` | `--max-pages` | ✅ |  |
 | `sync` | `--embed` | ✅ |  |
+| `status` |  | ✅ |  |
+| `status` | `--json` | ✅ |  |
+| `status` | `--jsonl` | ✅ |  |
 | `events list` |  | ✅ |  |
 | `events list` | `--json` | ✅ |  |
 | `events list` | `--jsonl` | ✅ |  |
@@ -50,6 +59,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events create` | `--location` | ✅ |  |
 | `events create` | `--description` | ✅ |  |
 | `events create` | `--attendee` | ✅ |  |
+| `events create` | `--repeat` | ✅ |  |
 | `events create` | `--notify` | ✅ |  |
 | `events create` | `--no-notify` | ✅ |  |
 | `events create` | `--id` | ✅ |  |
@@ -64,6 +74,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events update` | `--location` | ✅ |  |
 | `events update` | `--description` | ✅ |  |
 | `events update` | `--attendee` | ✅ |  |
+| `events update` | `--repeat` | ✅ |  |
 | `events update` | `--calendar` | ✅ |  |
 | `events update` | `--series` | ✅ |  |
 | `events update` | `--notify` | ✅ |  |

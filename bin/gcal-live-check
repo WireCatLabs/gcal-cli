@@ -6,7 +6,7 @@ set -euo pipefail
 steps=(
   "session: session status --check"
   "calendars: calendars list (counts)"
-  "sync: sync"
+  "sync: sync, again until every calendar is complete (at most \$GCAL_LIVE_SYNC_RUNS runs, 40 by default)"
   "sync-again: sync, and every calendar's round is changes, not full"
   "embed: sync --embed, skipped when no meaning model is downloaded"
   "search: --offline search <word> (counts)"
@@ -89,8 +89,16 @@ echo "calendars: $(summary '`${a.items.length} listed, ${a.items.filter((c) => c
 
 rounds='`${a.item.synced.length} calendars, rounds ${[...new Set(a.item.synced.map((c) => c.round))].join("+") || "none"}, ` +
   `${a.item.synced.reduce((n, c) => n + c.saved, 0)} saved, ${a.item.synced.reduce((n, c) => n + c.occurrences, 0)} slots`'
-run sync gcal "$profile" sync --json || stop sync "$failed"
-echo "sync: $(summary "$rounds" <<<"$answer")"
+# A first sync stops at its budget well before the 30 s deadline; each rerun goes on from where the last one stopped.
+max_runs=${GCAL_LIVE_SYNC_RUNS:-40}
+progress='`${a.item.state}, ${a.item.requests} requests, stopped by ${a.item.stopped ?? "nothing"}, ` +
+  `${a.item.synced.filter((c) => c.state === "complete").length} of ${a.item.synced.length} calendars complete`'
+for ((n = 1; ; n++)); do
+  run sync gcal "$profile" sync --json || stop sync "$failed"
+  echo "sync $n: $(summary "$rounds" <<<"$answer"); $(summary "$progress" <<<"$answer")"
+  summary 'a.item.state === "complete"' <<<"$answer" && break
+  ((n < max_runs)) || stop sync "still partial after $max_runs runs"
+done
 
 run sync-again gcal "$profile" sync --json || stop sync-again "$failed"
 echo "sync-again: $(summary "$rounds" <<<"$answer")"

@@ -77,13 +77,13 @@ it("skill status and skill show --for read what skill install wrote", async () =
   expect((await ran(["skill", "install", "--for", "claude", "--json"])).code).toBe(0)
   const status = await ran(["skill", "status", "--json"])
   expect(status.code).toBe(0)
-  expect(JSON.parse(status.out).targets).toEqual([
+  expect(JSON.parse(status.out).item.targets).toEqual([
     expect.objectContaining({ target: "claude", state: "current" }),
     expect.objectContaining({ target: "agents", installed: null, state: "missing" }),
   ])
   const shown = await ran(["skill", "show", "--for", "claude", "--json"])
   expect(shown.code).toBe(0)
-  expect(JSON.parse(shown.out)).toMatchObject({
+  expect(JSON.parse(shown.out).item).toMatchObject({
     target: "claude",
     content: expect.stringContaining("name: gcal-cli"),
   })

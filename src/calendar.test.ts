@@ -6,7 +6,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/server"
 import { memoryKeyring } from "@wirecat/cli-base"
 import { describeProgram } from "@wirecat/cli-base/commands"
 import { changesAuthorityAt, rememberAccount } from "@wirecat/cli-core/cli"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { configuration, permissions } from "./config.js"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
 import { IDENTITY } from "./identity.js"
@@ -45,9 +45,10 @@ const harness = ({ signedIn = true, extra = [] }: { signedIn?: boolean; extra?: 
   const gcal = async (...argv: string[]) => {
     const out: string[] = []
     const err: string[] = []
-    const code = await run(argv, {
+    const tty = argv[0] === "--tty"
+    const code = await run(tty ? argv.slice(1) : argv, {
       streams: { data: (text) => out.push(text), diagnostic: (text) => err.push(text) },
-      tty: false,
+      tty,
       env,
       keyring,
       fetch: google.fetch as typeof fetch,
@@ -103,11 +104,38 @@ describe("calendar commands over Google", () => {
     ])
   })
 
-  it("sync --full lists the window again", async () => {
+  it("a sync its budget stops answers partial with the command to continue, and the next run goes on", async () => {
+    const { gcal, json, google } = harness()
+    const stopped = await json("personal", "sync", "--max-pages", "2")
+    expect(stopped.item).toMatchObject({
+      state: "partial",
+      stopped: "requests",
+      progress: { calendars: 1, calendars_done: 0, requests: 2 },
+      hint: "run sync again to continue; see progress: gcal personal status",
+    })
+    expect(stopped.meta.complete).toBe(false)
+    expect(stopped.next).toEqual([
+      expect.objectContaining({ command: "sync", args: { max_pages: 2 }, line: "gcal personal sync --max-pages 2" }),
+    ])
+    expect((await json("personal", "status")).items).toMatchObject([
+      { external_id: "owner@example.com", state: "partial", profile: "personal", total: null },
+    ])
+    google.requests.length = 0
+    const text = await gcal("--tty", "personal", "sync", "--max-pages", "2")
+    expect(text.code).toBe(0)
+    expect(lists(google.requests)[0]?.query.get("pageToken")).toBe("events-page-2")
+    expect(text.err.trim().split("\n").at(-1)).toContain("gcal personal sync --max-pages 2")
+    const done = await json("personal", "sync")
+    expect(done.item).toMatchObject({ state: "complete", complete: true })
+    expect(done.next).toBeUndefined()
+    expect((await json("personal", "status")).items).toMatchObject([{ state: "complete" }])
+  })
+
+  it("sync --rescan lists the window again", async () => {
     const { json, google } = harness()
     await json("personal", "sync")
     google.requests.length = 0
-    await json("personal", "sync", "--full")
+    await json("personal", "sync", "--rescan")
     expect(lists(google.requests).every(({ query }) => !query.has("syncToken") && query.has("timeMin"))).toBe(true)
   })
 
@@ -211,6 +239,8 @@ describe("calendar commands over Google", () => {
       ["calendars", "sync", "owner@example.com"],
       ["calendars", "unsync", "busy@group.calendar.example.com"],
       ["links", "review"],
+      ["calendars", "busy", "today"],
+      ["status"],
     ]
     for (const words of reads) {
       const answer = await gcal("personal", ...words, "--jsonl")
@@ -243,6 +273,57 @@ describe("calendar commands over Google", () => {
     const { gcal } = harness()
     const answer = await gcal("personal", "sync", "--json")
     expect(`${answer.out}${answer.err}`).not.toContain(ACCESS)
+  })
+})
+
+describe("calendars busy over Google", () => {
+  // Working hours are read in the computer's zone; Node applies a TZ set at run time to Date and Intl.
+  const zone = process.env.TZ
+  beforeEach(() => {
+    process.env.TZ = "Europe/Madrid"
+  })
+  afterEach(() => {
+    if (zone === undefined) delete process.env.TZ
+    else process.env.TZ = zone
+  })
+  const busy = ["personal", "calendars", "busy", "from:2026-11-02", "to:2026-11-02", "person:ana@example.com"]
+
+  it("asks freeBusy for the synced calendars and each person, and stores nothing of theirs", async () => {
+    const { json, google } = harness()
+    await json("personal", "sync")
+    google.requests.length = 0
+    const answer = (await json(...busy, "person:bo@example.com", "--duration-minutes", "60", "--hours", "08:00-13:00"))
+      .item
+    expect(google.requests.map(({ path }) => path)).toEqual(["freeBusy"])
+    expect(answer.calendars).toEqual([
+      {
+        calendar: expect.any(String),
+        id: "owner@example.com",
+        busy: [{ start: "2026-11-02T09:00:00.000Z", end: "2026-11-02T10:00:00.000Z" }],
+      },
+      {
+        person: "ana@example.com",
+        id: "ana@example.com",
+        busy: [
+          { start: "2026-11-01T23:00:00.000Z", end: "2026-11-02T08:30:00.000Z" },
+          { start: "2026-11-02T11:00:00.000Z", end: "2026-11-02T12:00:00.000Z" },
+        ],
+      },
+      { person: "bo@example.com", id: "bo@example.com", busy: [], error: "notFound" },
+    ])
+    // Madrid is UTC+1 on 2 November: working hours 08:00-13:00 are 07:00Z-12:00Z.
+    expect(answer.slots).toEqual([{ start: "2026-11-02T10:00:00.000Z", end: "2026-11-02T11:00:00.000Z" }])
+    expect(answer.unknown).toEqual(["bo@example.com"])
+    expect((await json("personal", "people", "list")).items).not.toContainEqual(
+      expect.objectContaining({ email: "bo@example.com" }),
+    )
+  })
+
+  it("refuses --offline before asking Google", async () => {
+    const { gcal, google } = harness()
+    const answer = await gcal("personal", "--offline", ...busy.slice(1), "--json")
+    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("busy.offline")
+    expect(google.requests.filter(({ path }) => path === "freeBusy")).toEqual([])
   })
 })
 
