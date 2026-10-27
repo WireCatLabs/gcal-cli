@@ -12,7 +12,7 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
     "the OAuth client file can be read by other users of this computer",
   ],
   ["sign-in.client-file-invalid", "configuration_error", "the OAuth client file is not a Desktop app client JSON"],
-  ["sign-in.scope-missing", "permission_error", "Google did not grant read access to Calendar"],
+  ["sign-in.scope-missing", "permission_error", "Google did not grant a permission the sign-in asked for"],
   ["sign-in.lookup-unavailable", "provider_unavailable", "Google did not answer the account lookup"],
   ["sign-in.lookup-refused", "authentication_error", "Google refused the account lookup"],
   ["sign-in.no-email", "authentication_error", "Google did not share a verified email address for this account"],
@@ -23,6 +23,11 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
   ["sign-in.expired", "authentication_error", "Google no longer accepts this profile's sign-in"],
   ["api.unknown-method", "validation_error", "no Google Calendar method has this name"],
   ["api.scope-missing", "permission_error", "the sign-in lacks the Google permission this method needs"],
+  [
+    "event.not-invited",
+    "validation_error",
+    "the calendar is not an attendee of the event, so it has no answer to give",
+  ],
   ["api.disabled", "configuration_error", "the Google Calendar API is turned off for this OAuth project"],
 ]
 

@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# The owner's live check of event writes on a TEST calendar he names: create an event with no attendees, change it,
+# delete it. It prints step names, ids and status only — never a token, and never an event's text.
+set -euo pipefail
+
+steps=(
+  "session: session status --check, and the write grant is there"
+  "calendar: calendars list, and the named calendar is a writable one that is not the primary"
+  "create: events create, an hour tomorrow, no attendees"
+  "update: events update --title, --no-notify"
+  "respond: n/a, an event with no attendees has no invitation to answer"
+  "delete: events delete, --no-notify"
+)
+
+dry_run=false
+args=()
+for arg in "$@"; do
+  if [[ $arg == --dry-run ]]; then dry_run=true; else args+=("$arg"); fi
+done
+
+if [[ ${#args[@]} -ne 2 ]]; then
+  echo "usage: bin/gcal-write-check [--dry-run] <profile> <calendar-id of a test calendar>" >&2
+  exit 2
+fi
+profile=${args[0]}
+calendar=${args[1]}
+
+if $dry_run; then
+  for step in "${steps[@]}"; do echo "$step"; done
+  exit 0
+fi
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+(cd "$root" && pnpm --silent build)
+gcal() { node "$root/dist/bin/gcal.js" "$@"; }
+
+# Reads a gcal JSON answer on stdin and prints what the expression makes of it; `a` is the answer.
+summary() {
+  node -e '
+    let text = ""
+    process.stdin.on("data", (chunk) => (text += chunk)).on("end", () => {
+      const a = JSON.parse(text)
+      const out = new Function("a", "calendar", `return (${process.argv[1]})`)(a, process.argv[2])
+      if (out === false) process.exit(1)
+      if (out !== true) console.log(out)
+    })' "$1" "$calendar"
+}
+
+answer=""
+failed=""
+# Runs one step; the error's code and gcal's own message are safe to show (gcal never repeats Google's text).
+run() {
+  local err
+  err=$(mktemp)
+  if answer=$("$@" 2>"$err"); then
+    rm -f "$err"
+    return 0
+  fi
+  failed=$(node -e '
+    const fs = require("node:fs")
+    const lines = fs.readFileSync(process.argv[1], "utf8").trim().split("\n")
+    try { const { error } = JSON.parse(lines.at(-1)); console.log(`${error.code}: ${error.message}`) }
+    catch { console.log("no JSON error") }' "$err")
+  rm -f "$err"
+  return 1
+}
+stop() {
+  echo "FAILED at step $1: $2" >&2
+  exit 1
+}
+
+run gcal "$profile" session status --check --json || stop session "$failed"
+summary 'a.item.grants.includes("write")' <<<"$answer" ||
+  stop session "this profile has no write grant; run gcal $profile session start --grant write"
+echo "session: verified, write granted"
+
+run gcal "$profile" calendars list --json || stop calendar "$failed"
+summary 'a.items.some((c) => c.external_id === calendar)' <<<"$answer" ||
+  stop calendar "the account has no calendar with that id; calendars list shows them"
+summary 'a.items.some((c) => c.external_id === calendar && !c.primary)' <<<"$answer" ||
+  stop calendar "that is the account's primary calendar; name a test calendar"
+summary 'a.items.some((c) => c.external_id === calendar && ["owner", "writer"].includes(c.access_role))' <<<"$answer" ||
+  stop calendar "this account cannot write to that calendar"
+echo "calendar: writable, not the primary"
+
+day=$(node -e 'console.log(new Date(Date.now() + 86_400_000).toISOString().slice(0, 10))')
+run gcal "$profile" events create "$calendar" --title "gcal write check" \
+  --start-time "${day}T10:00" --end-time "${day}T11:00" --no-notify --yes --json || stop create "$failed"
+event=$(summary 'a.item.event' <<<"$answer")
+echo "create: $event, Google id $(summary 'a.item.operation_id' <<<"$answer"), $(summary 'a.item.entry.status' <<<"$answer")"
+
+run gcal "$profile" events update "$event" --title "gcal write check, changed" --no-notify --yes --json ||
+  stop update "$failed"
+echo "update: $event, $(summary 'a.item.entry.status' <<<"$answer")"
+
+echo "respond: n/a, an event with no attendees has no invitation to answer"
+
+run gcal "$profile" events delete "$event" --no-notify --yes --json || stop delete "$failed"
+echo "delete: $event, $(summary '`${a.item.removed} removed`' <<<"$answer")"
+echo "all steps passed"

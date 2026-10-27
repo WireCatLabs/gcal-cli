@@ -103,8 +103,7 @@ describe("calendar commands over Google", () => {
     ])
   })
 
-  // cli-core's sync reads its own --full, and the shared root's global --full takes the flag first.
-  it.fails("sync --full lists the window again", async () => {
+  it("sync --full lists the window again", async () => {
     const { json, google } = harness()
     await json("personal", "sync")
     google.requests.length = 0

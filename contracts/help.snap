@@ -1,4 +1,4 @@
-gcal — read-only Google Calendar for the terminal, scripts and AI agents
+gcal — Google Calendar for the terminal, scripts and AI agents: sync, search and change events
 
 Usage: gcal <profile> <command> [options]
 Account commands start with your profile, a name you choose; none is ever assumed.

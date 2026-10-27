@@ -6,12 +6,23 @@ import { operationOf, schemas, validateRequest } from "./api-contract.js"
 import { apiMethod, scopesOf, validateApiParams } from "./api-methods.js"
 import { googleError } from "./errors.js"
 import { metadata } from "./generated/metadata.js"
+import { EVENTS_SCOPE } from "./grants.js"
 
 const MAX_BYTES = 50 * 1024 * 1024
 const TIMEOUT_MS = 30_000
 
+export interface CallOptions {
+  /** Request headers beside gcal's own, such as `If-Match`; they never replace the token or the content type. */
+  headers?: Record<string, string>
+}
+
 export interface GoogleApi {
-  call(method: string, params?: Record<string, unknown>, body?: Record<string, unknown>): Promise<unknown>
+  call(
+    method: string,
+    params?: Record<string, unknown>,
+    body?: Record<string, unknown>,
+    options?: CallOptions,
+  ): Promise<unknown>
 }
 
 export interface GoogleApiOptions {
@@ -24,13 +35,13 @@ export interface GoogleApiOptions {
   events?: EventSink | undefined
 }
 
-/** Calendar today asks only for read access; writes and sharing need scopes a later `--grant` adds. */
-const scopeMissing = (name: string, mutates: boolean) =>
+/** `--grant write` adds only `calendar.events`: a method that needs more is named by its scopes instead. */
+const scopeMissing = (name: string) =>
   new CliError(
     "permission_error",
-    mutates
-      ? "this method changes Google Calendar, and gcal signs in with read access only; writes come later behind " +
-          "gcal <profile> session start --grant write"
+    scopesOf(name).includes(EVENTS_SCOPE)
+      ? "this method changes Google Calendar events, and this profile signed in with read access only; sign in " +
+          "again with gcal <profile> session start --grant write"
       : `this method needs a Google permission gcal does not ask for at sign-in (${scopesOf(name)
           .map((scope) => scope.replace("https://www.googleapis.com/auth/", ""))
           .join(" or ")})`,
@@ -75,14 +86,14 @@ const requestUrl = (name: string, params: Record<string, unknown>) => {
 
 /** Google Calendar over plain fetch: the token goes in the Authorization header only, never into an address. */
 export const googleApi = (options: GoogleApiOptions): GoogleApi => ({
-  call: async (name, params = {}, body) => {
+  call: async (name, params = {}, body, { headers = {} } = {}) => {
     const { mutates } = apiMethod(name)
     validateApiParams(params)
     if (body !== undefined && (!body || typeof body !== "object" || Array.isArray(body)))
       throw new CliError("validation_error", "API request body must be a JSON object")
     validateRequest(name, params, body)
     const granted = options.scopes()
-    if (granted && !scopesOf(name).some((scope) => granted.includes(scope))) throw scopeMissing(name, mutates)
+    if (granted && !scopesOf(name).some((scope) => granted.includes(scope))) throw scopeMissing(name)
     const request = requestUrl(name, params)
     const token = await options.accessToken()
     const timeout = AbortSignal.timeout(TIMEOUT_MS)
@@ -93,6 +104,7 @@ export const googleApi = (options: GoogleApiOptions): GoogleApi => ({
       response = await options.fetch(request.url, {
         method: request.method,
         headers: {
+          ...headers,
           authorization: `Bearer ${token}`,
           accept: "application/json",
           ...(body === undefined ? {} : { "content-type": "application/json" }),

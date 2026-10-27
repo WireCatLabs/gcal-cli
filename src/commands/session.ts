@@ -20,6 +20,7 @@ import {
 } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
 import { configuration } from "../config.js"
+import { GRANTS, type Grant } from "../grants.js"
 import { IDENTITY } from "../identity.js"
 
 /** What a test hands `run()` in place of Google and the system browser. */
@@ -51,6 +52,14 @@ const refuseOffline = (flags: GlobalFlags) => {
     throw new CliError("permission_error", "this needs Google; leave out --offline", { reason: "offline.refused" })
 }
 
+const grantList = (raw: string): Grant[] => {
+  const values = raw.split(",").map((value) => value.trim())
+  const unknown = values.filter((value) => !(GRANTS as readonly string[]).includes(value))
+  if (unknown.length)
+    throw new CliError("validation_error", `--grant takes ${GRANTS.join(", ")}; got ${unknown.join(", ")}`)
+  return [...new Set(values as Grant[])]
+}
+
 const answer = (command: Command, item: unknown) => renderAnswer(command, outputFor(command), itemOf(item))
 
 const startCommand = () =>
@@ -62,13 +71,19 @@ const startCommand = () =>
       examples: [
         `${IDENTITY.command} personal session start --client-file ~/client_secret.json`,
         `${IDENTITY.command} personal session start --no-browser`,
+        `${IDENTITY.command} personal session start --grant write`,
       ],
     }),
   )
-    .description("sign in to Google in the browser with read-only access to Calendar")
+    .description("sign in to Google in the browser; read-only unless you pass --grant write")
     .option("--client-file <file>", "your own Desktop app OAuth client JSON from Google Cloud Console")
     .option("--no-browser", "print the sign-in URL instead of opening a browser")
-    .action(async function (this: Command, args: { clientFile?: string; browser: boolean }) {
+    .option(
+      "--grant <scopes>",
+      "also ask for these, comma-separated: write (create, change and delete events, and answer invitations)",
+      grantList,
+    )
+    .action(async function (this: Command, args: { clientFile?: string; browser: boolean; grant?: Grant[] }) {
       const { environment, flags, common } = contextOf(this)
       refuseCommandName(common.profile, commandWords(rootOf(this)), IDENTITY.command)
       refuseOffline(flags)
@@ -86,9 +101,15 @@ const startCommand = () =>
           ...common,
           events,
           client,
+          grants: args.grant,
           openBrowser: args.browser ? (environment.openBrowser ?? (async () => {})) : async () => {},
           showUrl: (url) => {
-            steps.openUrl(url, "Choose the Google account and allow read access to Calendar")
+            steps.openUrl(
+              url,
+              args.grant?.includes("write")
+                ? "Choose the Google account and allow access to Calendar and its events"
+                : "Choose the Google account and allow read access to Calendar",
+            )
             streams.diagnostic(`Open Google sign-in: ${url}\n`)
           },
         }),

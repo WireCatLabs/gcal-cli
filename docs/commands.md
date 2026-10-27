@@ -58,7 +58,7 @@ sign in to Google and manage this profile's sign-in
 
 ### `gcal session start`
 
-sign in to Google in the browser with read-only access to Calendar
+sign in to Google in the browser; read-only unless you pass --grant write
 
 **Changes something in the service.**
 
@@ -70,10 +70,11 @@ gcal session start [options]
 |---|---|
 | `--client-file <file>` | your own Desktop app OAuth client JSON from Google Cloud Console. |
 | `--no-browser` | print the sign-in URL instead of opening a browser. |
+| `--grant <scopes>` | also ask for these, comma-separated: write (create, change and delete events, and answer invitations). |
 
-**Returns:** sign in to Google in the browser with read-only access to Calendar
+**Returns:** sign in to Google in the browser; read-only unless you pass --grant write
 
-**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --no-browser`
+**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --no-browser`, `gcal personal session start --grant write`
 
 ### `gcal session status`
 
@@ -241,6 +242,129 @@ gcal events show <event> [options]
 **Returns:** one event: its calendar copies, attendees with their person, Drive files and…
 
 **Example:** `gcal personal events show event:42 --json`
+
+### `gcal events create`
+
+add an event to a calendar; one that repeats is made in the calendar itself
+
+**Changes something in the service.**
+
+```sh
+gcal events create <calendar> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `calendar` | required | the calendar's id, or the provider's id. |
+
+| Option | What it does |
+|---|---|
+| `--title <title>` | the event's title. |
+| `--start-time <time>` | when it starts: a time in your zone, or one with its own. |
+| `--end-time <time>` | when it ends. |
+| `--start-date <date>` | the first day of an all-day event, YYYY-MM-DD. |
+| `--end-date <date>` | the last day of an all-day event. |
+| `--location <text>` | where; empty clears it. |
+| `--description <text>` | the details; empty clears it. |
+| `--attendee <email>` | an attendee; repeat for each. |
+| `--notify` | the provider mails the other attendees; needs events.notify allowed. |
+| `--no-notify` | the provider mails nobody; one of the two is required when there are other attendees. |
+| `--id <id>` | the id a create that ended in outcome_unknown named: a retry finds that event. |
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** add an event to a calendar; one that repeats is made in the calendar itself
+
+**Example:** `gcal personal events create 3 --title 'Example planning' --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00`, `gcal personal events create 3 --title 'Example review' --start-date 2026-11-03 --end-date 2026-11-03 --attendee ana@example.com --no-notify`
+
+### `gcal events update`
+
+change an event; with --series every occurrence of the repeating event
+
+**Changes something in the service.**
+
+```sh
+gcal events update <event> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `event` | required | the event's id, or event:<id>. |
+
+| Option | What it does |
+|---|---|
+| `--title <title>` | the event's title. |
+| `--start-time <time>` | when it starts: a time in your zone, or one with its own. |
+| `--end-time <time>` | when it ends. |
+| `--start-date <date>` | the first day of an all-day event, YYYY-MM-DD. |
+| `--end-date <date>` | the last day of an all-day event. |
+| `--location <text>` | where; empty clears it. |
+| `--description <text>` | the details; empty clears it. |
+| `--attendee <email>` | an attendee; repeat for each, replacing the list. |
+| `--calendar <id>` | the calendar, when the event is on more than one of the account's. |
+| `--series` | change the whole repeating event, not only this occurrence. |
+| `--notify` | the provider mails the other attendees; needs events.notify allowed. |
+| `--no-notify` | the provider mails nobody; one of the two is required when there are other attendees. |
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** change an event; with --series every occurrence of the repeating event
+
+**Example:** `gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --notify`
+
+### `gcal events delete`
+
+delete an event; a whole repeating event needs events.delete.series allowed first
+
+**Changes something in the service.**
+
+```sh
+gcal events delete <event> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `event` | required | the event's id, or event:<id>. |
+
+| Option | What it does |
+|---|---|
+| `--calendar <id>` | the calendar, when the event is on more than one of the account's. |
+| `--series` | delete the whole repeating event, not only this occurrence. |
+| `--notify` | the provider mails the other attendees; needs events.notify allowed. |
+| `--no-notify` | the provider mails nobody; one of the two is required when there are other attendees. |
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** delete an event; a whole repeating event needs events.delete.series allowed…
+
+**Example:** `gcal personal events delete event:42 --no-notify`
+
+### `gcal events respond`
+
+answer an invitation; the organiser is told only with --notify
+
+**Changes something in the service.**
+
+```sh
+gcal events respond <event> <response> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `event` | required | the event's id, or event:<id>. |
+| `response` | required | the answer. One of: `accepted`, `tentative`, `declined`. |
+
+| Option | What it does |
+|---|---|
+| `--calendar <id>` | the calendar, when the event is on more than one of the account's. |
+| `--notify` | the provider mails the other attendees; needs events.notify allowed. |
+| `--no-notify` | the provider mails nobody; one of the two is required when there are other attendees. |
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** answer an invitation; the organiser is told only with --notify
+
+**Example:** `gcal personal events respond event:42 accepted --notify`
 
 ## `gcal search`
 

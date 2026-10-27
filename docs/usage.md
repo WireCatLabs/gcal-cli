@@ -21,6 +21,13 @@ command without one stops with exit code 2 and lists the profiles on this comput
 gcal personal session start --client-file ~/client_secret.json
 ```
 
+To change events, sign in again with `--grant write`. Google then also grants `calendar.events`: events only, never
+sharing or whole calendars. If you untick it on the consent screen, the sign-in is refused and the old one stays.
+
+```sh
+gcal personal session start --grant write
+```
+
 For now, `gcal` has no Google app of its own, so it needs yours: see
 [your own Google client](configuration.md#your-own-google-client). Add `--no-browser` to get the sign-in address on
 stderr instead, and open it in any browser on this computer.
@@ -34,8 +41,8 @@ gcal personal session status --check    # ask Google whether the sign-in still w
 gcal personal session end               # forget the sign-in on this computer
 ```
 
-`session status` gives the account's email address, the permissions Google granted and `state`: `saved` or
-`missing`. With `--check`, `verified: true` means Google accepted the sign-in just now. `session end` removes the
+`session status` gives the account's email address, the permissions Google granted (`scopes`, and `grants` in
+`--grant`'s words) and `state`: `saved` or `missing`. With `--check`, `verified: true` means Google accepted the sign-in just now. `session end` removes the
 sign-in from the keyring; it keeps which account the profile is, and your stored calendar data.
 
 ## Sync your calendars
@@ -102,16 +109,46 @@ An event's conference details lose what lets someone join without an invitation.
 `password` are removed from every entry point. A link loses its query string, and a phone or SIP address loses the
 dial sequence after the number. `api show` says so for each method that returns events.
 
-For now, `gcal` reads only. Google gives it read access to Calendar, and nothing more:
+A profile signed in without `--grant write` reads only:
 
-- A method that changes Calendar fails with `permission_error`. The permission to write will come later, with
-  `session start --grant write`.
-- The access-control methods (`calendar.acl.*`) need a permission `gcal` does not ask for, so `acl.list` fails too.
+- A method that changes events fails with `permission_error` and names `session start --grant write`.
+- `--grant write` covers events only. The methods that change calendars, the calendar list or settings, and the
+  access-control methods (`calendar.acl.*`, `acl.list` included), need a permission `gcal` does not ask for.
 - A method that changes data asks first, and `--yes` answers for a script. Sharing a calendar (`acl`),
   `calendars.clear` (all events of the main calendar) and `calendars.transferOwnership` are refused until you allow
   that method in the profile's [permissions](configuration.md#permissions).
 - Google's change notifications (`watch` and `channels.stop`) are not offered. They need a public web address, and
   a program on your computer does not have one.
+
+## Change events
+
+After `session start --grant write`, `events create | update | delete | respond` change Google Calendar and the store
+together. They are cli-core's shared calendar writes; Google is reached through the same generated methods as
+`gcal api`.
+
+```sh
+gcal personal events create <calendar> --title "Planning" --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00
+gcal personal events create <calendar> --title "Offsite" --start-date 2026-11-03 --end-date 2026-11-04
+gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --no-notify
+gcal personal events respond event:42 accepted --notify
+gcal personal events delete event:42 --no-notify
+```
+
+- Each write asks first; `--yes` answers for a script, and `--dry-run` shows the write without making it.
+- With attendees other than you, say whether Google mails them: `--notify` or `--no-notify`. `--notify` is refused
+  until you allow `events.notify` (see [permissions](configuration.md#permissions)).
+- A change carries the version the last sync saw. If the event changed in Google since, the write stops with
+  `event.conflict`: run `sync` and try again. Nothing is overwritten.
+- A create whose answer was lost ends in `outcome_unknown` and names an id; repeat it with `--id <id>` and Google
+  finds the event instead of making a second one.
+- On a repeating event, a write changes the one occurrence you name; `--series` changes the whole series. Deleting a
+  whole series is refused until you allow `events.delete.series`. A new event never repeats.
+- `respond` changes only your own answer; the rest of the guest list stays as Google has it.
+- An event cannot switch between timed and all-day in one update: Google merges `start` and `end` on a change, so
+  the old kind's field stays, and `gcal` cannot send the `null` that would clear it. Delete it and create it again.
+
+`bin/gcal-write-check <profile> <calendar-id>` runs a create, an update and a delete on a test calendar you name, and
+prints only ids and status. It refuses the account's primary calendar.
 
 ## Output for scripts
 

@@ -1,6 +1,6 @@
 import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
-import type { CalendarSource } from "@wirecat/cli-core/calendar"
+import type { CalendarSource, CalendarWriter } from "@wirecat/cli-core/calendar"
 import { addCalendarCommands, type CalendarCommandDeps } from "@wirecat/cli-core/calendar/cli"
 import {
   type GlobalFlags,
@@ -15,7 +15,7 @@ import {
 } from "@wirecat/cli-core/cli"
 import type { MessageStore } from "@wirecat/cli-core/store"
 import { Command } from "commander"
-import { configuration } from "../config.js"
+import { configuration, permissions, writeKeys } from "../config.js"
 import type { GoogleApi } from "../google-api.js"
 import { IDENTITY } from "../identity.js"
 import type { GcalEnvironment } from "./session.js"
@@ -27,6 +27,7 @@ interface Opened {
   env: NodeJS.ProcessEnv
   /** Built on first use: a local read never reads the sign-in. */
   source: () => CalendarSource
+  writer: () => CalendarWriter
   api: () => GoogleApi
 }
 
@@ -123,6 +124,24 @@ export const calendarMount = () => {
       if (!action) throw notOpen()
       renderAnswer(action, outputFor(action), bodyOf(action, value))
     },
+    writes: {
+      get writer() {
+        return need().writer()
+      },
+      app: IDENTITY,
+      // Read on every write, with the command's own --permission and the read-only lock, as the shared check sees them.
+      settings: () => {
+        if (!action) throw notOpen()
+        return {
+          ...configuration.resolveSettings(action.optsWithGlobals<GlobalFlags>(), { env: need().env }),
+          permissionDefaults: permissions.defaults,
+        }
+      },
+      extraKeys: writeKeys,
+      get env() {
+        return need().env
+      },
+    },
   }
 
   const remoteSearch = async (words: string[], opts: RemoteOptions, command: Command) => {
@@ -205,13 +224,19 @@ export const calendarMount = () => {
       const gcalEnvironment = environment as GcalEnvironment
       const env = gcalEnvironment.env ?? process.env
       const { profile } = configuration.resolveSettings(action.optsWithGlobals<GlobalFlags>(), { env })
-      const [{ apiAccess, savedAccount }, { openGcalStore, PROVIDER }, { googleApi }, { googleCalendarSource }] =
-        await Promise.all([
-          import("../session.js"),
-          import("../store.js"),
-          import("../google-api.js"),
-          import("../calendar-source.js"),
-        ])
+      const [
+        { apiAccess, savedAccount },
+        { openGcalStore, PROVIDER },
+        { googleApi },
+        { googleCalendarSource },
+        { googleCalendarWriter },
+      ] = await Promise.all([
+        import("../session.js"),
+        import("../store.js"),
+        import("../google-api.js"),
+        import("../calendar-source.js"),
+        import("../calendar-writer.js"),
+      ])
       const account = savedAccount(env, profile)
       if (!account)
         throw new CliError(
@@ -224,6 +249,7 @@ export const calendarMount = () => {
       const key = { provider: PROVIDER.name, account }
       const accountId = await store.accounts.saveAccount(key, { name: null })
       let source: CalendarSource | undefined
+      let writer: CalendarWriter | undefined
       let api: GoogleApi | undefined
       const { keyring, fetch, signal } = gcalEnvironment
       const googleOf = () => (api ??= googleApi(apiAccess({ env, profile, keyring, fetch, signal })))
@@ -234,6 +260,7 @@ export const calendarMount = () => {
         env,
         api: googleOf,
         source: () => (source ??= googleCalendarSource(googleOf())),
+        writer: () => (writer ??= googleCalendarWriter(googleOf())),
       }
     },
   }

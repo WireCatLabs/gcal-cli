@@ -49,6 +49,20 @@ Without a setting of yours:
   Over MCP there is no one to ask, so `ask` lets the command run.
 - Sharing a calendar (`calendar.acl.insert`, `patch`, `update`, `delete`), emptying it (`calendar.calendars.clear`) and
   giving it to another account (`calendar.calendars.transferOwnership`) are `deny`.
+- The event writes (`events create`, `update`, `delete`, `respond`) are `ask`, each under its own key, such as
+  `events.create`.
+- `events.notify`, letting Google mail the other attendees (`--notify`), is `deny`. Over MCP `ask` lets a command
+  run, so an agent could otherwise mail people.
+- `events.delete.series`, deleting every occurrence of a repeating event (`events delete --series`), is `deny`.
+
+An event write also needs the key of the Google method it calls: `api.calendar.events.insert` for `create`,
+`api.calendar.events.patch` for `update` and `respond`, `api.calendar.events.delete` for `delete`. So
+`permissions.api readonly` stops the event writes too. One question covers every key of one write.
+
+```sh
+gcal personal config set permissions.events.notify allow     # let --notify mail attendees
+gcal personal config set permissions.events.create allow     # add events without the question
+```
 
 These defaults only become stricter against a broader key: `permissions.api allow` keeps both the question and the
 `deny`. To change one, set that method's own key, such as `permissions.api.calendar.calendars.clear ask`. A key that

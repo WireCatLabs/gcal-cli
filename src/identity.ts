@@ -8,7 +8,7 @@ export const IDENTITY: AppIdentity = {
   command: "gcal",
   appName: "gcal-cli",
   envPrefix: "GCAL",
-  description: "read-only Google Calendar for the terminal, scripts and AI agents",
+  description: "Google Calendar for the terminal, scripts and AI agents: sync, search and change events",
   version: VERSION,
   issues: "https://github.com/WireCatLabs/gcal-cli/issues/new",
   messenger: false,
