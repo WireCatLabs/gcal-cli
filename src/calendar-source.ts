@@ -190,7 +190,7 @@ const calendarOf = (entry: CalendarCalendarListEntry): CalendarInput | null => {
   }
 }
 
-const isGone = (error: unknown) => isCliError(error) && error.details.status === 410
+const statusOf = (error: unknown) => (isCliError(error) ? error.details.status : undefined)
 
 /**
  * Google Calendar as a `CalendarSource`, read only, through the generated API layer. A series' slots come from
@@ -235,7 +235,11 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
       try {
         answer = await list("calendar.events.list", params)
       } catch (error) {
-        if (cursor !== null && isGone(error)) return { reset: true }
+        // Google states no lifetime for a page token, and a run may resume one held since an earlier run: a refused
+        // one asks the engine to start that round over.
+        // https://developers.google.com/workspace/calendar/api/v3/reference/events/list
+        if (page ? [400, 410].includes(statusOf(error) as number) : cursor !== null && statusOf(error) === 410)
+          return { reset: true }
         throw error
       }
       const items = answer.items ?? []

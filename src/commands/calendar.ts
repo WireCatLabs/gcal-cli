@@ -1,5 +1,6 @@
 import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
+import type { NextStep } from "@wirecat/cli-base/standards"
 import type { CalendarSource, CalendarWriter } from "@wirecat/cli-core/calendar"
 import { addCalendarCommands, type CalendarCommandDeps } from "@wirecat/cli-core/calendar/cli"
 import {
@@ -21,6 +22,7 @@ import { IDENTITY } from "../identity.js"
 import type { GcalEnvironment } from "./session.js"
 
 interface Opened {
+  profile: string
   store: MessageStore
   accountId: number
   account: { provider: string; account: string }
@@ -68,6 +70,15 @@ const bodyOf = (command: Command, value: unknown) => {
       limit: Math.max(1, typeof value.limit === "number" ? value.limit : value.items.length),
       has_more: value.hasMore === true,
     })
+  // A sync its budget stopped is a partial answer: `meta.complete` says so, the command's `partial` keeps exit 0, and
+  // its `next` goes where the envelope prints a step: the whole line at a terminal, the command and args for an agent.
+  if (isRecord(value) && value.state === "partial") {
+    const { next, ...report } = value
+    return itemOf(snakeKeys(report), {
+      meta: { complete: false },
+      ...(Array.isArray(next) ? { next: next as NextStep[] } : {}),
+    })
+  }
   return itemOf(snakeKeys(value))
 }
 
@@ -105,6 +116,9 @@ export const calendarMount = () => {
     },
     get accountId() {
       return need().accountId
+    },
+    get profile() {
+      return need().profile
     },
     get account() {
       return need().account
@@ -255,6 +269,7 @@ export const calendarMount = () => {
       const { keyring, fetch, signal } = gcalEnvironment
       const googleOf = () => (api ??= googleApi(apiAccess({ env, profile, keyring, fetch, signal })))
       opened = {
+        profile,
         store,
         accountId,
         account: key,

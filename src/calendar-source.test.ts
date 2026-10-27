@@ -170,4 +170,11 @@ describe("Google words to neutral ones", () => {
     expect(await source.changes(MADRID, { cursor: DEAD_TOKEN, window: WINDOW })).toEqual({ reset: true })
     await expect(source.occurrences?.(MADRID, "missing", WINDOW)).rejects.toMatchObject({ code: "not_found" })
   })
+
+  it("a page token Google refuses on resume is a reset, so the engine starts that round over", async () => {
+    const { source } = adapter()
+    expect(await source.changes(MADRID, { cursor: null, page: "events-page-held-too-long", window: WINDOW })).toEqual({
+      reset: true,
+    })
+  })
 })

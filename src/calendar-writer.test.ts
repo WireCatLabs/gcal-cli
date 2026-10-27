@@ -223,7 +223,7 @@ describe("the Google calls behind each write", () => {
       { scope: "this", etag: ETAG, notify: false },
     )
     const { start, end, ...sent } = google.requests.at(-1)?.body ?? {}
-    const { start: _start, end: _end, ...held } = meeting
+    const { start: _start, end: _end, ...held } = meeting as Record<string, unknown>
     expect(sent).toEqual(held)
     expect([start, end]).toEqual([{ date: "2026-11-05" }, { date: "2026-11-06" }])
   })

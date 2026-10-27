@@ -45,9 +45,10 @@ const harness = ({ signedIn = true, extra = [] }: { signedIn?: boolean; extra?: 
   const gcal = async (...argv: string[]) => {
     const out: string[] = []
     const err: string[] = []
-    const code = await run(argv, {
+    const tty = argv[0] === "--tty"
+    const code = await run(tty ? argv.slice(1) : argv, {
       streams: { data: (text) => out.push(text), diagnostic: (text) => err.push(text) },
-      tty: false,
+      tty,
       env,
       keyring,
       fetch: google.fetch as typeof fetch,
@@ -101,6 +102,33 @@ describe("calendar commands over Google", () => {
     expect(lists(google.requests).map(({ query }) => [query.get("syncToken"), query.has("timeMin")])).toEqual([
       ["sync-fixture-1", false],
     ])
+  })
+
+  it("a sync its budget stops answers partial with the command to continue, and the next run goes on", async () => {
+    const { gcal, json, google } = harness()
+    const stopped = await json("personal", "sync", "--max-pages", "2")
+    expect(stopped.item).toMatchObject({
+      state: "partial",
+      stopped: "requests",
+      progress: { calendars: 1, calendars_done: 0, requests: 2 },
+      hint: "run sync again to continue",
+    })
+    expect(stopped.meta.complete).toBe(false)
+    expect(stopped.next).toEqual([
+      expect.objectContaining({ command: "sync", args: { max_pages: 2 }, line: "gcal personal sync --max-pages 2" }),
+    ])
+    expect((await json("personal", "calendars", "status")).items).toMatchObject([
+      { external_id: "owner@example.com", state: "partial", profile: "personal", total: null },
+    ])
+    google.requests.length = 0
+    const text = await gcal("--tty", "personal", "sync", "--max-pages", "2")
+    expect(text.code).toBe(0)
+    expect(lists(google.requests)[0]?.query.get("pageToken")).toBe("events-page-2")
+    expect(text.err.trim().split("\n").at(-1)).toContain("gcal personal sync --max-pages 2")
+    const done = await json("personal", "sync")
+    expect(done.item).toMatchObject({ state: "complete", complete: true })
+    expect(done.next).toBeUndefined()
+    expect((await json("personal", "calendars", "status")).items).toMatchObject([{ state: "complete" }])
   })
 
   it("sync --full lists the window again", async () => {

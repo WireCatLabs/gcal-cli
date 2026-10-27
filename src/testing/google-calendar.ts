@@ -239,6 +239,15 @@ const freeBusyOf = (body: { timeMin: string; timeMax: string; items: { id: strin
  * Google Calendar over hand-written answers. It refuses what Google refuses: a sync token beside a time bound, and a
  * full list that would leave deleted entries out. A cancelled slot is answered only with showDeleted, as Google does.
  */
+/** Google's error body for a parameter it does not accept, here a page token held too long. */
+const INVALID_ERROR = {
+  error: {
+    code: 400,
+    message: "Invalid Value",
+    errors: [{ domain: "global", reason: "invalid", message: "Invalid Value" }],
+  },
+}
+
 export const fakeGoogleCalendar = (extra: Record<string, unknown>[] = []) => {
   const requests: FakeRequest[] = []
   const fetch = async (input: string | URL | Request, init: RequestInit = {}): Promise<Response> => {
@@ -273,9 +282,9 @@ export const fakeGoogleCalendar = (extra: Record<string, unknown>[] = []) => {
       if (token) return json({ kind: "calendar#events", items: [], nextSyncToken: token })
       if (!query.has("timeMin") || !query.has("timeMax"))
         return json({ error: { code: 400, message: "the fake expects a window" } }, 400)
-      return json(
-        query.get("pageToken") === "events-page-2" ? { ...FULL_2, items: [...FULL_2.items, ...extra] } : FULL_1,
-      )
+      const page = query.get("pageToken")
+      if (page !== null && page !== "events-page-2") return json(INVALID_ERROR, 400)
+      return json(page === "events-page-2" ? { ...FULL_2, items: [...FULL_2.items, ...extra] } : FULL_1)
     }
     const instances = path.match(/^calendars\/([^/]+)\/events\/([^/]+)\/instances$/u)
     if (instances?.[2] === "weekly1")
