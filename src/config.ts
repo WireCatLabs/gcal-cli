@@ -1,3 +1,4 @@
+import { CALENDAR_WRITE_DEFAULTS, CALENDAR_WRITE_KEYS, type CalendarWrite } from "@wirecat/cli-core/calendar"
 import { type Configuration, commandPathKey, commandPermissions, settingsFor } from "@wirecat/cli-core/cli"
 import type { Level } from "@wirecat/cli-core/sends"
 import { operations } from "./generated/manifest.js"
@@ -7,6 +8,16 @@ import { IDENTITY } from "./identity.js"
 export const OWNER_ONLY = /^calendar\.(acl\.|calendars\.clear$|calendars\.transferOwnership$)/
 
 export const apiKey = (method: string): string => `api.${method}`
+
+/** The generated method each shared write calls, so denying `api` cannot be bypassed through `events create`. */
+const WRITE_METHODS: Record<CalendarWrite, string> = {
+  create: "calendar.events.insert",
+  update: "calendar.events.patch",
+  delete: "calendar.events.delete",
+  respond: "calendar.events.patch",
+}
+
+export const writeKeys = (write: CalendarWrite): string[] => [apiKey(WRITE_METHODS[write])]
 
 const apiDefault = (id: string): Level => (OWNER_ONLY.test(id) ? "deny" : "ask")
 
@@ -22,12 +33,15 @@ const keyOf = (path: readonly string[]) => {
 export const configuration: Configuration = settingsFor(IDENTITY, {
   permissions: commandPermissions({
     keyOf,
-    extra: operations.map((operation) => apiKey(operation.id)),
-    defaults: Object.fromEntries(
-      operations
-        .filter((operation) => operation.effect !== "read")
-        .map((operation) => [apiKey(operation.id), apiDefault(operation.id)]),
-    ),
+    extra: [...operations.map((operation) => apiKey(operation.id)), ...CALENDAR_WRITE_KEYS],
+    defaults: {
+      ...Object.fromEntries(
+        operations
+          .filter((operation) => operation.effect !== "read")
+          .map((operation) => [apiKey(operation.id), apiDefault(operation.id)]),
+      ),
+      ...CALENDAR_WRITE_DEFAULTS,
+    },
   }),
 })
 

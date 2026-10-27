@@ -6,6 +6,18 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Added
 
+- `gcal <profile> session start --grant write` also asks Google for `calendar.events`; `session status` lists the
+  grants. Without it, a write still fails with `permission_error` and names the flag.
+- `gcal <profile> events create | update | delete | respond`: cli-core's shared calendar writes over Google Calendar
+  (`events.insert`, `events.patch` and `events.delete` through the generated API). A change sends the synced version
+  as `If-Match`, so an event changed in Google since is a conflict, never overwritten. A create retried with the id
+  its `outcome_unknown` named finds the event. `--notify` maps to `sendUpdates=all`, `--no-notify` to `none`.
+  `respond` changes only the owner's own answer. The writes are MCP tools too.
+- Permission keys `events.create | update | delete | respond` (`ask`), `events.notify` and `events.delete.series`
+  (`deny`). An event write also checks its Google method's key, `api.calendar.events.insert | patch | delete`, so
+  denying `api` stops it.
+- `bin/gcal-write-check <profile> <calendar-id>`: the owner's live check of create, update and delete on a test
+  calendar.
 - `gcal <profile> search --remote <words>`: Google Calendar's own text search over the profile's synced calendars,
   read only and kept nowhere. It finds events outside the synced span, too. The answer names the fields an
   invitation's sender wrote under `untrusted`.

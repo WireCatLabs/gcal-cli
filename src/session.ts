@@ -3,6 +3,7 @@ import { CliError, type KeyringStore } from "@wirecat/cli-base"
 import { accountFileFor, type EventSink, profilesHere, rememberAccount } from "@wirecat/cli-core/cli"
 import type { OAuthClient } from "@wirecat/cli-core/oauth"
 import { accountEmail, CALENDAR_READ_SCOPE, SIGN_IN_SCOPES, sessionKeeper, sessionStorage } from "./google.js"
+import { GRANT_SCOPES, type Grant, grantsOf } from "./grants.js"
 import { IDENTITY } from "./identity.js"
 import { openGcalStore, PROVIDER } from "./store.js"
 
@@ -34,8 +35,17 @@ const scopeMissing = () =>
     { reason: "sign-in.scope-missing" },
   )
 
+const grantMissing = (grant: Grant) =>
+  new CliError(
+    "permission_error",
+    `Google did not grant the ${grant} permission; run session start --grant ${grant} again and leave it ticked ` +
+      "on the consent screen",
+    { reason: "sign-in.scope-missing" },
+  )
+
 export interface SignInOptions extends Common {
   client: OAuthClient
+  grants?: readonly Grant[] | undefined
   openBrowser: (url: string) => Promise<void>
   showUrl: (url: string) => void
   timeoutMs?: number | undefined
@@ -46,13 +56,16 @@ export const signIn = async (options: SignInOptions) => {
   const keeper = sessionKeeper(options)
   let account = ""
   const { scopes } = await keeper.signIn({
-    scopes: SIGN_IN_SCOPES,
+    scopes: [...SIGN_IN_SCOPES, ...(options.grants ?? []).map((grant) => GRANT_SCOPES[grant])],
     openBrowser: options.openBrowser,
     showUrl: options.showUrl,
     ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
     // Runs before anything is saved, so a refused account leaves the profile's sign-in as it was.
     accept: async (tokens) => {
       if (!tokens.scopes.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
+      // Google lets the account untick a scope it was asked for, and still signs in.
+      const missing = (options.grants ?? []).find((grant) => !tokens.scopes.includes(GRANT_SCOPES[grant]))
+      if (missing) throw grantMissing(missing)
       if (!tokens.accessToken) throw new CliError("authentication_error", "Google returned no access token")
       account = await accountEmail(
         tokens.accessToken,
@@ -82,7 +95,7 @@ export const signIn = async (options: SignInOptions) => {
   } finally {
     await store.close()
   }
-  return { profile, signed_in: true, account, scopes }
+  return { profile, signed_in: true, account, scopes, grants: grantsOf(scopes) }
 }
 
 /** A profile's saved sign-in with the keeper that refreshes it, made with the client it was signed in with. */
@@ -117,7 +130,14 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
   const session = savedSession(options)
   if (!session) return { profile, state: "missing", account, verified: false }
   const { saved, keeper } = session
-  const status = { profile, state: "saved", account, scopes: saved.tokens.scopes, verified: false }
+  const status = {
+    profile,
+    state: "saved",
+    account,
+    scopes: saved.tokens.scopes,
+    grants: grantsOf(saved.tokens.scopes),
+    verified: false,
+  }
   if (!options.check) return status
   const tokens = await keeper.tokens()
   if (!tokens.scopes.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
@@ -131,7 +151,7 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
     throw new CliError("authentication_error", "the saved sign-in belongs to another account; run session start", {
       reason: "profile.wrong-account",
     })
-  return { ...status, account: live, scopes: tokens.scopes, verified: true }
+  return { ...status, account: live, scopes: tokens.scopes, grants: grantsOf(tokens.scopes), verified: true }
 }
 
 export const signOut = async (options: Common) => {

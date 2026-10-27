@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**116 ✅ · 330 ⛔ · 0 ❌** — 65 commands, 381 options.
+**159 ✅ · 330 ⛔ · 0 ❌** — 69 commands, 420 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -16,6 +16,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `session start` |  | ✅ |  |
 | `session start` | `--client-file` | ✅ |  |
 | `session start` | `--no-browser` | ✅ |  |
+| `session start` | `--grant` | ✅ |  |
 | `session status` |  | ✅ |  |
 | `session status` | `--check` | ✅ |  |
 | `session end` |  | ✅ |  |
@@ -40,6 +41,48 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events show` |  | ✅ |  |
 | `events show` | `--json` | ✅ |  |
 | `events show` | `--jsonl` | ✅ |  |
+| `events create` |  | ✅ |  |
+| `events create` | `--title` | ✅ |  |
+| `events create` | `--start-time` | ✅ |  |
+| `events create` | `--end-time` | ✅ |  |
+| `events create` | `--start-date` | ✅ |  |
+| `events create` | `--end-date` | ✅ |  |
+| `events create` | `--location` | ✅ |  |
+| `events create` | `--description` | ✅ |  |
+| `events create` | `--attendee` | ✅ |  |
+| `events create` | `--notify` | ✅ |  |
+| `events create` | `--no-notify` | ✅ |  |
+| `events create` | `--id` | ✅ |  |
+| `events create` | `--json` | ✅ |  |
+| `events create` | `--jsonl` | ✅ |  |
+| `events update` |  | ✅ |  |
+| `events update` | `--title` | ✅ |  |
+| `events update` | `--start-time` | ✅ |  |
+| `events update` | `--end-time` | ✅ |  |
+| `events update` | `--start-date` | ✅ |  |
+| `events update` | `--end-date` | ✅ |  |
+| `events update` | `--location` | ✅ |  |
+| `events update` | `--description` | ✅ |  |
+| `events update` | `--attendee` | ✅ |  |
+| `events update` | `--calendar` | ✅ |  |
+| `events update` | `--series` | ✅ |  |
+| `events update` | `--notify` | ✅ |  |
+| `events update` | `--no-notify` | ✅ |  |
+| `events update` | `--json` | ✅ |  |
+| `events update` | `--jsonl` | ✅ |  |
+| `events delete` |  | ✅ |  |
+| `events delete` | `--calendar` | ✅ |  |
+| `events delete` | `--series` | ✅ |  |
+| `events delete` | `--notify` | ✅ |  |
+| `events delete` | `--no-notify` | ✅ |  |
+| `events delete` | `--json` | ✅ |  |
+| `events delete` | `--jsonl` | ✅ |  |
+| `events respond` |  | ✅ |  |
+| `events respond` | `--calendar` | ✅ |  |
+| `events respond` | `--notify` | ✅ |  |
+| `events respond` | `--no-notify` | ✅ |  |
+| `events respond` | `--json` | ✅ |  |
+| `events respond` | `--jsonl` | ✅ |  |
 | `search` |  | ✅ |  |
 | `search` | `--json` | ✅ |  |
 | `search` | `--jsonl` | ✅ |  |

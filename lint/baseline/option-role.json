@@ -1,0 +1,22 @@
+[
+  "events create --attendee",
+  "events create --end-date",
+  "events create --end-time",
+  "events create --id",
+  "events create --location",
+  "events create --no-notify",
+  "events create --start-date",
+  "events delete --calendar",
+  "events delete --no-notify",
+  "events delete --series",
+  "events respond --calendar",
+  "events respond --no-notify",
+  "events update --attendee",
+  "events update --calendar",
+  "events update --end-date",
+  "events update --end-time",
+  "events update --location",
+  "events update --no-notify",
+  "events update --series",
+  "events update --start-date"
+]

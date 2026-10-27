@@ -5,6 +5,7 @@ import { memoryKeyring } from "@wirecat/cli-base"
 import { openStore, storePath } from "@wirecat/cli-core/store"
 import { describe, expect, it, vi } from "vitest"
 import { CALENDAR_READ_SCOPE, googleClient, sessionStorage } from "./google.js"
+import { EVENTS_SCOPE } from "./grants.js"
 import { run } from "./program.js"
 
 const ACCESS = "fixture-access-token-7Qm2"
@@ -115,6 +116,7 @@ describe("session start", () => {
       signed_in: true,
       account: "owner@example.com",
       scopes: GRANTED.split(" "),
+      grants: [],
     })
 
     const authorize = new URL(opened[0] ?? "")
@@ -168,6 +170,51 @@ describe("session start", () => {
     expect(refused.code).not.toBe(0)
     expect(failure(refused.err)).toMatchObject({ code: "permission_error", reason: "sign-in.scope-missing" })
     expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({ state: "missing" })
+  })
+
+  it("--grant write also asks for calendar.events, and status shows it granted", async () => {
+    const { gcal, opened } = harness()
+    const fake = google({ scope: `${GRANTED} ${EVENTS_SCOPE}` })
+    const started = await gcal(
+      ["personal", "session", "start", "--client-file", clientFile(), "--grant", "write", "--json"],
+      fake,
+    )
+    expect(item(started.out)).toMatchObject({ grants: ["write"] })
+    expect(new URL(opened[0] ?? "").searchParams.get("scope")).toBe(
+      `openid email ${CALENDAR_READ_SCOPE} ${EVENTS_SCOPE}`,
+    )
+    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
+      scopes: expect.arrayContaining([EVENTS_SCOPE]),
+      grants: ["write"],
+    })
+  })
+
+  it("refuses --grant write when the account unticked it, and an unknown grant", async () => {
+    const { gcal } = harness()
+    const unticked = await gcal([
+      "personal",
+      "session",
+      "start",
+      "--client-file",
+      clientFile(),
+      "--grant",
+      "write",
+      "--json",
+    ])
+    expect(failure(unticked.err)).toMatchObject({ code: "permission_error", reason: "sign-in.scope-missing" })
+    expect(failure(unticked.err).message).toContain("--grant write")
+    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({ state: "missing" })
+    const unknown = await gcal([
+      "personal",
+      "session",
+      "start",
+      "--client-file",
+      clientFile(),
+      "--grant",
+      "admin",
+      "--json",
+    ])
+    expect(failure(unknown.err)).toMatchObject({ code: "validation_error" })
   })
 
   it("refuses another account on the same profile, and the same account on a second profile", async () => {

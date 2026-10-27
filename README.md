@@ -1,8 +1,9 @@
 # gcal
 
-`gcal` reads your Google Calendar from the terminal, from scripts and from AI agents. It never changes your calendar.
-It syncs the calendars you own into the local WireCat store, and then lists, shows and searches their events, the
-people in them and their Drive files, without the network. The design is in [docs/dev/DESIGN.md](docs/dev/DESIGN.md).
+`gcal` reads your Google Calendar from the terminal, from scripts and from AI agents. It syncs the calendars you own
+into the local WireCat store, and then lists, shows and searches their events, the people in them and their Drive
+files, without the network. After `session start --grant write` it also creates, changes and deletes events and
+answers invitations; each write asks first, and mailing other people is off until you allow it. The design is in [docs/dev/DESIGN.md](docs/dev/DESIGN.md).
 
 ## Quick start
 
