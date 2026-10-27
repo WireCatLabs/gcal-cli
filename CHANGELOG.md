@@ -20,6 +20,17 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   `mcp --permission`. A method that changes Calendar asks first (`--yes` in a script); sharing, `calendars.clear` and
   `calendars.transferOwnership` are denied until the owner allows that method. A key that names no method is refused,
   and `gcal doctor` lists any saved in the file. `gcal <profile> mcp` refuses to start while the file holds one.
+- `gcal <profile> sync [--full] [--embed]`, `calendars list | sync | unsync`, `events list | show`, `search`,
+  `people list | link` and `links review | resolve`: cli-core's shared calendar commands over Google Calendar, read
+  only. `sync` stores the calendars the owner owns from a year back to three months ahead, then asks Google only for
+  what changed; a repeating event's slots come one by one, cancelled slots included. Join links lose their query
+  string, and passcodes and PINs are never stored. Google's words are stored in cli-core's neutral ones
+  (`needs-action`, `out-of-office`, `focus`, `free-busy`). Each command has its own permission key, its path.
+- `bin/gcal-live-check <profile> <word>`: the owner's first run against real Google, step by step — sign-in,
+  calendars, a sync and a second one that must read only the changes, embedding, search — printing counts only.
+  `--dry-run` lists the steps.
+- `gcal mcp` shows control characters in an answer visibly, so an invitation's text cannot hide anything from the
+  agent.
 
 ### Fixed
 

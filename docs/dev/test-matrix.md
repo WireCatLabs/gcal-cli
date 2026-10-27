@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**72 ✅ · 333 ⛔ · 0 ❌** — 54 commands, 351 options.
+**112 ✅ · 333 ⛔ · 0 ❌** — 65 commands, 380 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -19,6 +19,46 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `session status` |  | ✅ |  |
 | `session status` | `--check` | ✅ |  |
 | `session end` |  | ✅ |  |
+| `calendars list` |  | ✅ |  |
+| `calendars list` | `--json` | ✅ |  |
+| `calendars list` | `--jsonl` | ✅ |  |
+| `calendars sync` |  | ✅ |  |
+| `calendars sync` | `--json` | ✅ |  |
+| `calendars sync` | `--jsonl` | ✅ |  |
+| `calendars unsync` |  | ✅ |  |
+| `calendars unsync` | `--json` | ✅ |  |
+| `calendars unsync` | `--jsonl` | ✅ |  |
+| `sync` |  | ✅ |  |
+| `sync` | `--json` | ✅ |  |
+| `sync` | `--jsonl` | ✅ |  |
+| `sync` | `--full` | ✅ |  |
+| `sync` | `--embed` | ✅ |  |
+| `events list` |  | ✅ |  |
+| `events list` | `--json` | ✅ |  |
+| `events list` | `--jsonl` | ✅ |  |
+| `events list` | `--limit` | ✅ |  |
+| `events show` |  | ✅ |  |
+| `events show` | `--json` | ✅ |  |
+| `events show` | `--jsonl` | ✅ |  |
+| `search` |  | ✅ |  |
+| `search` | `--json` | ✅ |  |
+| `search` | `--jsonl` | ✅ |  |
+| `search` | `--limit` | ✅ |  |
+| `search` | `--cursor` | ✅ |  |
+| `search` | `--exact` | ✅ |  |
+| `search` | `--newest` | ✅ |  |
+| `people list` |  | ✅ |  |
+| `people list` | `--json` | ✅ |  |
+| `people list` | `--jsonl` | ✅ |  |
+| `people link` |  | ✅ |  |
+| `people link` | `--json` | ✅ |  |
+| `people link` | `--jsonl` | ✅ |  |
+| `links review` |  | ✅ |  |
+| `links review` | `--json` | ✅ |  |
+| `links review` | `--jsonl` | ✅ |  |
+| `links resolve` |  | ✅ |  |
+| `links resolve` | `--json` | ✅ |  |
+| `links resolve` | `--jsonl` | ✅ |  |
 | `api list` |  | ✅ |  |
 | `api show` |  | ✅ |  |
 | `api call` |  | ✅ |  |

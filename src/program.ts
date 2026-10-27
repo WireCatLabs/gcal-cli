@@ -16,6 +16,7 @@ import {
 import { appUpdate } from "@wirecat/cli-core/update"
 import type { Command } from "commander"
 import { apiCommand } from "./commands/api.js"
+import { calendarMount } from "./commands/calendar.js"
 import { doctorCommand } from "./commands/doctor.js"
 import { mcpCommand } from "./commands/mcp.js"
 import { sessionCommand } from "./commands/session.js"
@@ -33,26 +34,32 @@ const update = appUpdate({
   offVariables: [`${IDENTITY.envPrefix}_NO_UPDATE_CHECK`],
 })
 
-export const definition = (): ProgramDefinition => ({
-  app: IDENTITY,
-  configuration,
-  commands: () => [
-    commandsCommand(IDENTITY),
-    sessionCommand(),
-    apiCommand(),
-    doctorCommand(),
-    skillCommand(IDENTITY, SKILL),
-    mcpCommand(),
-    upgradeCommand(IDENTITY, PACKAGE, (command) => ({
-      ...outputFor(command),
-      installer: () => update.installer({}),
-      latest: () => update.latest({}),
-      install: (argv) => update.runUpdate(argv, {}),
-    })),
-    configCommand(IDENTITY, configuration),
-    runsCommand(IDENTITY),
-  ],
-})
+export const definition = (): ProgramDefinition => {
+  const calendar = calendarMount()
+  return {
+    app: IDENTITY,
+    configuration,
+    configure: calendar.configure,
+    prepare: calendar.prepare,
+    commands: () => [
+      commandsCommand(IDENTITY),
+      sessionCommand(),
+      ...calendar.commands(),
+      apiCommand(),
+      doctorCommand(),
+      skillCommand(IDENTITY, SKILL),
+      mcpCommand(),
+      upgradeCommand(IDENTITY, PACKAGE, (command) => ({
+        ...outputFor(command),
+        installer: () => update.installer({}),
+        latest: () => update.latest({}),
+        install: (argv) => update.runUpdate(argv, {}),
+      })),
+      configCommand(IDENTITY, configuration),
+      runsCommand(IDENTITY),
+    ],
+  }
+}
 
 export const createProgram = (options?: ProgramOptions): Command => createSharedProgram(definition(), options)
 

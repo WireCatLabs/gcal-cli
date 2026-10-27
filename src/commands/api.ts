@@ -89,23 +89,8 @@ const call = async (
   const lock = readOnlyLockOf(IDENTITY, common.env)
   if (lock && method.mutates) throw readOnlyRefusal(lock, "change Google Calendar")
   const settings = permittedSettings(command, method)
-  const [{ savedSession }, { googleApi }] = await Promise.all([import("../session.js"), import("../google-api.js")])
-  const session = savedSession(common)
-  const options = {
-    fetch: common.fetch ?? globalThis.fetch,
-    signal: common.signal,
-    scopes: () => session?.saved.tokens.scopes,
-    accessToken: async () => {
-      if (!session)
-        throw new CliError(
-          "authentication_error",
-          `not signed in to Google; run ${IDENTITY.command} ${common.profile} session start`,
-        )
-      const { accessToken } = await session.keeper.tokens()
-      if (!accessToken) throw new CliError("authentication_error", "Google returned no access token")
-      return accessToken
-    },
-  }
+  const [{ apiAccess }, { googleApi }] = await Promise.all([import("../session.js"), import("../google-api.js")])
+  const options = apiAccess(common)
   const act = () =>
     baseContext(command, configuration.resolveSettings).run((events) =>
       googleApi({ ...options, events }).call(name, params, body),
