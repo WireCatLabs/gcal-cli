@@ -53,9 +53,30 @@ const harness = (scopes: string[] = [CALENDAR_READ_SCOPE, EVENTS_SCOPE]) => {
     })
     const last = err.join("\n").trim().split("\n").at(-1)
     const answer = code === 0 ? JSON.parse(out.join("\n").trim().split("\n")[0] ?? "") : undefined
-    return { code, item: answer?.item, items: answer?.items, error: code ? JSON.parse(last ?? "{}").error : undefined }
+    return {
+      code,
+      item: argv.includes("--jsonl") ? answer?.data : answer?.item,
+      items: answer?.items,
+      error: code ? JSON.parse(last ?? "{}").error : undefined,
+    }
   }
-  return { gcal, google, env, keyring, fetch }
+  /** Runs at a terminal that answers yes, and keeps each question asked. */
+  const atTerminal = async (...argv: string[]) => {
+    const asked: string[] = []
+    const code = await run(argv, {
+      streams: { data: () => undefined, diagnostic: () => undefined },
+      tty: false,
+      env,
+      keyring,
+      fetch,
+      answer: async (question: string) => {
+        asked.push(question)
+        return "y"
+      },
+    })
+    return { code, asked }
+  }
+  return { gcal, google, env, keyring, fetch, atTerminal }
 }
 
 const eventRef = async (gcal: ReturnType<typeof harness>["gcal"]) => {
@@ -84,6 +105,21 @@ describe("event writes over Google", () => {
       external_id: made.item.operation_id,
       starts_at: "2026-11-02T09:00:00.000Z",
     })
+  })
+
+  it("a person at a terminal is asked one question per write, naming every key that asks", async () => {
+    const { gcal, google, atTerminal } = harness()
+    await gcal("personal", "sync")
+    const plain = await atTerminal(...create, ...at)
+    expect(plain.code).toBe(0)
+    expect(plain.asked).toHaveLength(1)
+    expect(plain.asked[0]).toContain("api.calendar.events.insert")
+    expect((await gcal("personal", "config", "set", "permissions.events.notify", "ask")).code).toBe(0)
+    const mailing = await atTerminal(...create, ...at, "--attendee", "ana@example.com", "--notify")
+    expect(mailing.code).toBe(0)
+    expect(mailing.asked).toHaveLength(1)
+    expect(mailing.asked[0]).toContain("events.notify")
+    expect(posts(google)).toHaveLength(2)
   })
 
   it("denying api stops the shared writes before Google is asked", async () => {
@@ -123,6 +159,13 @@ describe("event writes over Google", () => {
     expect(deleted.code).toBe(0)
     expect(posts(google).at(-1)).toMatchObject({ method: "DELETE" })
     expect(google.event("review1")?.status).toBe("cancelled")
+  })
+
+  it("a timed event does not become an all-day one in one update", async () => {
+    const { gcal } = harness()
+    const event = await eventRef(gcal)
+    const switched = ["personal", "events", "update", event, "--start-date", "2026-11-06", "--end-date", "2026-11-06"]
+    expect((await gcal(...switched, "--no-notify", "--yes")).error).toMatchObject({ code: "validation_error" })
   })
 
   it("an event changed at Google since the sync is a conflict", async () => {
@@ -174,9 +217,11 @@ describe("event writes over Google", () => {
     expect(made.structuredContent.item.entry).toMatchObject({ starts_at: "2026-11-02T09:00:00.000Z" })
     const mailed = (await client.callTool({
       name: "gcal_write",
-      arguments: { command: "events create", arguments: { ...fields, attendee: ["ana@example.com"], notify: true } },
-    })) as { isError?: boolean }
+      arguments: { command: "events create", arguments: { ...fields, attendee: "ana@example.com", notify: true } },
+    })) as { isError?: boolean; content: { text: string }[] }
     expect(mailed.isError).toBe(true)
+    expect(mailed.content[0]?.text).toContain("permission_error")
+    expect(mailed.content[0]?.text).toContain("events.notify")
     expect(posts(google)).toHaveLength(1)
   })
 
@@ -203,7 +248,7 @@ describe("event writes over Google", () => {
     expect((await gcal(...respond, "--notify", "--yes", "--jsonl")).code).toBe(0)
     expect(posts(google).at(-1)?.query.get("sendUpdates")).toBe("all")
     const moved = await gcal(
-      ...["personal", "events", "update", event, "--start-date", "2026-11-06", "--end-date", "2026-11-06"],
+      ...["personal", "events", "update", allDay.item.event, "--start-date", "2026-11-06", "--end-date", "2026-11-06"],
       ...["--location", "", "--description", "", "--attendee", "bob@example.com", "--calendar", "owner@example.com"],
       ...["--notify", "--yes", "--jsonl"],
     )

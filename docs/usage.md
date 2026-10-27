@@ -144,8 +144,8 @@ gcal personal events delete event:42 --no-notify
 - On a repeating event, a write changes the one occurrence you name; `--series` changes the whole series. Deleting a
   whole series is refused until you allow `events.delete.series`. A new event never repeats.
 - `respond` changes only your own answer; the rest of the guest list stays as Google has it.
-- An event cannot switch between timed and all-day in one update: Google keeps the old kind's field. Delete it and
-  create it again.
+- An event cannot switch between timed and all-day in one update: Google merges `start` and `end` on a change, so
+  the old kind's field stays, and `gcal` cannot send the `null` that would clear it. Delete it and create it again.
 
 `bin/gcal-write-check <profile> <calendar-id>` runs a create, an update and a delete on a test calendar you name, and
 prints only ids and status. It refuses the account's primary calendar.
