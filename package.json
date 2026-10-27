@@ -56,8 +56,9 @@
     "test:coverage": "vitest run --coverage",
     "test:matrix": "vitest run >/dev/null && pnpm build >/dev/null && pnpm test:matrix:check",
     "test:matrix:check": "cli-dev test-matrix --program scripts/command-program.ts --untested scripts/test-matrix-untested.ts --name gcal --check && git diff --exit-code -- docs/dev/test-matrix.md",
-    "generate": "pnpm build && node --experimental-strip-types scripts/commands.ts",
-    "generate:check": "pnpm build && node --experimental-strip-types scripts/commands.ts --check",
+    "generate": "node --experimental-strip-types scripts/generate.ts && pnpm build && node --experimental-strip-types scripts/commands.ts",
+    "generate:check": "node --experimental-strip-types scripts/generate.ts --check && pnpm build && node --experimental-strip-types scripts/commands.ts --check",
+    "spec:sync": "node --experimental-strip-types scripts/sync-spec.ts",
     "smoke": "node --experimental-strip-types scripts/smoke.ts",
     "smoke:bun": "bun scripts/smoke.ts",
     "package:check": "pnpm smoke",
@@ -78,7 +79,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.4.0",
-    "@wirecat/cli-base": "0.62.0",
+    "@wirecat/cli-base": "0.63.0",
     "@wirecat/cli-core": "0.449.0",
     "commander": "15.0.0",
     "valibot": "1.5.0"
