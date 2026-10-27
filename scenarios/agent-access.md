@@ -15,4 +15,5 @@ look:
 ---
 
 Sharing a calendar and giving one away are offered to an agent at `ask`, which over MCP runs without a question.
-Deny `api.calendar.acl` in the profile's permissions to keep them from it.
+Deny `api.calendar.acl` to keep sharing from it, and `api.calendar.calendars.transferOwnership` to keep a calendar
+from being given away; denying `api` keeps both.

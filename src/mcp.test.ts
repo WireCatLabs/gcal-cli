@@ -37,6 +37,7 @@ it("serves search, read and write, names the untrusted text, and runs a command 
 it("pins the commands an agent can find, and offers neither api call nor clearing a calendar", async () => {
   const program = createProgram()
   const tools = toolsFromCommands(describeProgram(program), {
+    includeUnavailable: true,
     exclude: [["mcp"]],
     authority: changesAuthorityAt(program),
     fetchOnly: fetchesOnlyAt(program),
