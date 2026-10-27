@@ -62,6 +62,11 @@ An event write also needs the key of the Google method it calls: `api.calendar.e
 `api.calendar.events.patch` for `update` and `respond`, `api.calendar.events.delete` for `delete`. So
 `permissions.api readonly` stops the event writes too. One question covers every key of one write.
 
+The `api` commands answer to the same keys. A method that has Google mail the attendees (`--send-updates` other than
+`none`, or `--send-notifications true`) also needs `events.notify`. Deleting an event, or patching it to `cancelled`,
+also needs `events.delete.series` when the event repeats: `gcal` reads the event from Google first to find out.
+`--dry-run` lists every key a call checks, with its level, and calls nothing.
+
 ```sh
 gcal personal config set permissions.events.notify allow     # let --notify mail attendees
 gcal personal config set permissions.events.create allow     # add events without the question

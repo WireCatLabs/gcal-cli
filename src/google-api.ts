@@ -54,6 +54,11 @@ const scopeMissing = (name: string) =>
     { reason: "api.scope-missing", sent: false },
   )
 
+/** Refuses a method the saved sign-in cannot call; with no saved scopes Google decides. */
+export const refuseMissingScope = (name: string, granted: readonly string[] | undefined): void => {
+  if (granted && !scopesOf(name).some((scope) => granted.includes(scope))) throw scopeMissing(name)
+}
+
 const listOf = (value: unknown): string[] =>
   Array.isArray(value)
     ? value.map(String)
@@ -98,8 +103,7 @@ export const googleApi = (options: GoogleApiOptions): GoogleApi => ({
     if (body !== undefined && (!body || typeof body !== "object" || Array.isArray(body)))
       throw new CliError("validation_error", "API request body must be a JSON object")
     validateRequest(name, params, body)
-    const granted = options.scopes()
-    if (granted && !scopesOf(name).some((scope) => granted.includes(scope))) throw scopeMissing(name)
+    refuseMissingScope(name, options.scopes())
     const request = requestUrl(name, params)
     const token = await options.accessToken()
     const timeout = AbortSignal.timeout(TIMEOUT_MS)
