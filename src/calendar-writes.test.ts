@@ -1,20 +1,17 @@
 import { mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { Client } from "@modelcontextprotocol/client"
-import { InMemoryTransport } from "@modelcontextprotocol/server"
+import type { Client } from "@modelcontextprotocol/client"
 import { memoryKeyring } from "@wirecat/cli-base"
-import { describeProgram } from "@wirecat/cli-base/commands"
-import { changesAuthorityAt, rememberAccount } from "@wirecat/cli-core/cli"
+import { rememberAccount } from "@wirecat/cli-core/cli"
 import { afterEach, describe, expect, it } from "vitest"
-import { configuration, permissions } from "./config.js"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
 import { EVENTS_SCOPE } from "./grants.js"
 import { IDENTITY } from "./identity.js"
-import { createMcpServer } from "./mcp.js"
-import { createProgram, run } from "./program.js"
+import { run } from "./program.js"
 import { fakeGoogleCalendar, SERIES } from "./testing/google-calendar.js"
 import { fakeGoogleWrites, INVITATION } from "./testing/google-writes.js"
+import { mcpClient } from "./testing/mcp.js"
 
 const clients: Client[] = []
 afterEach(async () => {
@@ -238,20 +235,7 @@ describe("event writes over Google", () => {
   it("an agent writes through gcal_write as the command line does; mailing attendees stays refused", async () => {
     const { gcal, google, env, keyring, fetch } = harness()
     await gcal("personal", "sync")
-    const program = createProgram()
-    const server = createMcpServer({
-      profile: "personal",
-      commands: describeProgram(program),
-      levels: () => configuration.resolveSettings({ profile: "personal" }, { env }).permissions,
-      authority: changesAuthorityAt(program),
-      permissions,
-      readOnly: false,
-      run: (argv, environment) => run(argv, { ...environment, env, keyring, fetch }),
-    })
-    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
-    await server.connect(serverSide)
-    const client = new Client({ name: "test", version: "1.0.0" })
-    await client.connect(clientSide)
+    const { client } = await mcpClient({ env, keyring, fetch })
     clients.push(client)
     const fields = {
       calendar: "owner@example.com",

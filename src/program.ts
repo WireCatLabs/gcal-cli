@@ -1,6 +1,7 @@
 import { join } from "node:path"
 import { resolvePaths } from "@wirecat/cli-base"
 import {
+  appMcpCommand,
   commandsCommand,
   configCommand,
   createProgram as createSharedProgram,
@@ -18,9 +19,10 @@ import type { Command } from "commander"
 import { apiCommand } from "./commands/api.js"
 import { calendarMount } from "./commands/calendar.js"
 import { doctorCommand } from "./commands/doctor.js"
-import { mcpCommand } from "./commands/mcp.js"
 import { sessionCommand } from "./commands/session.js"
 import { configuration } from "./config.js"
+import { FIRST_SCREEN, guide, placeInSections } from "./first-screen.js"
+import { holdsSignIn } from "./google.js"
 import { IDENTITY, PACKAGE, SKILL } from "./identity.js"
 
 const update = appUpdate({
@@ -39,7 +41,11 @@ export const definition = (): ProgramDefinition => {
   return {
     app: IDENTITY,
     configuration,
-    configure: calendar.configure,
+    configure: (program) => {
+      calendar.configure?.(program)
+      placeInSections(program)
+    },
+    firstScreen: FIRST_SCREEN,
     prepare: calendar.prepare,
     commands: () => [
       commandsCommand(IDENTITY),
@@ -47,8 +53,28 @@ export const definition = (): ProgramDefinition => {
       ...calendar.commands(),
       apiCommand(),
       doctorCommand(),
+      guide(),
       skillCommand(IDENTITY, SKILL),
-      mcpCommand(),
+      appMcpCommand(IDENTITY, configuration, {
+        name: "Google Calendar",
+        untrusted: [
+          "event titles",
+          "descriptions",
+          "locations",
+          "attendee and organizer names",
+          "shared calendar names",
+        ],
+        permissionExample: "api.calendar.events.insert=deny",
+        skill: SKILL,
+        signedIn: (profile, env) => {
+          try {
+            return holdsSignIn(env, profile)
+          } catch {
+            // A keyring that cannot be read fails the server's tools as well.
+            return false
+          }
+        },
+      }),
       upgradeCommand(IDENTITY, PACKAGE, (command) => ({
         ...outputFor(command),
         installer: () => update.installer({}),

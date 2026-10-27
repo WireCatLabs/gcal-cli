@@ -4,8 +4,27 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ## Unreleased
 
+### Changed — may break callers
+
+- **`gcal <profile> mcp` is now `gcal <profile> mcp serve`**, cli-core's shared `mcp` for a CLI that is not a messenger
+  (WC-MCP-9). An agent entry that runs `gcal personal mcp` stops working: add it again with
+  `gcal personal mcp add claude-code --allow-writes`, or print a new one with `gcal personal mcp config`. The group
+  also has `mcp revoke`, `mcp server start|stop|status`, `mcp add` and `mcp check`, and `mcp serve` takes `--profiles
+  <names|all>`, `--http`, `--port` and `--public-url`. No profile is ever picked: `gcal mcp serve` alone exits 2 and
+  lists the profiles. The server's instructions now name the text other people wrote: event titles, descriptions,
+  locations, attendee and organizer names, shared calendar names. `api call` and `calendars.clear` are still never
+  offered to an agent; sharing is still offered at `ask`; `events.notify` and `sharing.notify` still apply.
+- **`doctor` answers with cli-core's shared fields**: `store` (path, and whether it exists), `oauth_client` (`own`
+  when `GCAL_GOOGLE_CLIENT_ID` is set, otherwise `null` with the reason; a profile signed in with `--client-file` keeps
+  its own client) and `profile_lock`, besides `credential_file` as before.
+
 ### Added
 
+- `gcal session list` lists the profiles on this computer, each with `signed_in`, `account` and `credential_storage`.
+  It takes no profile and picks none (WC-ACCT-12).
+- `gcal guide` lists scenarios — setting up, giving an agent access, finding a time — and `gcal guide <name>` gives
+  one, step by step. `gcal --help` shows what gcal can do and where to start.
+- `contracts/mcp-catalogue.json` pins every command an agent can find, and whether it reads or writes.
 - `sync` stops on its own before its time limit and goes on from there next run, so a big first sync no longer dies at
   the deadline and loses the round. It saves after every page, and a partial answer says `state: "partial"`, how far
   it got (`progress`), the command to run next (`next`: `gcal <profile> sync`, the same flags) and where to watch it

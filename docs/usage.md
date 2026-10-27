@@ -41,12 +41,15 @@ profile for the same account.
 gcal personal session status            # what is saved on this computer; no network
 gcal personal session status --check    # ask Google whether the sign-in still works
 gcal personal session end               # forget the sign-in on this computer
+gcal session list                       # every profile here, and whether each holds a sign-in
 ```
 
 `session status` gives the account's email address, the permissions Google granted (`scopes`, and `grants` in
 `--grant`'s words), `state`: `saved` or `missing`, and `credential_storage`: `keyring` or `file`. With `--check`,
 `verified: true` means Google accepted the sign-in just now. `session end` removes the sign-in from where it is kept;
-it keeps which account the profile is, and your stored calendar data.
+it keeps which account the profile is, and your stored calendar data. `session list` takes no profile and picks none:
+it lists the profiles named in the settings or signed in once, each with `signed_in`, `account` and
+`credential_storage`. It reads the keyring, never the network.
 
 On a computer with no keyring, such as a server without a desktop, keep the sign-in in a file instead. The file is
 `credentials.json` in `gcal`'s state folder, readable by you only. `gcal doctor` shows its path and the profiles in it.
@@ -200,18 +203,23 @@ prints only ids and status. It refuses the account's primary calendar.
 
 ## Output for scripts
 
-Every command except `mcp` takes `--json`, and prints one JSON value on stdout. Errors are JSON on stderr, with a code to branch
+Every command except `mcp serve` takes `--json`, and prints one JSON value on stdout. Errors are JSON on stderr, with a code to branch
 on. The [command reference](commands.md) lists the codes.
 
 ## Agents
 
 `gcal skill install` puts the tool's skill where Claude Code, Codex, Gemini CLI and OpenClaw look for it.
 `gcal skill install --for hermes` also adds that folder to Hermes Agent's own settings, so a bare `skill install`
-leaves Hermes out. `gcal personal mcp` serves the profile's commands over MCP, on stdin and stdout:
+leaves Hermes out. `gcal personal mcp serve` serves the profile's commands over MCP, on stdin and stdout:
 
 ```sh
-claude mcp add gcal -- gcal personal mcp
+gcal personal mcp add claude-code --allow-writes    # or: claude mcp add gcal -- gcal personal mcp serve
+gcal personal mcp check                             # start it once, as the agent will
 ```
+
+`mcp serve` never picks a profile: name one, or several with `--profiles work,personal`, or every profile with
+`--profiles all`. `--http` serves it over HTTP for a browser app, and `mcp config` prints the entry for any other
+client. `gcal guide agent-access` walks through it.
 
 The server offers every command, the ones that write included. The profile's permissions decide what runs; see
 [settings](configuration.md#permissions). That includes sharing a calendar (`acl`) and giving it to another account

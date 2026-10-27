@@ -7,6 +7,7 @@ import {
   CALENDAR_READ_SCOPE,
   type CredentialStorage,
   forgetOtherStorage,
+  holdsSignIn,
   SIGN_IN_SCOPES,
   sessionKeeper,
   sessionStorage,
@@ -174,3 +175,16 @@ export const signOut = async (options: Common) => {
   await session.keeper.signOut()
   return { profile: options.profile, ended: true, cached_data: "retained" }
 }
+
+/** Every profile this computer knows, named in the config or signed in once, with where its sign-in is now. */
+export const profileSignIns = (env: NodeJS.ProcessEnv, configured: readonly string[], keyring?: KeyringStore) =>
+  profilesHere(IDENTITY, configured, env).map((profile) => {
+    const account = savedAccount(env, profile) ?? null
+    try {
+      const signedIn = holdsSignIn(env, profile, keyring)
+      return { profile, signed_in: signedIn, account, credential_storage: signedIn ? storageOf(env, profile) : null }
+    } catch (error) {
+      if (!(error instanceof CliError)) throw error
+      return { profile, signed_in: null, account, credential_storage: null, error: error.message }
+    }
+  })

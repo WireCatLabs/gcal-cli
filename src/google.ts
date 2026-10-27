@@ -117,6 +117,13 @@ export const sessionStorage = (
     codec: sessionCodec,
   })
 
+/**
+ * Whether this computer holds the profile's Google sign-in, in the file or the keyring; no network. The account file
+ * is no answer: `session end` keeps it, so offline reads still find the profile's rows.
+ */
+export const holdsSignIn = (env: NodeJS.ProcessEnv, profile: string, keyring?: KeyringStore): boolean =>
+  sessionStorage(env, profile, keyring).read() !== undefined
+
 export interface KeeperOptions {
   /** Where a new sign-in goes; a saved one is read from where `storageOf` finds it. */
   storage?: CredentialStorage | undefined

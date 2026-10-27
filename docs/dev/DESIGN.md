@@ -48,6 +48,11 @@ If this CLI defines a messenger, set its `speechModels` to `parakeet-v3`.
   query string of a join link are never stored.
 - **Writes:** creating, changing and deleting events, and answering an invitation, behind `session start --grant write`
   and a permission per write (`events.*`); mailing attendees and deleting a whole series are denied by default.
+- **Shared commands:** `mcp` is cli-core's `appMcpCommand` and the first screen and `guide` are cli-core's
+  (`scenarios/`). `doctor` is cli-core's `appDoctorReport` plus `credential_file`, which no hook of
+  `appDoctorCommand` can add. `session list` is gcal's own: cli-core has no helper for a CLI that is not a messenger
+  (WC-ACCT-12, NEED-1884). A profile is signed in when its sign-in is in the file or the keyring, not when its account
+  file exists: `session end` keeps that file.
 - **Google app:** during development the owner's own client (`GCAL_GOOGLE_CLIENT_ID`, `GCAL_GOOGLE_CLIENT_SECRET`);
   the shared WireCat app gets Calendar after Drive's Google review is approved.
 
