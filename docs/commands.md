@@ -175,6 +175,29 @@ gcal calendars unsync <calendar> [options]
 
 **Example:** `gcal personal calendars unsync 3`
 
+### `gcal calendars busy`
+
+when calendars and people are taken, asked of the provider and not stored; with --duration-minutes, the free stretches they share
+
+```sh
+gcal calendars busy [words] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `words` | optional | today, week, from:<date>, to:<date>, calendar:<id>, person:<email>. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+| `--duration-minutes <minutes>` | find free stretches at least this long, 5–1440. |
+| `--hours <from-to>` | working hours in your time zone, Monday to Friday, with --duration-minutes. Default: `09:00-17:00`. |
+
+**Returns:** when calendars and people are taken, asked of the provider and not stored;…
+
+**Example:** `gcal personal calendars busy week person:ana@example.com --json`, `gcal personal calendars busy from:2026-11-02 to:2026-11-06 person:ana@example.com --duration-minutes 30 --hours 10:00-16:00`
+
 ## `gcal sync`
 
 bring the synced calendars up to date: what changed since the last sync, or everything with --full
@@ -218,7 +241,7 @@ gcal events list [words] [options]
 | `--jsonl` | one JSON object per item. |
 | `--limit <n>` | events at most, 1–1000. Default: `100`. |
 
-**Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 7 more; every field: gcal commands info events list
+**Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 8 more; every field: gcal commands info events list
 
 **Example:** `gcal personal events list week --json`, `gcal personal events list from:2026-11-02 to:2026-11-06 person:ana@example.com`
 
@@ -245,7 +268,7 @@ gcal events show <event> [options]
 
 ### `gcal events create`
 
-add an event to a calendar; one that repeats is made in the calendar itself
+add an event to a calendar; with --repeat, one that repeats
 
 **Changes something in the service.**
 
@@ -267,19 +290,20 @@ gcal events create <calendar> [options]
 | `--location <text>` | where; empty clears it. |
 | `--description <text>` | the details; empty clears it. |
 | `--attendee <email>` | an attendee; repeat for each. Default: ``. |
+| `--repeat <rule>` | how it repeats: an RFC 5545 rule: FREQ=DAILY\|WEEKLY\|MONTHLY, and INTERVAL, BYDAY (MO,WE; in MONTHLY also 1MO or -1FR), COUNT or UNTIL (a date, YYYYMMDD, for an all-day event; a UTC time, YYYYMMDDTHHMMSSZ, for a timed one). |
 | `--notify` | the provider mails the other attendees; needs events.notify allowed; this or --no-notify is required when there are other attendees. |
 | `--no-notify` | the provider mails nobody. |
 | `--id <id>` | the id a create that ended in outcome_unknown named: a retry finds that event. |
 | `--json` | one JSON value. |
 | `--jsonl` | one JSON object per item. |
 
-**Returns:** add an event to a calendar; one that repeats is made in the calendar itself
+**Returns:** add an event to a calendar; with --repeat, one that repeats
 
-**Example:** `gcal personal events create 3 --title 'Example planning' --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00`, `gcal personal events create 3 --title 'Example review' --start-date 2026-11-03 --end-date 2026-11-03 --attendee ana@example.com --no-notify`
+**Example:** `gcal personal events create 3 --title 'Example planning' --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00`, `gcal personal events create 3 --title 'Example review' --start-date 2026-11-03 --end-date 2026-11-03 --attendee ana@example.com --no-notify`, `gcal personal events create 3 --title 'Example standup' --start-time 2026-11-02T09:30 --end-time 2026-11-02T09:45 --repeat 'FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12'`
 
 ### `gcal events update`
 
-change an event; with --series every occurrence of the repeating event
+change an event; with --series every occurrence of the repeating event; new times or dates switch it between timed and all-day
 
 **Changes something in the service.**
 
@@ -301,6 +325,7 @@ gcal events update <event> [options]
 | `--location <text>` | where; empty clears it. |
 | `--description <text>` | the details; empty clears it. |
 | `--attendee <email>` | an attendee; repeat for each, replacing the list. Default: ``. |
+| `--repeat <rule>` | how it repeats, with --series: an RFC 5545 rule: FREQ=DAILY\|WEEKLY\|MONTHLY, and INTERVAL, BYDAY (MO,WE; in MONTHLY also 1MO or -1FR), COUNT or UNTIL (a date, YYYYMMDD, for an all-day event; a UTC time, YYYYMMDDTHHMMSSZ, for a timed one). |
 | `--calendar <id>` | the calendar, when the event is on more than one of the account's. |
 | `--series` | change the whole repeating event, not only this occurrence. |
 | `--notify` | the provider mails the other attendees; needs events.notify allowed; this or --no-notify is required when there are other attendees. |
@@ -308,9 +333,9 @@ gcal events update <event> [options]
 | `--json` | one JSON value. |
 | `--jsonl` | one JSON object per item. |
 
-**Returns:** change an event; with --series every occurrence of the repeating event
+**Returns:** change an event; with --series every occurrence of the repeating event; new…
 
-**Example:** `gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --notify`
+**Example:** `gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --notify`, `gcal personal events update event:42 --series --repeat 'FREQ=WEEKLY;BYDAY=TU;UNTIL=20261231T230000Z' --no-notify`
 
 ### `gcal events delete`
 

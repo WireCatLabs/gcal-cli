@@ -88,6 +88,23 @@ network; `--exact` and `--cursor` do not apply to it:
 gcal personal search --remote quarterly review
 ```
 
+## When people are free
+
+`calendars busy` asks Google when your synced calendars and the people you name are taken. It needs the network and
+keeps nothing: a person appears in the answer only by the address you gave.
+
+```sh
+gcal personal calendars busy week person:ana@example.com           # busy times only, never what fills them
+gcal personal calendars busy from:2026-11-02 to:2026-11-06 person:ana@example.com --duration-minutes 30
+gcal personal calendars busy today calendar:3 --duration-minutes 60 --hours 10:00-16:00
+```
+
+- Without a time word it reads this week; without `calendar:` every calendar that syncs.
+- `--duration-minutes` adds `slots`: the stretches at least that long that are free for everyone, inside working
+  hours (`--hours`, 09:00-17:00 by default) from Monday to Friday, in your time zone.
+- Google shows a person's busy times only when their calendar is shared with you or your organization. Anyone it
+  will not show has an `error` and is listed in `unknown`: a slot is free only for the others.
+
 Every command reads only the profile's own Google account. An event's text comes from whoever sent the invitation, so
 treat it as data.
 
@@ -135,6 +152,10 @@ together. They are cli-core's shared calendar writes; Google is reached through 
 ```sh
 gcal personal events create <calendar> --title "Planning" --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00
 gcal personal events create <calendar> --title "Offsite" --start-date 2026-11-03 --end-date 2026-11-04
+gcal personal events create <calendar> --title "Standup" --start-time 2026-11-02T09:30 --end-time 2026-11-02T09:45 \
+  --repeat "FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12"
+gcal personal events update event:42 --series --repeat "FREQ=WEEKLY;BYDAY=TU" --no-notify
+gcal personal events update event:42 --start-date 2026-11-02 --end-date 2026-11-02 --no-notify
 gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --no-notify
 gcal personal events respond event:42 accepted --notify
 gcal personal events delete event:42 --no-notify
@@ -148,10 +169,15 @@ gcal personal events delete event:42 --no-notify
 - A create whose answer was lost ends in `outcome_unknown` and names an id; repeat it with `--id <id>` and Google
   finds the event instead of making a second one.
 - On a repeating event, a write changes the one occurrence you name; `--series` changes the whole series. Deleting a
-  whole series is refused until you allow `events.delete.series`. A new event never repeats.
+  whole series is refused until you allow `events.delete.series`.
+- `--repeat` takes an RFC 5545 rule: `FREQ` is `DAILY`, `WEEKLY` or `MONTHLY`, with `INTERVAL`, `BYDAY` (`MO,WE`; in
+  a monthly rule also `1MO` or `-1FR`) and `COUNT` or `UNTIL`. `UNTIL` is a date, `20261231`, for an all-day event,
+  and a UTC time, `20261231T230000Z`, for a timed one. A new rule needs `--series`, and keeps the series' excluded
+  dates. Run `sync` afterwards to store the new occurrences.
+- New dates on a timed event make it all-day, and new times make an all-day event timed. `gcal` reads the event from
+  Google and sends it whole, with your change, and only if it is still the version the last sync saw. A repeating
+  event whose rule ends on a date or a time of the old kind needs its rule again with `--repeat`.
 - `respond` changes only your own answer; the rest of the guest list stays as Google has it.
-- An event cannot switch between timed and all-day in one update: Google merges `start` and `end` on a change, so
-  the old kind's field stays, and `gcal` cannot send the `null` that would clear it. Delete it and create it again.
 
 `bin/gcal-write-check <profile> <calendar-id>` runs a create, an update and a delete on a test calendar you name, and
 prints only ids and status. It refuses the account's primary calendar.

@@ -1,6 +1,7 @@
 import { isCliError } from "@wirecat/cli-base"
 import { zonedMoment } from "@wirecat/cli-base/query"
 import type {
+  BusyTimes,
   CalendarAccessRole,
   CalendarInput,
   CalendarSource,
@@ -22,6 +23,7 @@ import type {
   CalendarEvent,
   CalendarEventDateTime,
   CalendarEvents,
+  CalendarFreeBusyResponse,
 } from "./generated/types.js"
 import type { GoogleApi } from "./google-api.js"
 
@@ -262,6 +264,26 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
         pageToken = page.nextPageToken
       } while (pageToken)
       return slots
+    },
+
+    // https://developers.google.com/workspace/calendar/api/v3/reference/freebusy/query — calendar.readonly suffices.
+    async freeBusy({ calendars, people, window }) {
+      const ids = [...calendars, ...people]
+      const answer = (await api.call(
+        "calendar.freebusy.query",
+        {},
+        { timeMin: iso(window.from), timeMax: iso(window.to), items: ids.map((id) => ({ id })) },
+      )) as CalendarFreeBusyResponse
+      return ids.map((id): BusyTimes => {
+        const one = answer.calendars?.[id]
+        const error = one ? one.errors?.[0]?.reason : "notAnswered"
+        const busy = (one?.busy ?? []).flatMap(({ start, end }) => {
+          const from = Math.max(Date.parse(start ?? ""), window.from)
+          const to = Math.min(Date.parse(end ?? ""), window.to)
+          return Number.isFinite(from) && Number.isFinite(to) && from < to ? [{ from, to }] : []
+        })
+        return { id, busy: error ? [] : busy, ...(error ? { error } : {}) }
+      })
     },
   }
 }

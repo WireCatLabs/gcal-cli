@@ -20,10 +20,19 @@ const statusOf = (error: unknown) => (isCliError(error) ? error.details.status :
 
 const iso = (ms: number) => new Date(ms).toISOString()
 
-const timesOf = ({ startsAt, endsAt, startDate, endDate, timezone }: EventPatch) => {
-  if (startDate !== undefined && endDate !== undefined) return { start: { date: startDate }, end: { date: endDate } }
-  if (startsAt === undefined || endsAt === undefined) return {}
+/**
+ * `start.timeZone` is required for a recurring event, the zone its rule is expanded in
+ * (https://developers.google.com/workspace/calendar/api/v3/reference/events#start.timeZone), so a repeating all-day
+ * event carries it too.
+ */
+const timesOf = ({ startsAt, endsAt, startDate, endDate, timezone }: EventPatch, recurring = false) => {
   const zone = timezone ? { timeZone: timezone } : {}
+  if (startDate !== undefined && endDate !== undefined)
+    return {
+      start: { date: startDate, ...(recurring ? zone : {}) },
+      end: { date: endDate, ...(recurring ? zone : {}) },
+    }
+  if (startsAt === undefined || endsAt === undefined) return {}
   return { start: { dateTime: iso(startsAt), ...zone }, end: { dateTime: iso(endsAt), ...zone } }
 }
 
@@ -31,9 +40,10 @@ const timesOf = ({ startsAt, endsAt, startDate, endDate, timezone }: EventPatch)
  * An empty text, not `null`, clears a field: the generated request check, like Google's discovery document, types
  * them as strings.
  */
-const bodyOf = (patch: EventPatch): Record<string, unknown> => ({
+const bodyOf = (patch: EventPatch, recurring = patch.recurrence !== undefined): Record<string, unknown> => ({
   ...(patch.title === undefined ? {} : { summary: patch.title }),
-  ...timesOf(patch),
+  ...timesOf(patch, recurring),
+  ...(patch.recurrence === undefined ? {} : { recurrence: patch.recurrence }),
   ...(patch.location === undefined ? {} : { location: patch.location ?? "" }),
   ...(patch.description === undefined ? {} : { description: patch.description ?? "" }),
   ...(patch.attendees === undefined
@@ -45,6 +55,10 @@ const bodyOf = (patch: EventPatch): Record<string, unknown> => ({
  * Google Calendar as a `CalendarWriter`, through the generated API layer. A change sends the stored `etag` as
  * `If-Match`, so Google answers 412 when the event moved on. Scope needs no call of its own: an occurrence and its
  * series have different ids, and cli-core names the one to change.
+ *
+ * A switch between timed and all-day is a full `events.update` of the event as fetched: `events.patch` merges
+ * `start`, and clearing its `dateTime` would need a `null` the generated request check refuses. Google documents get
+ * then update with etags for a partial change (https://developers.google.com/workspace/calendar/api/v3/reference/events/update).
  */
 export const googleCalendarWriter = (api: GoogleApi): CalendarWriter => {
   const where = (calendar: StoredCalendar, eventId: string, notify: boolean) => ({
@@ -76,6 +90,24 @@ export const googleCalendarWriter = (api: GoogleApi): CalendarWriter => {
         })) as CalendarEvent,
     )
 
+  /** The event as Google holds it, only if that is the version the store holds: else the change would overwrite. */
+  const current = async (calendar: StoredCalendar, eventId: string, etag: string) => {
+    const event = await get(calendar, eventId)
+    if (event.etag !== etag) throw calendarConflict()
+    return event
+  }
+  const replace = (calendar: StoredCalendar, event: CalendarEvent, etag: string, notify: boolean) =>
+    guarded(
+      async () =>
+        (await api.call(
+          "calendar.events.update",
+          // Without these Google ignores the event's Meet link and Drive files in the body it is given.
+          { ...where(calendar, event.id as string, notify), conferenceDataVersion: 1, supportsAttachments: true },
+          event as Record<string, unknown>,
+          { headers: { "if-match": etag } },
+        )) as CalendarEvent,
+    )
+
   return {
     provider: "google-calendar",
 
@@ -99,6 +131,14 @@ export const googleCalendarWriter = (api: GoogleApi): CalendarWriter => {
     },
 
     async update(calendar, externalId, changes, { etag, notify }) {
+      const dated = changes.startDate !== undefined
+      if (dated || changes.startsAt !== undefined) {
+        const event = await current(calendar, externalId, etag)
+        if (dated !== Boolean(event.start?.date)) {
+          const recurring = changes.recurrence !== undefined || (event.recurrence?.length ?? 0) > 0
+          return entryOf(await replace(calendar, { ...event, ...bodyOf(changes, recurring) }, etag, notify), calendar)
+        }
+      }
       return entryOf(await patch(calendar, externalId, bodyOf(changes), etag, notify), calendar)
     },
 

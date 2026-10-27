@@ -115,6 +115,7 @@ export const calendarMount = () => {
     get source() {
       return need().source()
     },
+    freeBusy: true,
     embed: async (max) => {
       const { store, env } = need()
       const { embedEvents } = await import("@wirecat/cli-core/services")

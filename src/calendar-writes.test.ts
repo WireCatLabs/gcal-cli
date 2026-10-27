@@ -13,7 +13,7 @@ import { EVENTS_SCOPE } from "./grants.js"
 import { IDENTITY } from "./identity.js"
 import { createMcpServer } from "./mcp.js"
 import { createProgram, run } from "./program.js"
-import { fakeGoogleCalendar } from "./testing/google-calendar.js"
+import { fakeGoogleCalendar, SERIES } from "./testing/google-calendar.js"
 import { fakeGoogleWrites, INVITATION } from "./testing/google-writes.js"
 
 const clients: Client[] = []
@@ -21,7 +21,10 @@ afterEach(async () => {
   for (const client of clients.splice(0)) await client.close()
 })
 
-const harness = (scopes: string[] = [CALENDAR_READ_SCOPE, EVENTS_SCOPE]) => {
+const harness = (
+  scopes: string[] = [CALENDAR_READ_SCOPE, EVENTS_SCOPE],
+  held: Record<string, unknown>[] = [INVITATION],
+) => {
   const keyring = memoryKeyring()
   const env: NodeJS.ProcessEnv = {
     ...process.env,
@@ -39,7 +42,7 @@ const harness = (scopes: string[] = [CALENDAR_READ_SCOPE, EVENTS_SCOPE]) => {
     client: { clientId: "fixture-client.apps" },
   })
   rememberAccount(IDENTITY, "personal", "owner@example.com", env)
-  const google = fakeGoogleWrites([INVITATION], fakeGoogleCalendar([INVITATION]).fetch)
+  const google = fakeGoogleWrites(held, fakeGoogleCalendar([INVITATION]).fetch)
   const fetch = google.fetch as typeof globalThis.fetch
   const gcal = async (...argv: string[]) => {
     const out: string[] = []
@@ -161,11 +164,58 @@ describe("event writes over Google", () => {
     expect(google.event("review1")?.status).toBe("cancelled")
   })
 
-  it("a timed event does not become an all-day one in one update", async () => {
-    const { gcal } = harness()
+  it("a timed event becomes all-day and back, each a full update with If-Match", async () => {
+    const { gcal, google } = harness()
+    const event = await eventRef(gcal)
+    const update = ["personal", "events", "update", event, "--no-notify", "--yes"]
+    const allDay = await gcal(...update, "--start-date", "2026-11-06", "--end-date", "2026-11-06")
+    expect(allDay.error).toBeUndefined()
+    expect(posts(google).at(-1)).toMatchObject({ method: "PUT", ifMatch: INVITATION.etag })
+    expect(google.event("review1")?.start).toEqual({ date: "2026-11-06" })
+    const timed = await gcal(...update, ...at)
+    expect(timed.error).toBeUndefined()
+    expect(posts(google).at(-1)).toMatchObject({ method: "PUT" })
+    expect(google.event("review1")?.start).toMatchObject({ dateTime: "2026-11-02T09:00:00.000Z" })
+  })
+
+  it("the switch checks api.calendar.events.update, so denying it in the API stops it", async () => {
+    const { gcal, google } = harness()
     const event = await eventRef(gcal)
     const switched = ["personal", "events", "update", event, "--start-date", "2026-11-06", "--end-date", "2026-11-06"]
-    expect((await gcal(...switched, "--no-notify", "--yes")).error).toMatchObject({ code: "validation_error" })
+    expect((await gcal("personal", "config", "set", "permissions.api.calendar.events.update", "deny")).code).toBe(0)
+    const denied = await gcal(...switched, "--no-notify", "--yes")
+    expect(denied.error).toMatchObject({ code: "permission_error" })
+    expect(posts(google)).toEqual([])
+  })
+
+  it("update --series --repeat patches the series' rule and keeps its EXDATE", async () => {
+    const { gcal, google } = harness(undefined, [INVITATION, SERIES])
+    await gcal("personal", "sync")
+    const { items } = await gcal("personal", "events", "list", "from:2026-11-02", "to:2026-11-03")
+    const slot = items.find(({ title }: { title: string }) => title === "Weekly planning")
+    const changed = await gcal(
+      ...["personal", "events", "update", `event:${slot.id}`, "--series", "--repeat", "FREQ=WEEKLY;BYDAY=MO,TH"],
+      ...["--no-notify", "--yes"],
+    )
+    expect(changed.error).toBeUndefined()
+    expect(posts(google).at(-1)).toMatchObject({
+      method: "PATCH",
+      path: "calendars/owner@example.com/events/weekly1",
+      ifMatch: SERIES.etag,
+      body: { recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=MO,TH", "EXDATE;TZID=Europe/Madrid:20261109T100000"] },
+    })
+  })
+
+  it("--repeat inserts a repeating event with its rule and zone, and says to sync", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    const made = await gcal(...create, ...at, "--repeat", "FREQ=WEEKLY;BYDAY=MO;COUNT=4", "--yes")
+    expect(made.error).toBeUndefined()
+    expect(posts(google).at(-1)?.body).toMatchObject({
+      recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=MO;COUNT=4"],
+      start: { timeZone: expect.any(String) },
+    })
+    expect(made.item.hint).toBe("sync to store its occurrences")
   })
 
   it("an event changed at Google since the sync is a conflict", async () => {

@@ -21,6 +21,7 @@ const CALENDAR = {
   deletedAt: null,
 }
 const AT = Date.UTC(2026, 10, 2, 9)
+const TIMED = { title: "Example standup", startsAt: AT, endsAt: AT + 900_000, timezone: "Europe/Madrid" }
 const ETAG = INVITATION.etag
 
 const adapter = (scopes: string[] = [CALENDAR_READ_SCOPE, EVENTS_SCOPE]) => {
@@ -95,7 +96,8 @@ describe("the Google calls behind each write", () => {
       { startsAt: AT, endsAt: AT + 3_600_000, timezone: "Europe/Madrid", location: null },
       { scope: "this", etag: ETAG, notify: false },
     )
-    expect(google.requests[0]).toMatchObject({
+    expect(google.requests.map(({ method }) => method)).toEqual(["GET", "PATCH"])
+    expect(google.requests[1]).toMatchObject({
       method: "PATCH",
       path: "calendars/owner@example.com/events/review1",
       ifMatch: ETAG,
@@ -105,8 +107,92 @@ describe("the Google calls behind each write", () => {
         location: "",
       },
     })
-    expect(google.requests[0]?.query.get("sendUpdates")).toBe("none")
+    expect(google.requests[1]?.query.get("sendUpdates")).toBe("none")
     expect(changed).toMatchObject({ location: null, startsAt: AT })
+  })
+
+  it("a repeating event is inserted with its rule, and its all-day start and end carry the zone", async () => {
+    const { google, writer } = adapter()
+    const made = await writer.create(
+      CALENDAR,
+      {
+        title: "Example retro",
+        startDate: "2026-11-06",
+        endDate: "2026-11-07",
+        timezone: "Europe/Madrid",
+        recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=FR;COUNT=4"],
+      },
+      { id: "retro01", notify: false },
+    )
+    expect(google.requests[0]?.body).toMatchObject({
+      start: { date: "2026-11-06", timeZone: "Europe/Madrid" },
+      end: { date: "2026-11-07", timeZone: "Europe/Madrid" },
+      recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=FR;COUNT=4"],
+    })
+    expect(made).toMatchObject({ kind: "series", recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=FR;COUNT=4"] })
+  })
+
+  it("a series' new rule is patched in, replacing the old one", async () => {
+    const { google, writer } = adapter()
+    const made = await writer.create(
+      CALENDAR,
+      { ...TIMED, recurrence: ["RRULE:FREQ=DAILY;COUNT=5"] },
+      { id: "rule0001", notify: false },
+    )
+    const changed = await writer.update(
+      CALENDAR,
+      "rule0001",
+      { recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=MO"] },
+      { scope: "series", etag: made.etag as string, notify: false },
+    )
+    expect(google.requests.at(-1)).toMatchObject({
+      method: "PATCH",
+      body: { recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=MO"] },
+    })
+    expect(changed.recurrence).toEqual(["RRULE:FREQ=WEEKLY;BYDAY=MO"])
+  })
+
+  it("switching to all-day replaces the fetched event, keeping its guests, Meet link and files", async () => {
+    const { google, writer } = adapter()
+    const changed = await writer.update(
+      CALENDAR,
+      "review1",
+      { startDate: "2026-11-05", endDate: "2026-11-06", timezone: "Europe/Madrid" },
+      { scope: "this", etag: ETAG, notify: false },
+    )
+    const put = google.requests.at(-1)
+    expect(google.requests.map(({ method }) => method)).toEqual(["GET", "PUT"])
+    expect(put).toMatchObject({ ifMatch: ETAG, body: { summary: "Example review", attendees: INVITATION.attendees } })
+    expect(put?.body?.start).toEqual({ date: "2026-11-05" })
+    expect(put?.query.get("conferenceDataVersion")).toBe("1")
+    expect(put?.query.get("supportsAttachments")).toBe("true")
+    expect(changed).toMatchObject({ allDay: true, startDate: "2026-11-05" })
+
+    const back = await writer.update(
+      CALENDAR,
+      "review1",
+      { startsAt: AT, endsAt: AT + 3_600_000, timezone: "Europe/Madrid" },
+      { scope: "this", etag: changed.etag as string, notify: false },
+    )
+    expect(google.requests.at(-1)?.body?.start).toEqual({
+      dateTime: "2026-11-02T09:00:00.000Z",
+      timeZone: "Europe/Madrid",
+    })
+    expect(back).toMatchObject({ allDay: false, startsAt: AT, startDate: null })
+  })
+
+  it("a switch over an event that moved on since the sync is a conflict, and nothing is replaced", async () => {
+    const { google, writer } = adapter()
+    google.changeBehind("review1")
+    await expect(
+      writer.update(
+        CALENDAR,
+        "review1",
+        { startDate: "2026-11-05", endDate: "2026-11-06", timezone: "Europe/Madrid" },
+        { scope: "this", etag: ETAG, notify: false },
+      ),
+    ).rejects.toMatchObject({ details: { reason: "event.conflict" } })
+    expect(google.requests.map(({ method }) => method)).toEqual(["GET"])
   })
 
   it("delete sends If-Match and returns nothing", async () => {

@@ -1,4 +1,4 @@
-// Shapes and refusals from the Calendar API reference (Events: insert, get, patch, delete; "Handle API errors" for
+// Shapes and refusals from the Calendar API reference (Events: insert, get, patch, update, delete; "Handle API errors" for
 // 409 and 412; "Resource versions" for If-Match); every value is made up.
 
 const PREFIX = "/calendar/v3/"
@@ -74,7 +74,7 @@ export interface WriteRequest {
  * Google Calendar's event writes over held events. It refuses what Google refuses: an id outside base32hex, a second
  * event with the same id (409), an If-Match that is not the event's etag (412), and — inferred from the documented
  * merge, not seen live — a start or end holding both a date and a time. A patch replaces arrays and merges
- * objects, as Google's patch does. Anything else goes to `fallback`, the read fake.
+ * objects, as Google's patch does; an update replaces the whole event. Anything else goes to `fallback`, the read fake.
  */
 export const fakeGoogleWrites = (
   held: Record<string, unknown>[] = [INVITATION],
@@ -162,7 +162,10 @@ export const fakeGoogleWrites = (
       changed(event).status = "cancelled"
       return answered(new Response(null, { status: 204 }))
     }
-    const merged = patched(structuredClone(event), body ?? {})
+    const merged =
+      method === "PUT"
+        ? changed({ ...structuredClone(body ?? {}), id: event.id } as Event)
+        : patched(structuredClone(event), body ?? {})
     // Patch merges objects, so a timed event given a date keeps its dateTime; Google refuses a time that is both.
     if ([merged.start, merged.end].some((time) => isObject(time) && "date" in time && "dateTime" in time))
       return json({ error: { code: 400, message: "Invalid start time." } }, 400)

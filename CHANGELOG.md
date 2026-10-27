@@ -6,6 +6,17 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Added
 
+- `gcal <profile> calendars busy [today|week|from: to:] [calendar:<id>] [person:<email>]`: Google's free/busy for the
+  synced calendars and the people named (`freebusy.query`, which `calendar.readonly` allows). `--duration-minutes`
+  adds the stretches free for all of them inside `--hours` (09:00-17:00 by default), Monday to Friday, in the
+  computer's time zone; whoever Google will not show is listed in `unknown`. Nothing is stored. cli-core's shared
+  command over gcal's `freeBusy`.
+- `events create --repeat <rule>` makes a repeating event, and `events update --series --repeat <rule>` changes its
+  rule, keeping its excluded dates. The rule is checked before Google sees it; a repeating event's start and end carry
+  its time zone, which Google requires.
+- `events update` switches an event between timed and all-day: new dates on a timed event, or times on an all-day
+  one. gcal reads the event, checks it is the version the last sync saw, and sends it whole with `events.update`,
+  keeping its Meet link and Drive files. An event update now also checks `api.calendar.events.update`.
 - `gcal <profile> session start --grant write` also asks Google for `calendar.events`; `session status` lists the
   grants. Without it, a write still fails with `permission_error` and names the flag. `--grant sharing` asks for
   `calendar.acls`, which the sharing methods (`calendar.acl.*`) need.
