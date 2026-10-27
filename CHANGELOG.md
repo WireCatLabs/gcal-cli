@@ -72,6 +72,13 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- `gcal config set | unset` lists only the settings gcal uses: the messenger settings (`sends_per_hour`,
+  `transcribe_with`, `phone_countries`, `task_*` and the others) are gone, and `gcal skill show` takes no skill name.
+  Over MCP, `sync` and `calendars list` run through `gcal_read`, since they only save what they read from Google.
+  cli-core 0.468.0.
+- Every run is kept in the run log, not only those `--record` asked for: successes for 7 days, failures for 30
+  (`keep_successful_runs_for_days`, `keep_runs_for_days`, `runs_size_limit_mb`); `record: false` keeps only failures.
+  cli-core 0.467.0.
 - `gcal_write` takes the event writes as the command line does (cli-core 0.459.0): `attendee` is a list, so one create
   invites several people; `location` and `description` take `""` to clear them; `notify` is one boolean (`false`
   sends `--no-notify`), and `no_notify` is gone. A write's `entry` names the event's `title`.
