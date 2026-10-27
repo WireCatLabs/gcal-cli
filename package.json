@@ -80,7 +80,7 @@
   "dependencies": {
     "@modelcontextprotocol/server": "2.4.0",
     "@wirecat/cli-base": "0.63.0",
-    "@wirecat/cli-core": "file:/var/tmp/claude/claude-1000/-home-leemour-Projects-AI-cli-gcal/fde3ec23-bc44-4629-aeda-c16b76de2fb1/scratchpad/pack/wirecat-cli-core-0.455.0.tgz",
+    "@wirecat/cli-core": "0.456.0",
     "commander": "15.0.0",
     "valibot": "1.5.0"
   },
