@@ -3,6 +3,9 @@ import type { Asker, GuardRequest, Level, SendGuard } from "@wirecat/cli-core/se
 
 export { EVENTS_DELETE_SERIES_KEY, EVENTS_NOTIFY_KEY }
 
+/** Google mailing the person a calendar is shared with. Its own key, as `events.notify` is for attendees (WC-PERM-22). */
+export const SHARING_NOTIFY_KEY = "sharing.notify"
+
 /** The events methods that take `sendUpdates` and `sendNotifications` (Discovery snapshot, spec/google/calendar.json). */
 const MAILING = new Set([
   "calendar.events.insert",
@@ -24,6 +27,16 @@ export const notifies = (method: string, params: Record<string, unknown>): boole
   if (updates !== undefined && updates !== null && updates !== "none") return true
   return params.sendNotifications === true || params.sendNotifications === "true"
 }
+
+const SHARING = new Set(["calendar.acl.insert", "calendar.acl.patch", "calendar.acl.update"])
+
+/**
+ * Whether Google mails the person a calendar is shared with. Unlike events, left out means it does: "The default is
+ * True" (https://developers.google.com/workspace/calendar/api/v3/reference/acl/insert#parameters). `acl.delete` mails
+ * nobody ("there are no notifications on access removal").
+ */
+export const notifiesSharing = (method: string, params: Record<string, unknown>): boolean =>
+  SHARING.has(method) && params.sendNotifications !== false && params.sendNotifications !== "false"
 
 /** A write that removes the event it names: a delete, or a patch or update to `status: "cancelled"`. */
 export const cancels = (method: string, body: Record<string, unknown> | undefined): boolean =>

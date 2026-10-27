@@ -11,7 +11,8 @@ An agent connected through `gcal <profile> mcp` can change who sees your calenda
 `--grant sharing` it can share a calendar with any address, make it public, or remove someone. It can also call the
 method that gives a calendar to another account; that one works only for a Google Workspace administrator, and only
 when the sign-in has a permission `gcal` does not ask for. Over MCP no one is there to answer a question, so `ask`
-lets these run. To keep sharing with you, run
+lets these run. An agent cannot have Google mail the person it shares with: that needs `sharing.notify`, which is
+`deny`. It can still share in silence, with `--send-notifications false`. To keep sharing with you, run
 `gcal personal config set permissions.api.calendar.acl deny`, or sign in without `--grant sharing`. Emptying a
 calendar is never offered to an agent.
 

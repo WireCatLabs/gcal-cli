@@ -1,6 +1,7 @@
 import { CALENDAR_WRITE_DEFAULTS, CALENDAR_WRITE_KEYS, type CalendarWrite } from "@wirecat/cli-core/calendar"
 import { type Configuration, commandPathKey, commandPermissions, settingsFor } from "@wirecat/cli-core/cli"
 import type { Level } from "@wirecat/cli-core/sends"
+import { SHARING_NOTIFY_KEY } from "./api-keys.js"
 import { operations } from "./generated/manifest.js"
 import { IDENTITY } from "./identity.js"
 
@@ -37,7 +38,7 @@ const keyOf = (path: readonly string[]) => {
 export const configuration: Configuration = settingsFor(IDENTITY, {
   permissions: commandPermissions({
     keyOf,
-    extra: [...operations.map((operation) => apiKey(operation.id)), ...CALENDAR_WRITE_KEYS],
+    extra: [...operations.map((operation) => apiKey(operation.id)), ...CALENDAR_WRITE_KEYS, SHARING_NOTIFY_KEY],
     defaults: {
       ...Object.fromEntries(
         operations
@@ -45,6 +46,7 @@ export const configuration: Configuration = settingsFor(IDENTITY, {
           .map((operation) => [apiKey(operation.id), apiDefault(operation.id)]),
       ),
       ...CALENDAR_WRITE_DEFAULTS,
+      [SHARING_NOTIFY_KEY]: "deny",
     },
   }),
 })

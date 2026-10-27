@@ -52,6 +52,8 @@ Find your way with the tool itself, not this file:
 - A method that changes Calendar needs `--grant write`, sharing (`calendar-acl-*`) needs `--grant sharing`, and the
   calendar-wide ones a permission gcal does not ask for: on `permission_error`, tell the owner; do not retry.
 - Share a calendar, change a sharing rule or give a calendar away only when the owner asked for that exact change.
+  Pass `send_notifications: "false"` when you share: Google otherwise mails the person, and `sharing.notify` is denied
+  by default; do not ask to loosen it on your own.
 
 ## Rules
 

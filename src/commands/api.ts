@@ -38,7 +38,16 @@ import {
 import { Command } from "commander"
 import * as v from "valibot"
 import { jsonObject, operationOf, operations, schemas, validateRequest } from "../api-contract.js"
-import { cancels, EVENTS_DELETE_SERIES_KEY, EVENTS_NOTIFY_KEY, isSeries, keyedGuard, notifies } from "../api-keys.js"
+import {
+  cancels,
+  EVENTS_DELETE_SERIES_KEY,
+  EVENTS_NOTIFY_KEY,
+  isSeries,
+  keyedGuard,
+  notifies,
+  notifiesSharing,
+  SHARING_NOTIFY_KEY,
+} from "../api-keys.js"
 import { type ApiMethod, apiMethod, apiMethods, validateApiParams } from "../api-methods.js"
 import { CONFERENCE_SECRETS_NOTE, safeAnswer } from "../conference.js"
 import { apiKey, configuration, OWNER_ONLY, permissions } from "../config.js"
@@ -145,6 +154,19 @@ const preview = (
   )
 }
 
+/** The method's own refusal comes first, so a denied share is not blamed on its mail. */
+const refuseSharingMail = (levelOf: (key: string) => Level, name: string) => {
+  const level = levelOf(SHARING_NOTIFY_KEY)
+  if (!["deny", "readonly"].includes(level) || ["deny", "readonly"].includes(levelOf(apiKey(name)))) return
+  throw new CliError(
+    "permission_error",
+    `sharing a calendar mails the person it is shared with unless sendNotifications is false, and ` +
+      `${SHARING_NOTIFY_KEY} is ${level}; pass --send-notifications false (send_notifications "false" over MCP, ` +
+      `"sendNotifications": false in api call --params), or allow ${SHARING_NOTIFY_KEY}`,
+    { permission: SHARING_NOTIFY_KEY },
+  )
+}
+
 const call = (command: Command, name: string, params: Record<string, unknown>, body?: Record<string, unknown>) =>
   worded(contextOf(command).common.profile, () => callGoogle(command, name, params, body))
 
@@ -165,8 +187,14 @@ const callGoogle = async (
   const levelOf = (key: string) => levelFor(settings.permissions, key, permissions.defaults).level
   // gcal's rule: the shared calendar keys hold on every path, so `api` cannot mail attendees or delete a series
   // that `events` would refuse.
-  const keys = [apiKey(name), ...(method.mutates && notifies(name, params) ? [EVENTS_NOTIFY_KEY] : [])]
+  const sharingMail = method.mutates && notifiesSharing(name, params)
+  const keys = [
+    apiKey(name),
+    ...(method.mutates && notifies(name, params) ? [EVENTS_NOTIFY_KEY] : []),
+    ...(sharingMail ? [SHARING_NOTIFY_KEY] : []),
+  ]
   const removes = method.mutates && cancels(name, body)
+  if (sharingMail) refuseSharingMail(levelOf, name)
   if (dryRun) {
     validateRequest(name, params, body)
     return preview(command, levelOf, keys, removes, method.mutates)
