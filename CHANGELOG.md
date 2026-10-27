@@ -26,6 +26,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   what changed; a repeating event's slots come one by one, cancelled slots included. Join links lose their query
   string, and passcodes and PINs are never stored. Google's words are stored in cli-core's neutral ones
   (`needs-action`, `out-of-office`, `focus`, `free-busy`). Each command has its own permission key, its path.
+- `bin/gcal-live-check <profile> <word>`: the owner's first run against real Google, step by step — sign-in,
+  calendars, a sync and a second one that must read only the changes, embedding, search — printing counts only.
+  `--dry-run` lists the steps.
 - `gcal mcp` shows control characters in an answer visibly, so an invitation's text cannot hide anything from the
   agent.
 
