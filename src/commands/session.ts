@@ -2,6 +2,7 @@ import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import {
   type BaseEnvironment,
+  baseContext,
   commandWords,
   environmentOf,
   type GlobalFlags,
@@ -80,10 +81,10 @@ const startCommand = () =>
         answers: false,
       })
       const { signIn } = await import("../session.js")
-      answer(
-        this,
-        await signIn({
+      const signedIn = await baseContext(this, configuration.resolveSettings).run((events) =>
+        signIn({
           ...common,
+          events,
           client,
           openBrowser: args.browser ? (environment.openBrowser ?? (async () => {})) : async () => {},
           showUrl: (url) => {
@@ -92,6 +93,7 @@ const startCommand = () =>
           },
         }),
       )
+      answer(this, signedIn)
     })
 
 const statusCommand = () =>
@@ -108,7 +110,10 @@ const statusCommand = () =>
       const { flags, common } = contextOf(this)
       if (args.check) refuseOffline(flags)
       const { sessionStatus } = await import("../session.js")
-      answer(this, await sessionStatus({ ...common, check: args.check === true }))
+      const status = await baseContext(this, configuration.resolveSettings).run((events) =>
+        sessionStatus({ ...common, events, check: args.check === true }),
+      )
+      answer(this, status)
     })
 
 const endCommand = () =>
@@ -123,7 +128,7 @@ const endCommand = () =>
     .action(async function (this: Command) {
       const { common } = contextOf(this)
       const { signOut } = await import("../session.js")
-      answer(this, await signOut(common))
+      answer(this, await baseContext(this, configuration.resolveSettings).run(() => signOut(common)))
     })
 
 export const sessionCommand = (): Command =>

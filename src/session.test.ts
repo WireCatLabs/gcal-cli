@@ -300,6 +300,23 @@ describe("session status and end", () => {
     })
   })
 
+  it("records each session run with its account lookup", async () => {
+    const { gcal } = harness()
+    await gcal(["--record", "personal", "session", "start", "--client-file", clientFile(), "--json"])
+    await gcal(["--record", "personal", "session", "status", "--check", "--json"])
+    await gcal(["--record", "personal", "session", "end", "--json"])
+    const runs = JSON.parse((await gcal(["personal", "runs", "list", "--json"])).out).items as {
+      command: string
+      status: string
+      requests: number
+      operations: string[]
+    }[]
+    const of = (command: string) => runs.find((run) => run.command === command)
+    expect(of("session start")).toMatchObject({ status: "success", operations: ["GET /v1/userinfo"] })
+    expect(of("session status")).toMatchObject({ status: "success", requests: 1, operations: ["GET /v1/userinfo"] })
+    expect(of("session end")).toMatchObject({ status: "success" })
+  })
+
   it("refuses --check offline", async () => {
     const { gcal } = harness()
     const refused = await gcal(["--offline", "personal", "session", "status", "--check", "--json"])
