@@ -218,7 +218,7 @@ gcal events list [words] [options]
 | `--jsonl` | one JSON object per item. |
 | `--limit <n>` | events at most, 1–1000. Default: `100`. |
 
-**Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 7 more; every field: gcal commands info events list
+**Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 8 more; every field: gcal commands info events list
 
 **Example:** `gcal personal events list week --json`, `gcal personal events list from:2026-11-02 to:2026-11-06 person:ana@example.com`
 

@@ -19,6 +19,7 @@ The first release of `gcal`, a Google Calendar CLI for the terminal, scripts and
   reads the calendars you own from a year back to three months ahead; each later one asks Google only for what
   changed. `sync --embed` also indexes events for search by meaning. A join link is stored without its query
   string, and a meeting's passcode or PIN is never stored.
+  Each answer names, under `untrusted`, the fields an invitation's sender wrote, so an agent reads them as data.
 - **`gcal <profile> search --remote <words>` asks Google Calendar's own search.** It reads only, keeps nothing, and
   also finds events outside the synced span. The answer names, under `untrusted`, the fields an invitation's sender
   wrote.
