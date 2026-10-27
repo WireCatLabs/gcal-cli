@@ -86,7 +86,7 @@ const eventRef = async (gcal: ReturnType<typeof harness>["gcal"]) => {
 }
 
 const create = ["personal", "events", "create", "owner@example.com", "--title", "Example planning"]
-const at = ["--start-time", "2026-11-02T10:00", "--end-time", "2026-11-02T11:00"]
+const at = ["--start-time", "2026-11-02T10:00+01:00", "--end-time", "2026-11-02T11:00+01:00"]
 const posts = (google: ReturnType<typeof fakeGoogleWrites>) => google.requests.filter(({ method }) => method !== "GET")
 
 describe("event writes over Google", () => {
@@ -206,8 +206,8 @@ describe("event writes over Google", () => {
     const fields = {
       calendar: "owner@example.com",
       title: "Example planning",
-      start_time: "2026-11-02T10:00",
-      end_time: "2026-11-02T11:00",
+      start_time: "2026-11-02T10:00+01:00",
+      end_time: "2026-11-02T11:00+01:00",
     }
     const made = (await client.callTool({
       name: "gcal_write",
@@ -263,7 +263,16 @@ describe("event writes over Google", () => {
     })
     expect(patch?.query.get("sendUpdates")).toBe("all")
     const timed = await gcal(
-      ...["personal", "events", "update", event, "--start-time", "2026-11-06T09:00", "--end-time", "2026-11-06T10:00"],
+      ...[
+        "personal",
+        "events",
+        "update",
+        event,
+        "--start-time",
+        "2026-11-06T09:00+01:00",
+        "--end-time",
+        "2026-11-06T10:00+01:00",
+      ],
       ...["--no-notify", "--yes"],
     )
     expect(timed.code).toBe(0)
