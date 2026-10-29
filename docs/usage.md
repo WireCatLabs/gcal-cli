@@ -99,13 +99,16 @@ gcal personal people link email:ana@example.com telegram:12345  # the same perso
 gcal personal links review                                      # copies the tool could not join to one event
 ```
 
-`search --remote` asks Google Calendar's own search instead, over the calendars that sync. It also finds events
-outside the synced span (a year back, three months ahead). It reads only, keeps nothing in the store, and needs the
-network; `--exact` and `--cursor` do not apply to it:
+`search` reads the store by default (`--backend archive`). `--backend server` asks Google Calendar's own search
+instead, over the calendars that sync. It also finds events outside the synced span (a year back, three months
+ahead). It reads only, keeps nothing in the store, and needs the network; `--exact` and `--cursor` do not apply to it:
 
 ```sh
-gcal personal search --remote quarterly review
+gcal personal search --backend server quarterly review
 ```
+
+`--backend both` is refused: the store and Google rank and page events in different ways, so one merged list would
+have no single order and no next page. Run the two searches one after the other.
 
 ## When people are free
 

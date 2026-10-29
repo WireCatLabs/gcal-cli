@@ -103,7 +103,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `search` | `--cursor` | ✅ |  |
 | `search` | `--exact` | ✅ |  |
 | `search` | `--newest` | ✅ |  |
-| `search` | `--remote` | ✅ |  |
+| `search` | `--backend` | ✅ |  |
 | `people list` |  | ✅ |  |
 | `people list` | `--json` | ✅ |  |
 | `people list` | `--jsonl` | ✅ |  |

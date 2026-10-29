@@ -37,9 +37,9 @@ If this CLI defines a messenger, set its `speechModels` to `parakeet-v3`.
 - **Deletes at Google:** the entry is marked deleted; a past event stays as history, a future one becomes cancelled
   (WC-DATA-7). The person deletes local data only through cli-core's store commands.
 - **Search:** title, description (cleaned), location and attendee names, by words and by meaning. Events appear in
-  `search all` and in a person's context. `search --remote` asks Google live and saves nothing. Working location,
+  `search all` and in a person's context. `search --backend server` asks Google live and saves nothing. Working location,
   focus time, out of office, birthdays and busy-only private events are listed, never searched.
-- **Offline:** everything except `session`, `calendars list`, `calendars busy`, `sync` and `search --remote`.
+- **Offline:** everything except `session`, `calendars list`, `calendars busy`, `sync` and `search --backend server`.
 - **Links:** attendees join people by address; Telegram, WhatsApp and MAX people only by the owner's
   `people link`; an event joins a Zoom meeting by join key and its other copies by iCalUID; an attached Drive file
   links the event to the stored document. Ambiguous links go to `links review`. Never by name or time alone.

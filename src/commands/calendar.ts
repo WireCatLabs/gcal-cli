@@ -15,7 +15,7 @@ import {
   snakeKeys,
 } from "@wirecat/cli-core/cli"
 import type { MessageStore } from "@wirecat/cli-core/store"
-import { Command } from "commander"
+import { Command, Option } from "commander"
 import { configuration, permissions, writeKeys } from "../config.js"
 import type { GoogleApi } from "../google-api.js"
 import { IDENTITY } from "../identity.js"
@@ -84,8 +84,10 @@ const bodyOf = (command: Command, value: unknown) => {
   return itemOf(snakeKeys(value))
 }
 
+type Backend = "archive" | "server" | "both"
+
 interface RemoteOptions {
-  remote?: boolean
+  backend: Backend
   limit: number
   cursor: number
   exact?: boolean
@@ -167,13 +169,13 @@ export const calendarMount = () => {
   const remoteSearch = async (words: string[], opts: RemoteOptions, command: Command) => {
     const flags = command.optsWithGlobals<GlobalFlags>()
     if (flags.offline)
-      throw new CliError("permission_error", "search --remote asks Google; leave out --offline", {
+      throw new CliError("permission_error", "search --backend server asks Google; leave out --offline", {
         reason: "offline.refused",
       })
     if (opts.exact || opts.cursor)
       throw new CliError(
         "validation_error",
-        "search --remote takes neither --exact nor --cursor: Google ranks and pages it",
+        "search --backend server takes neither --exact nor --cursor: Google ranks and pages it",
       )
     const { store, accountId, account, api } = need()
     const calendars = (await store.calendar.calendars(accountId)).filter(
@@ -198,25 +200,39 @@ export const calendarMount = () => {
     if (!local) throw new CliError("configuration_error", "cli-core's search has no action to hand back to")
     overrideSharedContract(
       search,
-      "gcal's search can also ask Google's own text search (--remote), read only: a scope of the same search (WC-CMD-6, WC-CMD-7).",
+      "gcal's search can also ask Google's own text search (--backend server), read only: a scope of the same search (WC-CMD-6, WC-CMD-7).",
       (command) => {
         annotate(command, {
           effects: REMOTE_READ_LOCAL_READ,
           examples: [
             `${IDENTITY.command} personal search roadmap planning --json`,
-            `${IDENTITY.command} personal search --remote quarterly review`,
+            `${IDENTITY.command} personal search --backend server quarterly review`,
           ],
         })
         command.description(
-          "find stored events by words, and by meaning when its model is downloaded; with --remote, ask Google instead",
+          "find stored events by words, and by meaning when its model is downloaded; with --backend server, ask Google instead",
         )
-        command.summary("find stored events by words and meaning, or with --remote ask Google")
-        command.option("--remote", "ask Google Calendar's own search over the synced calendars instead of the store")
+        command.summary("find stored events by words and meaning, or with --backend server ask Google")
+        command.addOption(
+          new Option(
+            "--backend <archive|server|both>",
+            "where to search: archive, the local store, or server, Google Calendar's own search over the synced calendars",
+          )
+            .choices(["archive", "server", "both"])
+            .default("archive"),
+        )
       },
     )
     search.action(async function (this: Command, ...args: unknown[]) {
       const [words, opts, command] = args as [string[], RemoteOptions, Command]
-      return opts.remote ? remoteSearch(words, opts, command) : local.apply(this, args)
+      if (opts.backend === "both")
+        throw new CliError(
+          "validation_error",
+          "search --backend both is not offered: the store's search and Google's rank and page events differently, so " +
+            "one merged list would have no single order or next page; run --backend archive and --backend server",
+          { reason: "search.backend-both" },
+        )
+      return opts.backend === "server" ? remoteSearch(words, opts, command) : local.apply(this, args)
     })
   }
 

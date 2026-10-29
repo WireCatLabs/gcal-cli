@@ -23,7 +23,7 @@ Find your way with the tool itself, not this file:
   state. `calendars list` shows which calendars sync; turning one on or off is the owner's choice.
 - `gcal <profile> events list week --json`, `events list from:<date> to:<date> person:<email>`, and
   `events show event:<id>` read the local store, without the network.
-- `gcal <profile> search <words> --json` finds stored events; `search --remote <words>` asks Google over the synced
+- `gcal <profile> search <words> --json` finds stored events; `search --backend server <words>` asks Google over the synced
   calendars, for events outside the synced span. Its `untrusted` list names the fields others wrote; `people list [event:<id>] --json` gives attendees.
 - `gcal <profile> calendars busy week person:<email> --duration-minutes 30 --json` asks Google when the owner and the
   people named are taken, and with `--duration-minutes` gives `slots` free for all of them in working hours. A person
