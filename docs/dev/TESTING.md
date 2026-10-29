@@ -21,3 +21,6 @@ How the tests run, and what they never touch. The rules are the handbook's
   [drive-cli does](https://github.com/WireCatLabs/drive-cli/blob/150b105569a98fbd0d4b66349305ad84128adfda/package.json#L37), and remove the skip.
 - `pnpm smoke` installs the packed package into a temporary folder and runs it offline.
 - `pnpm audit:commands` audits the command tree beside the latest published WireCat CLIs.
+- `bin/gcal-write-check <profile> <calendar-id>` is the owner's live check of the event writes against real Google: a
+  create, an update and a delete on a test calendar, printing only ids and status. It refuses the account's primary
+  calendar. It is in the repository, not in the npm package.

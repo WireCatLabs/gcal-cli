@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Says whether this terminal can reach gcal's saved sign-in in the system keyring, and if not, the keyring's own
+# reason. It never prints the sign-in: only "found", "not found" or the error text.
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+  echo "usage: bin/gcal-keyring-check <profile>" >&2
+  exit 2
+fi
+root=$(cd "$(dirname "$0")/.." && pwd)
+
+cd "$root" && node --input-type=module -e '
+import { createRequire } from "node:module"
+const require = createRequire(import.meta.url)
+const base = require.resolve("@wirecat/cli-base")
+const { Entry } = require(require.resolve("@napi-rs/keyring", { paths: [base] }))
+const account = `oauth:google:${process.argv[1]}`
+console.log(`D-Bus session: ${process.env.DBUS_SESSION_BUS_ADDRESS ? "set" : "NOT set"}`)
+try {
+  const secret = new Entry("gcal-cli", account, { linux: { store: "secret-service" } }).getPassword()
+  console.log(`keyring entry gcal-cli / ${account}: ${secret ? "found" : "not found"}`)
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error)
+  console.log(`keyring error: ${message}`)
+  // libdbus refuses a bus whose id differs from the one in the address; a terminal older than the bus keeps the old id.
+  if (message.includes("Did not receive a reply")) console.log("hint: the D-Bus address may be stale; open a new terminal")
+  process.exitCode = 1
+}
+' "$1"

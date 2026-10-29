@@ -1575,7 +1575,7 @@ gcal mcp serve [options]
 
 **Returns:** serve this profile's commands to an AI agent
 
-**Example:** `gcal personal mcp serve`, `gcal personal mcp serve --profiles work,personal`, `gcal personal mcp serve --http --public-url https://laptop.example.ts.net`
+**Example:** `gcal personal mcp serve`, `gcal mcp serve --profiles work,personal`, `gcal personal mcp serve --http --public-url https://laptop.example.ts.net`
 
 ### `gcal mcp revoke`
 
@@ -1593,7 +1593,7 @@ gcal mcp revoke [options]
 
 **Returns:** forget every login given to a browser app
 
-**Example:** `gcal personal mcp revoke`, `gcal personal mcp revoke --profiles all`
+**Example:** `gcal personal mcp revoke`, `gcal mcp revoke --profiles all`
 
 ### `gcal mcp server`
 
@@ -1669,7 +1669,7 @@ gcal mcp config [options]
 
 **Returns:** print the local MCP configuration of this profile, or of those --profiles names
 
-**Example:** `gcal personal mcp config`, `gcal personal mcp config --profiles all`
+**Example:** `gcal personal mcp config`, `gcal mcp config --profiles all`
 
 ### `gcal mcp add`
 

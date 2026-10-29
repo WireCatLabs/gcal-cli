@@ -16,7 +16,7 @@ support request.
 | `sign-in.scope-missing` | Google's consent page lets you untick Calendar. Run `session start` again and leave it ticked. |
 | `profile.wrong-account` or `profile.same-account` | Each Google account has one profile. Use the profile that account already has, or a new profile name for a new account. |
 | `oauth.expired` a week after sign-in | A Google app in Testing mode gives sign-ins that end after 7 days ([Google's note](https://developers.google.com/identity/protocols/oauth2#expiration)). Run `session start` again, or publish the app in Google Cloud Console. |
-| `oauth.not-saved` | `gcal` keeps the sign-in in the system keyring, and none is available. On Linux, start a keyring service such as GNOME Keyring, or sign in with `session start --credential-storage file`. |
+| `oauth.not-saved` | `gcal` keeps the sign-in in the system keyring, and this process could not reach it: the keyring is locked, no keyring service runs, or the process has no D-Bus session (an agent's shell, `ssh`, `cron`). A terminal opened before the desktop session's message bus restarted also fails: its `DBUS_SESSION_BUS_ADDRESS` still names the old bus (`guid=…`); open a new terminal. The sign-in is still there. Run the command again with `--debug` to see the keyring's own reason, then run it from a desktop terminal or unlock the keyring. Where no keyring works, sign in with `session start --credential-storage file`. |
 | A write is refused | The profile's permissions or `GCAL_READ_ONLY` stop it; see [settings](configuration.md#permissions). |
 
 Never paste a token, a password or private content into a support request.
