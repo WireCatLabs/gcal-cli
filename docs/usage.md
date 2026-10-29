@@ -201,9 +201,6 @@ gcal personal events delete event:42 --no-notify
   event whose rule ends on a date or a time of the old kind needs its rule again with `--repeat`.
 - `respond` changes only your own answer; the rest of the guest list stays as Google has it.
 
-`bin/gcal-write-check <profile> <calendar-id>` runs a create, an update and a delete on a test calendar you name, and
-prints only ids and status. It refuses the account's primary calendar.
-
 ## Output for scripts
 
 Every command except `mcp serve` takes `--json`, and prints one JSON value on stdout. Errors are JSON on stderr, with a code to branch

@@ -2,7 +2,7 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
-## Unreleased
+## 0.1.0 — 29.10.2026
 
 The first release of `gcal`, a Google Calendar CLI for the terminal, scripts and AI agents.
 

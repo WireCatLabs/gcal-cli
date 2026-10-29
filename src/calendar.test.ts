@@ -91,6 +91,15 @@ describe("calendar commands over Google", () => {
     expect(people.map(({ email }: { email: string }) => email)).toContain("bob@example.com")
   })
 
+  it("events list past its limit says has_more and offers no --page it cannot take", async () => {
+    const { json } = harness()
+    await json("personal", "sync")
+    const listed = await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04", "--limit", "1")
+    expect(listed.items).toHaveLength(1)
+    expect(listed.page).toEqual({ mode: "page", limit: 1, has_more: true })
+    expect(JSON.stringify(listed.next ?? [])).not.toContain("page")
+  })
+
   it("a second sync sends the token alone", async () => {
     const { json, google } = harness()
     await json("personal", "sync")
