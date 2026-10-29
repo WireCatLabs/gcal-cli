@@ -1,7 +1,7 @@
 import { chmodSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { type KeyringStore, memoryKeyring } from "@wirecat/cli-base"
+import { brokenKeyring, type KeyringStore, memoryKeyring } from "@wirecat/cli-base"
 import { openStore, storePath } from "@wirecat/cli-core/store"
 import { describe, expect, it, vi } from "vitest"
 import { CALENDAR_READ_SCOPE, googleClient, sessionStorage } from "./google.js"
@@ -61,12 +61,27 @@ const clientFile = (mode = 0o600) => {
   return file
 }
 
-const harness = (keyring: KeyringStore = memoryKeyring()) => {
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
-    GCAL_CONFIG_DIR: mkdtempSync(join(tmpdir(), "config-")),
-    GCAL_STATE_DIR: mkdtempSync(join(tmpdir(), "state-")),
+const homeOnly = () => {
+  const home = mkdtempSync(join(tmpdir(), "home-"))
+  const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("GCAL_")))
+  const xdg = {
+    XDG_CONFIG_HOME: join(home, ".config"),
+    XDG_DATA_HOME: join(home, ".local/share"),
+    XDG_CACHE_HOME: join(home, ".cache"),
   }
+  return { ...env, HOME: home, ...xdg }
+}
+
+// `paths: "default"` is the owner's layout: no GCAL_*_DIR, so the keyring service is plain `gcal-cli`.
+const harness = (keyring: KeyringStore = memoryKeyring(), paths: "overridden" | "default" = "overridden") => {
+  const env: NodeJS.ProcessEnv =
+    paths === "default"
+      ? homeOnly()
+      : {
+          ...process.env,
+          GCAL_CONFIG_DIR: mkdtempSync(join(tmpdir(), "config-")),
+          GCAL_STATE_DIR: mkdtempSync(join(tmpdir(), "state-")),
+        }
   const opened: string[] = []
   const gcal = async (argv: string[], fake = google()) => {
     const out: string[] = []
@@ -375,6 +390,30 @@ describe("session status and end", () => {
     expect(of("session start")).toMatchObject({ status: "success", operations: ["GET /v1/userinfo"] })
     expect(of("session status")).toMatchObject({ status: "success", requests: 1, operations: ["GET /v1/userinfo"] })
     expect(of("session end")).toMatchObject({ status: "success" })
+  })
+
+  it("reads a keyring sign-in saved before the sign-in file existed, without a new sign-in", async () => {
+    const entry = {
+      version: 1,
+      provider: "google",
+      clientId: "fixture-client.apps",
+      accessToken: ACCESS,
+      refreshToken: REFRESH,
+      expiresAt: Date.now() + 3_600_000,
+      scopes: GRANTED.split(" "),
+      clientSecret: SECRET,
+    }
+    const keyring = memoryKeyring({ "gcal-cli:oauth:google:personal": JSON.stringify(entry) })
+    const { gcal } = harness(keyring, "default")
+    const status = await gcal(["personal", "session", "status", "--check", "--json"])
+    expect(item(status.out)).toMatchObject({ state: "saved", credential_storage: "keyring", verified: true })
+  })
+
+  it("says the keyring could not be reached, and keeps its reason out of the answer", async () => {
+    const { gcal } = harness(brokenKeyring("Platform failure: DBus error: Failed to connect to socket"), "default")
+    const refused = await gcal(["personal", "session", "status", "--check", "--json"])
+    expect(failure(refused.err)).toMatchObject({ code: "configuration_error", reason: "oauth.not-saved" })
+    expect(refused.err).not.toContain("DBus")
   })
 
   it("refuses --check offline", async () => {
