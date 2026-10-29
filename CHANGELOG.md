@@ -2,6 +2,14 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## 0.1.1 — 29.10.2026
+
+### Fixed
+
+- **The agent guide's header (`skills/gcal-cli/SKILL.md`) is valid YAML again.** Its `description` held
+  `Calendar: sync`, which a YAML parser reads as a nested mapping, so strict skill loaders and the WireCat site's
+  skills index refused the file. The text is unchanged apart from a dash in place of that colon.
+
 ## 0.1.0 — 29.10.2026
 
 ### Added
