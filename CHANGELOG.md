@@ -59,8 +59,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   denying `api` stops it.
 - `bin/gcal-write-check <profile> <calendar-id>`: the owner's live check of create, update and delete on a test
   calendar.
-- `gcal <profile> search --remote <words>`: Google Calendar's own text search over the profile's synced calendars,
-  read only and kept nowhere. It finds events outside the synced span, too. The answer names the fields an
+- `gcal <profile> search --backend server <words>`: Google Calendar's own text search over the profile's synced
+  calendars, read only and kept nowhere. `--backend archive`, the local store, is the default, the same flag as tg's
+  `search`; `--backend both` is refused, since the two rank and page events differently. It finds events outside the synced span, too. The answer names the fields an
   invitation's sender wrote under `untrusted`.
 - Started from `@wirecat/cli-template` 0.6.0.
 - `gcal <profile> session start | status | end`: sign in to Google in the browser with read-only Calendar access,

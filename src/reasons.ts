@@ -19,6 +19,7 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
   ["profile.same-account", "validation_error", "this Google account is already signed in as another profile"],
   ["profile.not-signed-in", "authentication_error", "this profile has no Google sign-in yet"],
   ["calendars.none-synced", "validation_error", "no calendar of this profile syncs yet"],
+  ["search.backend-both", "validation_error", "search answers from one backend at a time: archive or server"],
   ["offline.refused", "permission_error", "this command needs Google; --offline was given"],
   ["sign-in.expired", "authentication_error", "Google no longer accepts this profile's sign-in"],
   ["api.unknown-method", "validation_error", "no Google Calendar method has this name"],

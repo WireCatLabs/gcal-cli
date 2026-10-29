@@ -144,12 +144,12 @@ describe("calendar commands over Google", () => {
     )
   })
 
-  it("search --remote asks Google over the synced calendars only, and stores nothing", async () => {
+  it("search --backend server asks Google over the synced calendars only, and stores nothing", async () => {
     const { json, google } = harness()
     await json("personal", "sync")
     await json("personal", "calendars", "sync", "team@group.calendar.example.com")
     google.requests.length = 0
-    const found = (await json("personal", "search", "--remote", "writing", "--limit", "5", "--newest")).item
+    const found = (await json("personal", "search", "--backend", "server", "writing", "--limit", "5", "--newest")).item
     expect(found).toMatchObject({ query: "writing", by: "google", has_more: false })
     expect(found.untrusted).toContain("title")
     expect(found.hits).toEqual([
@@ -172,35 +172,50 @@ describe("calendar commands over Google", () => {
     expect(google.requests.every(({ path }) => !path.startsWith("users/me/calendarList"))).toBe(true)
   })
 
-  it("search --remote never stores what it found, and keeps passcodes out", async () => {
+  it("search --backend server never stores what it found, and keeps passcodes out", async () => {
     const { json } = harness()
     await json("personal", "sync")
-    const remote = (await json("personal", "search", "--remote", "planning")).item
+    const remote = (await json("personal", "search", "--backend", "server", "planning")).item
     expect(JSON.stringify(remote)).not.toMatch(/998877|fixturepwd|123456789/u)
     const before = (await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04")).items.length
-    await json("personal", "search", "--remote", "planning")
+    await json("personal", "search", "--backend", "server", "planning")
     expect((await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04")).items.length).toBe(before)
   })
 
-  it("search --remote refuses --offline, --exact and --cursor, and needs a synced calendar", async () => {
+  it("search --backend server refuses --offline, --exact and --cursor, and needs a synced calendar", async () => {
     const { gcal, json, google } = harness()
     const code = (answer: { err: string }) => JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
-    expect(code(await gcal("personal", "search", "--remote", "planning", "--json")).reason).toBe(
+    expect(code(await gcal("personal", "search", "--backend", "server", "planning", "--json")).reason).toBe(
       "calendars.none-synced",
     )
     await json("personal", "sync")
     google.requests.length = 0
-    expect(code(await gcal("personal", "--offline", "search", "--remote", "planning", "--json")).reason).toBe(
-      "offline.refused",
-    )
-    expect(code(await gcal("personal", "search", "--remote", "planning", "--exact", "--json")).code).toBe(
+    expect(
+      code(await gcal("personal", "--offline", "search", "--backend", "server", "planning", "--json")).reason,
+    ).toBe("offline.refused")
+    expect(code(await gcal("personal", "search", "--backend", "server", "planning", "--exact", "--json")).code).toBe(
       "validation_error",
     )
-    expect(code(await gcal("personal", "search", "--remote", "planning", "--cursor", "2", "--json")).code).toBe(
-      "validation_error",
-    )
+    expect(
+      code(await gcal("personal", "search", "--backend", "server", "planning", "--cursor", "2", "--json")).code,
+    ).toBe("validation_error")
     expect(google.requests).toEqual([])
     expect((await json("personal", "--offline", "search", "planning")).item.hits.length).toBeGreaterThan(0)
+  })
+
+  it("search --backend archive is the store's search, both is refused and other values are rejected", async () => {
+    const { gcal, json, google } = harness()
+    const code = (answer: { err: string }) => JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
+    await json("personal", "sync")
+    google.requests.length = 0
+    expect((await json("personal", "search", "--backend", "archive", "planning")).item).toEqual(
+      (await json("personal", "search", "planning")).item,
+    )
+    expect(code(await gcal("personal", "search", "--backend", "both", "planning", "--json")).reason).toBe(
+      "search.backend-both",
+    )
+    expect((await gcal("personal", "search", "--backend", "google", "planning", "--json")).code).toBe(2)
+    expect(google.requests).toEqual([])
   })
 
   it("turns a calendar's sync on and off, links a person, and reviews links", async () => {
@@ -360,7 +375,7 @@ describe("calendar commands over MCP", () => {
     expect(listed.content[0]?.text).not.toMatch(/\\u001b/u)
     const remote = (await client.callTool({
       name: "gcal_read",
-      arguments: { command: "search", arguments: { words: ["ignore"], remote: true } },
+      arguments: { command: "search", arguments: { words: ["ignore"], backend: "server" } },
     })) as { isError?: boolean; structuredContent: { item: { hits: { title: string }[]; untrusted: string[] } } }
     expect(remote.isError).toBeFalsy()
     expect(remote.structuredContent.item.untrusted).toContain("title")
