@@ -384,6 +384,30 @@ describe("session status and end", () => {
   })
 })
 
+describe("session list", () => {
+  const items = (text: string) => JSON.parse(text).items
+
+  it("lists every profile with whether it holds a sign-in, without a profile and without picking one", async () => {
+    const { gcal, env } = harness()
+    writeFileSync(join(env.GCAL_CONFIG_DIR ?? "", "config.json"), JSON.stringify({ profiles: { work: {} } }))
+    expect(items((await gcal(["session", "list", "--json"])).out)).toEqual([
+      { profile: "work", signed_in: false, account: null, credential_storage: null },
+    ])
+    expect((await gcal(["personal", "session", "start", "--client-file", clientFile()])).code).toBe(0)
+    expect(items((await gcal(["session", "list", "--json"])).out)).toEqual([
+      { profile: "personal", signed_in: true, account: "owner@example.com", credential_storage: "keyring" },
+      { profile: "work", signed_in: false, account: null, credential_storage: null },
+    ])
+    expect((await gcal(["personal", "session", "end"])).code).toBe(0)
+    expect(items((await gcal(["session", "list", "--json"])).out)).toContainEqual({
+      profile: "personal",
+      signed_in: false,
+      account: "owner@example.com",
+      credential_storage: null,
+    })
+  })
+})
+
 describe("the owner's Google client", () => {
   it("says how to set one up when none is given", () => {
     expect(() => googleClient({})).toThrow(/--client-file <path>.*GCAL_GOOGLE_CLIENT_ID and GCAL_GOOGLE_CLIENT_SECRET/)

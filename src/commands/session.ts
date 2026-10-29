@@ -9,8 +9,10 @@ import {
   itemOf,
   LOCAL_READ,
   LOCAL_WRITE,
+  listOf,
   logsInOrOut,
   outputFor,
+  profileFree,
   REMOTE_READ,
   REMOTE_WRITE,
   refuseCommandName,
@@ -175,9 +177,32 @@ const endCommand = () =>
       answer(this, await baseContext(this, configuration.resolveSettings).run(() => signOut(common)))
     })
 
+const listCommand = () =>
+  profileFree(
+    annotate(new Command("list"), {
+      effects: LOCAL_READ,
+      examples: [`${IDENTITY.command} session list`, `${IDENTITY.command} session list --json`],
+    }),
+  )
+    .summary("list the profiles here and whether each is signed in")
+    .description("list the profiles on this computer and whether each holds a Google sign-in; picks none")
+    .action(async function (this: Command) {
+      const environment = environmentOf<GcalEnvironment>(this)
+      const env = environment.env ?? process.env
+      const { configuredProfiles } = configuration.resolveSettings({}, { env, needsProfile: false })
+      const { profileSignIns } = await import("../session.js")
+      const items = profileSignIns(env, configuredProfiles, environment.keyring)
+      renderAnswer(
+        this,
+        outputFor(this),
+        listOf("session list", { items, limit: Math.max(1, items.length), has_more: false }),
+      )
+    })
+
 export const sessionCommand = (): Command =>
   annotate(new Command("session"), { effects: LOCAL_READ })
     .description("sign in to Google and manage this profile's sign-in")
     .addCommand(startCommand())
     .addCommand(statusCommand())
     .addCommand(endCommand())
+    .addCommand(listCommand())

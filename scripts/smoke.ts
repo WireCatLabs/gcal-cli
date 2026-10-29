@@ -65,11 +65,12 @@ try {
     isRecord(tree) && Array.isArray(tree.commands)
       ? tree.commands.map((command) => isRecord(command) && command.name)
       : []
-  for (const root of ["commands", "doctor", "skill", "mcp", "upgrade", "config"])
+  for (const root of ["commands", "doctor", "guide", "skill", "mcp", "upgrade", "config"])
     assert.ok(names.includes(root), `${root} is missing from the installed package`)
   assert.equal(JSON.parse(run(["doctor", "--json"])).item.version, version)
   assert.match(run(["skill", "show"]), /name: gcal-cli/)
-  console.log(`installed ${name}@${version}: help, version, commands, doctor and skill answer offline`)
+  assert.match(run(["guide"]), /set-up/)
+  console.log(`installed ${name}@${version}: help, version, commands, doctor, skill and guide answer offline`)
 } finally {
   rmSync(temp, { recursive: true, force: true })
 }

@@ -1,19 +1,15 @@
 import { mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { Client } from "@modelcontextprotocol/client"
-import { InMemoryTransport } from "@modelcontextprotocol/server"
 import { isCliError, memoryKeyring } from "@wirecat/cli-base"
-import { describeProgram } from "@wirecat/cli-base/commands"
-import { changesAuthorityAt } from "@wirecat/cli-core/cli"
 import { describe, expect, it, vi } from "vitest"
 import { apiMethods } from "./api-methods.js"
-import { configuration, permissions } from "./config.js"
+import { permissions } from "./config.js"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
 import { googleApi } from "./google-api.js"
 import { ACLS_SCOPE, EVENTS_SCOPE } from "./grants.js"
-import { createMcpServer } from "./mcp.js"
-import { createProgram, run } from "./program.js"
+import { run } from "./program.js"
+import { mcpClient } from "./testing/mcp.js"
 
 const ACCESS = "fixture-access-token-4Rt9"
 const REFRESH = "fixture-refresh-token-8Wq2"
@@ -573,24 +569,11 @@ describe("conference secrets", () => {
 })
 
 describe("over MCP", () => {
-  const serve = async (
-    readOnly = false,
-    levels = () => configuration.resolveSettings({ profile: "personal" }).permissions,
-  ) => {
-    const program = createProgram()
-    const server = createMcpServer({
-      profile: "personal",
-      commands: describeProgram(program),
-      levels,
-      authority: changesAuthorityAt(program),
-      permissions,
-      readOnly,
-      run,
-    })
-    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
-    await server.connect(serverSide)
-    const client = new Client({ name: "test", version: "1.0.0" })
-    await client.connect(clientSide)
+  const serve = async (options: { readOnly?: boolean; permission?: string } = {}) => {
+    const { client } = await mcpClient(
+      options.readOnly ? { env: { ...process.env, GCAL_READ_ONLY: "1" } } : {},
+      options.permission ? ["--permission", options.permission] : [],
+    )
     const search = async (query: string) =>
       (
         (await client.callTool({ name: "gcal_tools_search", arguments: { query } })).structuredContent as {
@@ -626,7 +609,7 @@ describe("over MCP", () => {
   })
 
   it("lists sharing as unavailable to an agent when the profile denies api", async () => {
-    const { client, search } = await serve(false, () => ({ api: "deny" }))
+    const { client, search } = await serve({ permission: "api=deny" })
     try {
       const insert = (await search("access control rule")).find((item) => item.command === "api calendar-acl-insert")
       expect(insert).toMatchObject({ availability: { available: false } })
@@ -641,8 +624,8 @@ describe("over MCP", () => {
   })
 
   it("lists a write as unavailable under the read-only lock, and a denied read as unavailable", async () => {
-    const locked = await serve(true)
-    const denied = await serve(false, () => ({ "api.calendar.events.list": "deny" }))
+    const locked = await serve({ readOnly: true })
+    const denied = await serve({ permission: "api.calendar.events.list=deny" })
     try {
       const of = (items: { command: string }[], command: string) => items.find((item) => item.command === command)
       expect(of(await locked.search("deletes an event"), "api calendar-events-delete")).toMatchObject({
@@ -846,20 +829,7 @@ describe("the calendar keys hold on api writes", () => {
   it("holds over MCP: an agent cannot mail attendees or delete a series", async () => {
     const { env, keyring } = harness(WRITER)
     const fake = writes(SERIES)
-    const program = createProgram()
-    const server = createMcpServer({
-      profile: "personal",
-      commands: describeProgram(program),
-      levels: () => configuration.resolveSettings({ profile: "personal" }, { env }).permissions,
-      authority: changesAuthorityAt(program),
-      permissions,
-      readOnly: false,
-      run: (argv, environment) => run(argv, { ...environment, env, keyring, fetch: fake.fetch }),
-    })
-    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
-    await server.connect(serverSide)
-    const client = new Client({ name: "test", version: "1.0.0" })
-    await client.connect(clientSide)
+    const { client } = await mcpClient({ env, keyring, fetch: fake.fetch })
     try {
       const write = async (command: string, args: Record<string, unknown>) =>
         (await client.callTool({ name: "gcal_write", arguments: { command, arguments: args } })) as {
@@ -992,20 +962,7 @@ describe("sharing.notify holds on api sharing writes", () => {
   it("holds over MCP: an agent cannot share a calendar with mail, and can without", async () => {
     const { env, keyring } = harness(SHARER)
     const fake = sharing()
-    const program = createProgram()
-    const server = createMcpServer({
-      profile: "personal",
-      commands: describeProgram(program),
-      levels: () => configuration.resolveSettings({ profile: "personal" }, { env }).permissions,
-      authority: changesAuthorityAt(program),
-      permissions,
-      readOnly: false,
-      run: (argv, environment) => run(argv, { ...environment, env, keyring, fetch: fake.fetch }),
-    })
-    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
-    await server.connect(serverSide)
-    const client = new Client({ name: "test", version: "1.0.0" })
-    await client.connect(clientSide)
+    const { client } = await mcpClient({ env, keyring, fetch: fake.fetch })
     try {
       const share = async (args: Record<string, unknown>) =>
         (await client.callTool({

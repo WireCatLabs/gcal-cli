@@ -1,132 +1,114 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
-import { Client } from "@modelcontextprotocol/client"
-import { InMemoryTransport } from "@modelcontextprotocol/server"
+import { fileURLToPath } from "node:url"
 import { describeProgram } from "@wirecat/cli-base/commands"
-import { changesAuthorityAt } from "@wirecat/cli-core/cli"
-import { afterEach, expect, it } from "vitest"
-import { configuration, permissions } from "./config.js"
-import { createMcpServer, serveMcp } from "./mcp.js"
+import { changesAuthorityAt, checkGuide, fetchesOnlyAt } from "@wirecat/cli-core/cli"
+import { toolsFromCommands } from "@wirecat/cli-core/mcp"
+import { expect, it } from "vitest"
+import { permissions } from "./config.js"
 import { createProgram, run } from "./program.js"
+import { mcpClient } from "./testing/mcp.js"
 
-const clients: Client[] = []
-afterEach(async () => {
-  for (const client of clients.splice(0)) await client.close()
-})
-
-const connect = async () => {
-  const program = createProgram()
-  const server = createMcpServer({
-    profile: "personal",
-    commands: describeProgram(program),
-    levels: () => configuration.resolveSettings({ profile: "personal" }).permissions,
-    authority: changesAuthorityAt(program),
-    permissions,
-    readOnly: false,
-    run,
-  })
-  const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
-  await server.connect(serverSide)
-  const client = new Client({ name: "test", version: "1.0.0" })
-  await client.connect(clientSide)
-  clients.push(client)
-  return client
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
-const structured = (result: unknown) => {
-  if (!isRecord(result) || !isRecord(result.structuredContent))
-    throw new Error("the tool answered without structured content")
-  return result.structuredContent
-}
-
-it("offers search, read and write", async () => {
-  const client = await connect()
-  const { tools } = await client.listTools()
-  expect(tools.map((tool) => tool.name).sort()).toEqual(["gcal_read", "gcal_tools_search", "gcal_write"])
-})
-
-it("finds writes as well as reads", async () => {
-  const client = await connect()
-  const found = structured(await client.callTool({ name: "gcal_tools_search", arguments: {} }))
-  expect(found.items).toContainEqual(expect.objectContaining({ writes: true }))
-  expect(found.items).not.toContainEqual(expect.objectContaining({ command: "mcp" }))
-})
-
-it("runs a command through the CLI and answers with its result", async () => {
-  const client = await connect()
-  const answer = structured(await client.callTool({ name: "gcal_read", arguments: { command: "doctor" } }))
-  expect(answer.item).toMatchObject({ version: expect.any(String), profiles: [] })
-})
-
-it("serves until the command is stopped", async () => {
-  const program = createProgram()
-  const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
-  const stop = new AbortController()
-  const serving = serveMcp({
-    profile: "personal",
-    commands: describeProgram(program),
-    levels: () => ({}),
-    authority: () => false,
-    permissions,
-    readOnly: false,
-    run,
-    signal: stop.signal,
-    transport: serverSide,
-  })
-  const client = new Client({ name: "test", version: "1.0.0" })
-  await client.connect(clientSide)
-  expect((await client.listTools()).tools).toHaveLength(3)
-  stop.abort()
-  await expect(serving).resolves.toBeUndefined()
-})
-
-it("gcal <profile> mcp starts the server and ends on a signal", async () => {
-  const stop = new AbortController()
-  const serving = run(["personal", "mcp"], {
-    signal: stop.signal,
-    tty: false,
-    streams: { data: () => {}, diagnostic: () => {} },
-  })
-  stop.abort()
-  expect(await serving).toBe(0)
-})
-
-it("gcal <profile> mcp refuses a --permission that names no command", async () => {
+const ran = async (argv: string[]) => {
+  const out: string[] = []
   const err: string[] = []
-  const code = await run(["personal", "mcp", "--permission", "api.calendar.events.nope=deny"], {
+  const code = await run(argv, {
     tty: false,
-    streams: { data: () => {}, diagnostic: (text) => err.push(text) },
+    streams: { data: (text) => out.push(text), diagnostic: (text) => err.push(text) },
   })
-  expect(code).toBe(2)
-  expect(err.join("")).toContain("api.calendar.events.nope")
+  return { code, out: out.join(""), err: err.join("") }
+}
+
+it("serves search, read and write, names the untrusted text, and runs a command through the CLI", async () => {
+  const { client, close } = await mcpClient()
+  try {
+    const { tools } = await client.listTools()
+    expect(tools.map((tool) => tool.name).sort()).toEqual(["gcal_read", "gcal_tools_search", "gcal_write"])
+    expect(client.getInstructions()).toContain("attendee and organizer names")
+    const doctor = (await client.callTool({ name: "gcal_read", arguments: { command: "doctor" } })) as {
+      structuredContent: { item: Record<string, unknown> }
+    }
+    expect(doctor.structuredContent.item).toMatchObject({ version: expect.any(String), credential_file: {} })
+  } finally {
+    expect(await close()).toBe(0)
+  }
 })
 
-it("gcal <profile> mcp refuses to start while the config file saves a key that names no command", async () => {
+it("pins the commands an agent can find, and offers neither api call nor clearing a calendar", async () => {
+  const program = createProgram()
+  const tools = toolsFromCommands(describeProgram(program), {
+    includeUnavailable: true,
+    exclude: [["mcp"]],
+    authority: changesAuthorityAt(program),
+    fetchOnly: fetchesOnlyAt(program),
+    permissions,
+  })
+  const catalogue = Object.fromEntries(tools.map((tool) => [tool.command, tool.writes ? "write" : "read"]))
+  await expect(`${JSON.stringify(catalogue, null, 2)}\n`).toMatchFileSnapshot("../contracts/mcp-catalogue.json")
+  expect(Object.keys(catalogue)).not.toContain("api call")
+  expect(Object.keys(catalogue)).not.toContain("api calendar-calendars-clear")
+  expect(catalogue["api calendar-acl-insert"]).toBe("write")
+})
+
+it("mcp serve refuses a --permission that names no command", async () => {
+  const { code, err } = await ran(["personal", "mcp", "serve", "--permission", "api.calendar.events.nope=deny"])
+  expect(code).toBe(2)
+  expect(err).toContain("api.calendar.events.nope")
+})
+
+it("mcp serve refuses to start while the config file saves a key that names no command", async () => {
   const file = join(process.env.GCAL_CONFIG_DIR ?? "", "config.json")
   mkdirSync(dirname(file), { recursive: true })
   writeFileSync(file, JSON.stringify({ defaults: { permissions: { "api.calendar.events.nope": "deny" } } }))
-  const err: string[] = []
   try {
-    const code = await run(["personal", "mcp"], {
-      tty: false,
-      streams: { data: () => {}, diagnostic: (text) => err.push(text) },
-    })
+    const { code, err } = await ran(["personal", "mcp", "serve"])
     expect(code).not.toBe(0)
-    expect(err.join("")).toContain("api.calendar.events.nope")
+    expect(err).toContain("api.calendar.events.nope")
   } finally {
     rmSync(file, { force: true })
   }
 })
 
-it("gcal <profile> mcp takes --permission api=readonly over the deny defaults under it", async () => {
-  const stop = new AbortController()
-  const serving = run(["personal", "mcp", "--permission", "api=readonly"], {
-    signal: stop.signal,
-    tty: false,
-    streams: { data: () => {}, diagnostic: () => {} },
-  })
-  stop.abort()
-  expect(await serving).toBe(0)
+it("mcp serve takes --permission api=readonly over the deny defaults under it", async () => {
+  const { client, close } = await mcpClient({}, ["--permission", "api=readonly"])
+  expect((await client.listTools()).tools).toHaveLength(3)
+  expect(await close()).toBe(0)
+})
+
+it("keeps every scenario step runnable", async () => {
+  const packageRoot = fileURLToPath(new URL("..", import.meta.url))
+  expect(await checkGuide(() => createProgram(), { packageRoot })).toEqual([])
+})
+
+it("mcp config prints an entry that serves the named profile, or every profile only when told", async () => {
+  const one = await ran(["personal", "mcp", "config", "--permission", "api=readonly", "--json"])
+  expect(one.code).toBe(0)
+  const entry = JSON.parse(one.out).item.config.mcpServers["gcal-personal"]
+  expect(entry.args.slice(-5)).toEqual(["personal", "mcp", "serve", "--permission", "api=readonly"])
+  const all = await ran(["mcp", "config", "--profiles", "all", "--json"])
+  expect(JSON.parse(all.out).item.config.mcpServers.gcal.args.slice(-4)).toEqual(["mcp", "serve", "--profiles", "all"])
+})
+
+it("mcp serve --profiles refuses a profile this computer does not have", async () => {
+  const { code, err } = await ran(["mcp", "serve", "--profiles", "nope"])
+  expect(code).toBe(2)
+  expect(err).toContain('no profile named \\"nope\\"')
+})
+
+it("mcp revoke answers for the profile it names", async () => {
+  const { code, out } = await ran(["personal", "mcp", "revoke", "--json"])
+  expect(code).toBe(0)
+  expect(JSON.parse(out).item).toMatchObject({ profile: "personal" })
+})
+
+it("guide lists the scenarios and gives one step by step", async () => {
+  const list = await ran(["guide", "--json"])
+  expect(JSON.parse(list.out).items.map((one: { name: string }) => one.name)).toEqual([
+    "agent-access",
+    "find-time",
+    "set-up",
+    "person-brief",
+  ])
+  const one = await ran(["guide", "set-up", "--json"])
+  expect(JSON.parse(one.out).item.steps[0].run).toContain("session start")
 })

@@ -14,7 +14,8 @@ Find your way with the tool itself, not this file:
 - `gcal help session status` is one command's help, with what it returns.
 - `gcal doctor --json` says what is set up on this computer.
 - `gcal <profile> session status --json` says whether the profile is signed in, and to which Google account;
-  `--check` asks Google.
+  `--check` asks Google. `gcal session list --json` lists the profiles on this computer; it names, never chooses.
+- `gcal guide` lists step-by-step scenarios; `gcal guide <name> --json` gives one.
 
 ## Calendars and events
 

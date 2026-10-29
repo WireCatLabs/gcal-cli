@@ -1,16 +1,27 @@
-gcal — Google Calendar for the terminal, scripts and AI agents: sync, search and change events
+gcal — Google Calendar in a local store: search it offline, find free time, change events.
 
 Usage: gcal <profile> <command> [options]
 Account commands start with your profile, a name you choose; none is ever assumed.
 
-Works with:
-  tg                      Telegram in the same local store: search, review and tasks offline
-  max                     MAX in the same local store: search, review and tasks offline
-  wa                      WhatsApp in the same local store: search, review and tasks offline
-  zm                      Zoom meetings: transcripts and summaries, searchable with your other WireCat data
-  drive                   Google Drive and Docs as local text, searchable with your other WireCat data
-  memo context <person>   one person across messengers, mail, notes and meetings
+What you can do:
+  calendars sync <calendar>                  choose calendars; only these are copied
+  sync                                       copy what changed since the last sync
+  search "budget review"                     every stored event, by words and meaning, offline
+  events list week person:ana@example.com    this week's events with one person
+  calendars busy week --duration-minutes 30  free stretches the calendars share
+  events create <calendar> --title …         add an event; attendees are mailed only if you say
+  --read-only …                              this run refuses every change
 
-Next:         gcal commands      every command, by section
-              gcal help options  output, offline, timeouts, dry run
-For agents:   gcal skill show    rules and the discovery loop
+Works with:
+  tg                                         Telegram in the same local store: search, review and tasks offline
+  max                                        MAX in the same local store: search, review and tasks offline
+  wa                                         WhatsApp in the same local store: search, review and tasks offline
+  zm                                         Zoom meetings: transcripts and summaries, searchable with your other WireCat data
+  drive                                      Google Drive and Docs as local text, searchable with your other WireCat data
+  memo context <person>                      one person across messengers, mail, notes and meetings
+
+Start here:   gcal personal session start  (any profile name works)
+Next:         gcal commands                every command, by section
+              gcal guide                   scenarios: command sequences for common tasks
+              gcal help options            output, offline, timeouts, dry run
+For agents:   gcal skill show              rules and the discovery loop

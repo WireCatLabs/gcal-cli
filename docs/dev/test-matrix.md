@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**205 ✅ · 318 ⛔ · 0 ❌** — 71 commands, 452 options.
+**212 ✅ · 336 ⛔ · 0 ❌** — 80 commands, 468 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -21,6 +21,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `session status` |  | ✅ |  |
 | `session status` | `--check` | ✅ |  |
 | `session end` |  | ✅ |  |
+| `session list` |  | ✅ |  |
 | `calendars list` |  | ✅ |  |
 | `calendars list` | `--json` | ✅ |  |
 | `calendars list` | `--jsonl` | ✅ |  |
@@ -489,13 +490,37 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-settings-list` | `--sync-token` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-settings-list` | `--max-results` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `doctor` |  | ✅ |  |
+| `guide` |  | ✅ |  |
 | `skill show` |  | ✅ |  |
 | `skill show` | `--for` | ✅ |  |
 | `skill install` |  | ✅ |  |
 | `skill install` | `--for` | ✅ |  |
 | `skill status` |  | ✅ |  |
-| `mcp` |  | ✅ |  |
-| `mcp` | `--permission` | ✅ |  |
+| `mcp serve` |  | ✅ |  |
+| `mcp serve` | `--permission` | ✅ |  |
+| `mcp serve` | `--profiles` | ✅ |  |
+| `mcp serve` | `--http` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp serve` | `--port` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp serve` | `--public-url` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp revoke` |  | ✅ |  |
+| `mcp revoke` | `--profiles` | ⛔ | cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp server start` |  | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp server start` | `--port` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp server start` | `--public-url` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp server start` | `--permission` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp server start` | `--profiles` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp server stop` |  | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp server stop` | `--profiles` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp server status` |  | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp server status` | `--profiles` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp config` |  | ✅ |  |
+| `mcp config` | `--permission` | ✅ |  |
+| `mcp config` | `--profiles` | ✅ |  |
+| `mcp add` |  | ⛔ | writes Codex's or Claude Code's own MCP settings; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp add` | `--allow-writes` | ⛔ | writes Codex's or Claude Code's own MCP settings; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp add` | `--permission` | ⛔ | writes Codex's or Claude Code's own MCP settings; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp check` |  | ⛔ | starts the installed gcal as a child process, as the agent would; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
+| `mcp check` | `--permission` | ⛔ | starts the installed gcal as a child process, as the agent would; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs gcal's own server, config, revoke and refusals |
 | `upgrade` |  | ✅ |  |
 | `upgrade` | `--check` | ✅ |  |
 | `config show` |  | ✅ |  |

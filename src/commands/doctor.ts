@@ -1,35 +1,21 @@
 import { existsSync, readFileSync } from "node:fs"
-import { dirname, join } from "node:path"
-import { CliError, configFilePath, resolvePaths } from "@wirecat/cli-base"
+import { join } from "node:path"
+import { CliError, resolvePaths } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import {
+  appDoctorReport,
   environmentOf,
   itemOf,
   LOCAL_READ,
   outputFor,
   privateFiles,
   profileFree,
-  readOnlyLockOf,
   renderAnswer,
-  unknownPermissionIssues,
 } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
-import { configuration, permissions } from "../config.js"
+import { configuration } from "../config.js"
+import { googleClient } from "../google.js"
 import { IDENTITY } from "../identity.js"
-
-const failure = (error: unknown) => {
-  if (error instanceof CliError) return error.message
-  throw error
-}
-
-const configFiles = (path: string) => {
-  const files = privateFiles({ files: [path], dirs: [dirname(path)] })
-  if (!files.checked) return { files, fixes: [] }
-  return {
-    files: { ...files, problems: files.problems.map(({ path, mode, want }) => ({ path, mode, want })) },
-    fixes: files.problems.map((problem) => problem.fix),
-  }
-}
 
 const ACCOUNT = "oauth:google:"
 
@@ -56,57 +42,33 @@ const credentialFile = (state: string) => {
 }
 
 /**
- * It is run when everything else is broken, so a problem in the config file is a field in the answer, never a throw.
- * `fixes` are the `chmod` commands that make the config private; they go to stderr, not into the answer.
+ * gcal bundles no client, so one in the environment is the owner's own. Without one, a profile signed in with
+ * `--client-file` still works: its sign-in keeps the client it was made with.
  */
-export const doctorReport = (env: NodeJS.ProcessEnv, command: Command) => {
-  const paths = resolvePaths({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env })
-  const common = {
-    version: IDENTITY.version,
-    runtime: { node: process.versions.node, platform: process.platform },
-    paths: { config: paths.config, state: paths.state, cache: paths.cache },
-  }
-  const readOnly = readOnlyLockOf(IDENTITY, env) ?? null
-  const credentials = credentialFile(paths.state)
+const oauthClient = (env: NodeJS.ProcessEnv) => {
   try {
-    const settings = configuration.resolveSettings({}, { env, readOnly: true, needsProfile: false, withIssues: true })
-    const { files, fixes } = configFiles(settings.configPath)
-    return {
-      report: {
-        ...common,
-        config: {
-          path: settings.configPath,
-          found: settings.configFound,
-          issues: [
-            ...(settings.configIssues ?? []),
-            ...unknownPermissionIssues(command, settings, IDENTITY.command, permissions),
-          ],
-        },
-        profiles: settings.configuredProfiles,
-        credential_file: credentials.report,
-        read_only: readOnly,
-        files,
-      },
-      fixes: [...fixes, ...credentials.fixes],
-    }
+    googleClient(env)
+    return { client: "own" as const }
   } catch (error) {
-    const file = configFilePath(paths.config)
-    const { files, fixes } = configFiles(file)
-    return {
-      report: {
-        ...common,
-        config: { path: file, found: existsSync(file), issues: [] },
-        settings: { error: failure(error) },
-        profiles: null,
-        credential_file: credentials.report,
-        read_only: readOnly,
-        files,
-      },
-      fixes: [...fixes, ...credentials.fixes],
-    }
+    if (!(error instanceof CliError)) throw error
+    throw new CliError(
+      "configuration_error",
+      `${error.message}; a profile already signed in with --client-file keeps its own client`,
+    )
   }
 }
 
+export const doctorReport = (env: NodeJS.ProcessEnv, command: Command) => {
+  const shared = appDoctorReport(IDENTITY, configuration, env, command, { oauthClient })
+  const state = resolvePaths({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }).state
+  const credentials = credentialFile(state)
+  return {
+    report: { ...shared.report, credential_file: credentials.report },
+    fixes: [...shared.fixes, ...credentials.fixes],
+  }
+}
+
+// cli-core's appDoctorCommand has no hook for a field of the CLI's own, and gcal must keep `credential_file`.
 export const doctorCommand = (): Command =>
   profileFree(
     annotate(new Command("doctor"), {
@@ -114,7 +76,11 @@ export const doctorCommand = (): Command =>
       examples: [`${IDENTITY.command} doctor`, `${IDENTITY.command} doctor --json`],
     }),
   )
-    .description("check this installation: version, paths, config, profiles; no keyring or network")
+    .summary("check this installation; no keyring or network")
+    .description(
+      "check this installation: version, paths, config, profiles, store, OAuth client, where each sign-in is kept; " +
+        "no keyring or network",
+    )
     .action(function (this: Command) {
       const env = environmentOf(this).env ?? process.env
       const { report, fixes } = doctorReport(env, this)

@@ -25,7 +25,7 @@ const json = (text: string) => {
 it("lists the required root commands and config", async () => {
   const { code, out } = await ran(["commands", "--json"])
   expect(code).toBe(0)
-  const required = ["commands", "doctor", "skill", "mcp", "upgrade", "config", "runs"]
+  const required = ["commands", "doctor", "guide", "skill", "mcp", "upgrade", "config", "runs"]
   expect(JSON.parse(out).commands).toEqual(
     expect.arrayContaining(required.map((name) => expect.objectContaining({ name }))),
   )
@@ -35,6 +35,22 @@ it("doctor answers without a config file", async () => {
   const { code, out } = await ran(["doctor", "--json"])
   expect(code).toBe(0)
   expect(json(out).item).toMatchObject({ config: { found: false, issues: [] }, profiles: [], read_only: null })
+})
+
+it("doctor names the store, the OAuth client and the profile lock, and says a signed-in profile keeps its client", () => {
+  const bare = { ...process.env, GCAL_GOOGLE_CLIENT_ID: "", GCAL_GOOGLE_CLIENT_SECRET: "" }
+  const { report } = doctorReport(bare, createProgram())
+  expect(report).toMatchObject({
+    store: { path: expect.any(String), exists: expect.any(Boolean) },
+    oauth_client: { client: null, error: expect.stringContaining("keeps its own client") },
+    profile_lock: null,
+    credential_file: { found: false },
+  })
+  const own = doctorReport(
+    { ...bare, GCAL_GOOGLE_CLIENT_ID: "fixture.apps", GCAL_PROFILE_LOCK: "work" },
+    createProgram(),
+  )
+  expect(own.report).toMatchObject({ oauth_client: { client: "own" }, profile_lock: "work" })
 })
 
 const withConfig = async (text: string, check: (config: unknown) => void) => {
@@ -130,8 +146,8 @@ it("skill show prints the packaged skill", async () => {
   expect(out).toContain(readFileSync(new URL("../skills/gcal-cli/SKILL.md", import.meta.url), "utf8").split("\n")[0])
 })
 
-it("mcp without a profile stops and says so", async () => {
-  const { code, err } = await ran(["mcp", "--json"])
+it("mcp serve without a profile stops and says so", async () => {
+  const { code, err } = await ran(["mcp", "serve", "--json"])
   expect(code).toBe(2)
   expect(err).toContain("validation_error")
 })

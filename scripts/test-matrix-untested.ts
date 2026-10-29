@@ -14,7 +14,33 @@ const generatedOptions = [
   ),
 ].filter((name) => name && name !== "--help")
 
+const SHARED_MCP =
+  "cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs " +
+  "gcal's own server, config, revoke and refusals"
+const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
+
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
+  ...["--http", "--port", "--public-url"].map((option) => ({ command: "mcp serve", option, reason: LONG_RUNNING })),
+  ...[undefined, "--port", "--public-url", "--permission", "--profiles"].map((option) => ({
+    command: "mcp server start",
+    ...(option ? { option } : {}),
+    reason: LONG_RUNNING,
+  })),
+  ...["mcp server stop", "mcp server status"].flatMap((command) => [
+    { command, reason: LONG_RUNNING },
+    { command, option: "--profiles", reason: LONG_RUNNING },
+  ]),
+  { command: "mcp revoke", option: "--profiles", reason: SHARED_MCP },
+  ...[undefined, "--allow-writes", "--permission"].map((option) => ({
+    command: "mcp add",
+    ...(option ? { option } : {}),
+    reason: `writes Codex's or Claude Code's own MCP settings; ${SHARED_MCP}`,
+  })),
+  ...[undefined, "--permission"].map((option) => ({
+    command: "mcp check",
+    ...(option ? { option } : {}),
+    reason: `starts the installed gcal as a child process, as the agent would; ${SHARED_MCP}`,
+  })),
   { command: "api *", reason: GENERATED },
   ...generatedOptions.map((option) => ({ command: "api *", option, reason: GENERATED })),
   {

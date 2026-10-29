@@ -81,7 +81,7 @@ gcal personal config set permissions.events.create allow     # add events withou
 These defaults only become stricter against a broader key: `permissions.api allow` keeps both the question and the
 `deny`. To change one, set that method's own key, such as `permissions.api.calendar.calendars.clear ask`. A key that
 names no method is refused, and `gcal doctor` lists any in the file. `GCAL_READ_ONLY=1` refuses every write, whatever
-the permissions say. `gcal <profile> mcp --permission api=readonly` makes a key stricter for that server only.
+the permissions say. `gcal <profile> mcp serve --permission api=readonly` makes a key stricter for that server only.
 
 ## Run records
 
