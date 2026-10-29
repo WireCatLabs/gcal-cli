@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 
 const check = (...args: string[]) => spawnSync("bin/gcal-write-check", args, { encoding: "utf8", env: process.env })
 
-describe("bin/gcal-write-check", () => {
+describe.skipIf(process.platform === "win32")("bin/gcal-write-check", () => {
   it("lists its steps in order on --dry-run, without building or calling Google", () => {
     const { status, stdout } = check("--dry-run", "personal", "test@group.calendar.example.com")
     expect(status).toBe(0)

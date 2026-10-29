@@ -493,7 +493,7 @@ describe("session start --credential-storage file", () => {
     expect(started.code).toBe(0)
     expect(item(started.out)).toMatchObject({ signed_in: true, credential_storage: "file" })
     const file = join(env.GCAL_STATE_DIR ?? "", "credentials.json")
-    expect(statSync(file).mode & 0o777).toBe(0o600)
+    if (process.platform !== "win32") expect(statSync(file).mode & 0o777).toBe(0o600)
     expect(JSON.parse(readFileSync(file, "utf8"))).toHaveProperty(["oauth:google:personal"])
     const status = await gcal(["personal", "session", "status", "--check", "--json"], fake)
     expect(item(status.out)).toMatchObject({ state: "saved", verified: true, credential_storage: "file" })
