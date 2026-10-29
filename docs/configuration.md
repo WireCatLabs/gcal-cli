@@ -61,7 +61,8 @@ Without a setting of yours:
 - `events.delete.series`, deleting every occurrence of a repeating event (`events delete --series`), is `deny`.
 
 An event write also needs the key of the Google method it calls: `api.calendar.events.insert` for `create`,
-`api.calendar.events.patch` for `update` and `respond`, `api.calendar.events.delete` for `delete`. So
+`api.calendar.events.patch` for `respond`, `api.calendar.events.patch` and `api.calendar.events.update` for `update`
+(a switch between timed and all-day sends the whole event), `api.calendar.events.delete` for `delete`. So
 `permissions.api readonly` stops the event writes too. One question covers every key of one write.
 
 The `api` commands answer to the same keys. A method that has Google mail the attendees (`--send-updates` other than
