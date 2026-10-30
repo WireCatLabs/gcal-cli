@@ -65,6 +65,13 @@ Find your way with the tool itself, not this file:
   Pass `send_notifications: "false"` when you share: Google otherwise mails the person, and `sharing.notify` is denied
   by default; do not ask to loosen it on your own.
 
+## Over MCP
+
+When `gcal <profile> mcp serve` is connected, it serves three tools instead of a shell: `gcal_tools_search` finds a
+command by what it does, `gcal_read` runs a command that only reads, and `gcal_write` runs one that changes Google
+Calendar. Each takes `command` (such as `events list`) and `arguments` named as in the command's help, and answers the
+same JSON as `--json`. `api call`, `calendars.clear`, `session` and `mcp` are not offered; ask the owner to run them.
+
 ## Rules
 
 - Add `--json` and read stdout; an error is JSON on stderr with a `code` to branch on.

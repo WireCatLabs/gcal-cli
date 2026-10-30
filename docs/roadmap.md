@@ -16,7 +16,8 @@ reaches every Google Calendar API method by name. Every command is in the [comma
 
 ## Next
 
-- **Moving an event to another calendar.** Today: create it on the other calendar and delete the old one.
+- **Moving an event to another calendar with `events`.** Today `gcal <profile> api calendar-events-move` moves it
+  through Google's own method, after `session start --grant write`; it asks first, like every write.
 - **Changing "this and all following" occurrences of a repeating event.** Today a change applies to one occurrence or
   to the whole series (`--series`).
 - **Sign-in without your own Google client.** `gcal` uses WireCat's shared Google app once Google has reviewed it for

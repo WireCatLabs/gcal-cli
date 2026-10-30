@@ -1,7 +1,7 @@
 # gcal — design
 
-Written by `npx @wirecat/cli-template new`. The agent reads it first, asks the further questions the reference CLI
-does not answer, and starts building only after the owner has read it.
+The owner's answers to the design interview, and the decisions made since. Read it before changing what a command
+does, and write each new decision here.
 
 ## Answers
 

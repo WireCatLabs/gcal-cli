@@ -32,6 +32,8 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **A refusal from Google for a missing or forbidden item names a reason**: `google.not-found` or `google.denied`,
   so a script can branch on it instead of the message.
 - **A sign-in cut short by a timeout or Ctrl-C still closes the store it opened.**
+- **`gcal api call --help` no longer shows `Default: [object Object]` for `--params`.** Left out, it still sends no
+  parameters.
 
 ### Security
 

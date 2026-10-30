@@ -472,6 +472,7 @@ describe("writes", () => {
     expect((await gcal(["personal", "api", "calendar-colors-get", "--json"], fake)).code).toBe(0)
     const read = ["personal", "api", "call", "calendar.events.list", "--params", '{"calendarId":"primary"}', "--json"]
     expect((await gcal(read, fake)).code).toBe(0)
+    expect((await gcal(["personal", "api", "call", "calendar.colors.get", "--json"], fake)).code).toBe(0)
   })
 
   it("previews a write with --dry-run and sends nothing", async () => {

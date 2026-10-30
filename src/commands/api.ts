@@ -283,16 +283,17 @@ const callCommand = () =>
   })
     .description("call one Google Calendar API method by name with JSON parameters")
     .argument("<method>", "Google method name, as api list prints it")
-    .option("--params <json>", "query and path parameters as a JSON object", jsonObject, {})
+    .option("--params <json>", "query and path parameters as a JSON object; none if left out", jsonObject)
     .option("--body <json>", "request body as a JSON object", jsonObject)
     .option("--dry-run", DRY_RUN)
     .action(async function (
       this: Command,
       name: string,
-      args: { params: Record<string, unknown>; body?: Record<string, unknown> },
+      args: { params?: Record<string, unknown>; body?: Record<string, unknown> },
     ) {
-      validateApiParams(args.params)
-      await call(this, name, args.params, args.body)
+      const params = args.params ?? {}
+      validateApiParams(params)
+      await call(this, name, params, args.body)
     })
 
 export const apiCommand = (): Command => {
