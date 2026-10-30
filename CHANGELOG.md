@@ -34,6 +34,8 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **A sign-in cut short by a timeout or Ctrl-C still closes the store it opened.**
 - **`gcal api call --help` no longer shows `Default: [object Object]` for `--params`.** Left out, it still sends no
   parameters.
+- **`gcal` starts in about half the time** (`gcal --help`: 0.40 s before, 0.19 s now, on a laptop with Node 24). The
+  package ships one bundled program instead of hundreds of modules. A sync also maps each event faster.
 
 ### Security
 

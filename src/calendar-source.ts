@@ -65,14 +65,22 @@ const word = <T>(table: Record<string, T>, value: string | undefined): T | null 
 
 const iso = (ms: number) => new Date(ms).toISOString()
 
+// A sync maps thousands of events in a handful of zones; building a formatter for each is most of the mapping's time.
+const checkedZones = new Map<string, boolean>()
+
 const zoneOk = (zone: string | undefined): zone is string => {
   if (!zone) return false
-  try {
-    new Intl.DateTimeFormat("en", { timeZone: zone })
-    return true
-  } catch {
-    return false
+  let ok = checkedZones.get(zone)
+  if (ok === undefined) {
+    try {
+      new Intl.DateTimeFormat("en", { timeZone: zone })
+      ok = true
+    } catch {
+      ok = false
+    }
+    checkedZones.set(zone, ok)
   }
+  return ok
 }
 
 const momentOf = (time: CalendarEventDateTime | undefined, zone: string): number | null => {
