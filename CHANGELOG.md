@@ -37,6 +37,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   Each event now names `title` and `location` itself.
 - **`gcal api` refuses an empty, `.` or `..` id in a request's address** (`api.bad-path-id`). Such an id made the
   address point at another Google endpoint, `calendars/primary/events/..` at the calendar itself; nothing is sent now.
+- **`session end` in a run with moved folders keeps the owner's sign-in in the system keyring, and says so.** A run
+  with `GCAL_CONFIG_DIR`, `GCAL_STATE_DIR` or a moved `HOME` uses the keyring entry every run of gcal shares; ending
+  the session there would have signed the owner out everywhere. It now answers `ended: false` with `kept: "keyring"`.
+  A run in the normal folders ends the sign-in as before.
 
 ## 0.2.0 — 30.10.2026
 

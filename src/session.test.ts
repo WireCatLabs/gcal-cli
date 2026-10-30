@@ -1,7 +1,7 @@
 import { chmodSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { brokenKeyring, type KeyringStore, memoryKeyring } from "@wirecat/cli-base"
+import { brokenKeyring, type KeyringStore, memoryKeyring, systemKeyring } from "@wirecat/cli-base"
 import { openStore, storePath } from "@wirecat/cli-core/store"
 import { describe, expect, it, vi } from "vitest"
 import { CALENDAR_READ_SCOPE, googleClient, sessionStorage } from "./google.js"
@@ -373,6 +373,31 @@ describe("session status and end", () => {
       state: "missing",
       account: "owner@example.com",
     })
+  })
+
+  it("in a run with moved folders, end keeps the shared system keyring entry and says so", async () => {
+    const entries = new Map<string, string>()
+    const get = vi.spyOn(systemKeyring, "get").mockImplementation((service, account) => {
+      return entries.get(`${service}/${account}`) ?? null
+    })
+    const set = vi.spyOn(systemKeyring, "set").mockImplementation((service, account, secret) => {
+      entries.set(`${service}/${account}`, secret)
+    })
+    const remove = vi.spyOn(systemKeyring, "delete").mockReturnValue(true)
+    const warn = vi.spyOn(process.stderr, "write").mockReturnValue(true)
+    try {
+      const { gcal, env } = harness(systemKeyring)
+      sessionStorage(env, "personal").write({
+        tokens: { accessToken: ACCESS, refreshToken: REFRESH, expiresAt: Date.now() + 3_600_000, scopes: [] },
+        client: { clientId: "fixture-client.apps" },
+      })
+      const ended = await gcal(["personal", "session", "end", "--json"])
+      expect(item(ended.out)).toMatchObject({ profile: "personal", ended: false, kept: "keyring" })
+      expect(remove).not.toHaveBeenCalled()
+      expect(entries.size).toBe(1)
+    } finally {
+      for (const spy of [get, set, remove, warn]) spy.mockRestore()
+    }
   })
 
   it("records each session run with its account lookup", async () => {

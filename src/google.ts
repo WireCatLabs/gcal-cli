@@ -1,13 +1,6 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import {
-  CliError,
-  Credentials,
-  type KeyringStore,
-  pathsAreOverridden,
-  resolvePaths,
-  systemKeyring,
-} from "@wirecat/cli-base"
+import { CliError, Credentials, isMovedRun, type KeyringStore, resolvePaths, systemKeyring } from "@wirecat/cli-base"
 import { type EventSink, privateFiles, providerRequest } from "@wirecat/cli-core/cli"
 import {
   credentialStorage,
@@ -75,7 +68,7 @@ const credentialsOptions = (env: NodeJS.ProcessEnv, storage: CredentialStorage, 
   service: IDENTITY.appName,
   storage,
   env,
-  isolated: pathsAreOverridden({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
+  isolated: isMovedRun({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
   keyring: keyring ?? systemKeyring,
 })
 

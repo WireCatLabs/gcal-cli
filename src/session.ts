@@ -172,7 +172,17 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
 export const signOut = async (options: Common) => {
   const session = savedSession(options)
   if (!session) return { profile: options.profile, ended: false, cached_data: "retained" }
-  await session.keeper.signOut()
+  const storage = storageOf(options.env, options.profile)
+  const { removed } = await session.keeper.signOut()
+  // cli-base keeps the system keyring entry in a run with moved folders: it is the owner's own sign-in.
+  if (storage === "keyring" && !removed.includes("keyring"))
+    return {
+      profile: options.profile,
+      ended: false,
+      kept: "keyring",
+      why: "this run has moved folders, and the keyring entry is the sign-in every run of gcal shares",
+      cached_data: "retained",
+    }
   return { profile: options.profile, ended: true, cached_data: "retained" }
 }
 
