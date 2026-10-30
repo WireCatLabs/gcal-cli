@@ -594,7 +594,7 @@ gcal api call <method> [options]
 
 | Option | What it does |
 |---|---|
-| `--params <json>` | query and path parameters as a JSON object. Default: `[object Object]`. |
+| `--params <json>` | query and path parameters as a JSON object; none if left out. |
 | `--body <json>` | request body as a JSON object. |
 | `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 

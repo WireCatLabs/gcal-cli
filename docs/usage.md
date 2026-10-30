@@ -231,4 +231,6 @@ client. `gcal guide agent-access` walks through it.
 The server offers every command, the ones that write included. The profile's permissions decide what runs; see
 [settings](configuration.md#permissions). That includes sharing a calendar (`acl`) and giving it to another account
 (`calendars.transferOwnership`): an agent can do both without a question. Two commands are never offered to an agent:
-`api call`, and `calendars.clear`, which empties a calendar. You run those yourself, in a terminal.
+`api call`, and `calendars.clear`, which empties a calendar. You run those yourself, in a terminal. Nor are the
+commands that set up the sign-in and the agent link: `session start` and `session end`, and `mcp serve`, `mcp add`,
+`mcp config`, `mcp check`, `mcp revoke` and `mcp server start | stop | status`.
