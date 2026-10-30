@@ -166,6 +166,20 @@ describe("reading through the API", () => {
     expect(request?.url.href).not.toContain(ACCESS)
   })
 
+  it("refuses an empty, . or .. id, which would move the request to another endpoint, and sends nothing", async () => {
+    const { gcal } = harness()
+    const fake = google()
+    for (const id of ["", ".", ".."]) {
+      const refused = await gcal(
+        ["personal", "api", "calendar-events-get", "--calendar-id", "primary", "--event-id", id, "--json"],
+        fake,
+      )
+      expect([id, refused.code]).toEqual([id, 2])
+      expect(refused.err).toContain("api.bad-path-id")
+    }
+    expect(toCalendar(fake.requests)).toEqual([])
+  })
+
   it("calls freebusy.query as a read, with no --allow-writes", async () => {
     const { gcal } = harness()
     const fake = google(() => json(FREE_BUSY))

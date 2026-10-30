@@ -235,6 +235,18 @@ describe("the Google calls behind each write", () => {
     expect(google.event("review1")?.status).toBe("cancelled")
   })
 
+  it("delete of an event Google already deleted (410) or no longer shows (404) is done", async () => {
+    const { google, writer } = adapter()
+    await writer.remove(CALENDAR, "review1", { scope: "series", etag: ETAG, notify: false })
+    const deletedEtag = google.event("review1")?.etag as string
+    await expect(
+      writer.remove(CALENDAR, "review1", { scope: "series", etag: deletedEtag, notify: false }),
+    ).resolves.toBeUndefined()
+    await expect(
+      writer.remove(CALENDAR, "unknown1", { scope: "series", etag: ETAG, notify: false }),
+    ).resolves.toBeUndefined()
+  })
+
   it("respond changes only the owner's answer and keeps every other attendee", async () => {
     const { google, writer } = adapter()
     const answered = await writer.respond(CALENDAR, "review1", "tentative", { etag: ETAG, notify: true })

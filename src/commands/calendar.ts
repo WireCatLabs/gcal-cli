@@ -205,6 +205,30 @@ export const calendarMount = () => {
     },
   }
 
+  const flush = () => {
+    for (const answer of answers.splice(0)) answer()
+  }
+
+  // cli-core's sync prints its report, then fails when a calendar did not sync: the report must still reach the
+  // caller, after the store closed (WC-LIFE-4), and never when the close failed.
+  const keepAnswerOnFailure = (leaf: Command) => {
+    const handler = leaf instanceof Recorded ? leaf.handler : undefined
+    if (!handler) return
+    leaf.action(async function (this: Command, ...args: unknown[]) {
+      try {
+        return await handler.apply(this, args)
+      } catch (error) {
+        const closed = await (opened?.close() ?? Promise.resolve()).then(
+          () => true,
+          () => false,
+        )
+        if (closed) flush()
+        else answers.length = 0
+        throw error
+      }
+    })
+  }
+
   const remoteSearch = async (words: string[], opts: RemoteOptions, command: Command) => {
     const flags = command.optsWithGlobals<GlobalFlags>()
     if (flags.offline)
@@ -284,7 +308,10 @@ export const calendarMount = () => {
       withRemote(search)
       for (const group of holder.commands) {
         if (group.commands.length) annotate(group, { effects: NO_EFFECTS })
-        for (const leaf of leaves(group)) commands.add(leaf)
+        for (const leaf of leaves(group)) {
+          keepAnswerOnFailure(leaf)
+          commands.add(leaf)
+        }
       }
       return [...holder.commands]
     },
@@ -295,7 +322,7 @@ export const calendarMount = () => {
       // WC-LIFE-4: a close that fails can change the answer, so the store closes before anything is printed.
       program.hook("postAction", async () => {
         await opened?.close()
-        for (const answer of answers.splice(0)) answer()
+        flush()
       })
     },
     /** After the shared checks passed: opens the store for a calendar command, for the profile's own account only. */

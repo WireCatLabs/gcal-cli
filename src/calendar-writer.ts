@@ -138,11 +138,18 @@ export const googleCalendarWriter = (api: GoogleApi): CalendarWriter => {
     },
 
     async remove(calendar, externalId, { etag, notify }) {
-      await guarded(() =>
-        api.call("calendar.events.delete", where(calendar, externalId, notify), undefined, {
-          headers: { "if-match": etag },
-        }),
-      )
+      try {
+        await guarded(() =>
+          api.call("calendar.events.delete", where(calendar, externalId, notify), undefined, {
+            headers: { "if-match": etag },
+          }),
+        )
+      } catch (error) {
+        // 410 is an event deleted already, "no further action is necessary"; 404 is one Google no longer shows this
+        // account. Either way nothing is left to delete, and cli-core removes the stored copy.
+        // https://developers.google.com/workspace/calendar/api/guides/errors
+        if (![404, 410].includes(statusOf(error) as number)) throw error
+      }
     },
 
     async respond(calendar, externalId, response, { etag, notify }) {

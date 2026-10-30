@@ -137,6 +137,25 @@ describe("calendar commands over Google", () => {
     expect((await json("personal", "status")).items).toMatchObject([{ state: "complete" }])
   })
 
+  it("a sync where one calendar fails still prints its report, then fails with sync.partial", async () => {
+    const { gcal, json, google } = harness()
+    await json("personal", "sync")
+    await json("personal", "calendars", "sync", "team@group.calendar.example.com")
+    const real = google.fetch
+    google.fetch = async (input, init) =>
+      String(input).includes("team%40group.calendar.example.com/events")
+        ? new Response(JSON.stringify({ error: { code: 403, message: "Forbidden" } }), { status: 403 })
+        : real(input, init)
+    const answer = await gcal("personal", "sync", "--json")
+    expect(answer.code).not.toBe(0)
+    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("sync.partial")
+    const report = JSON.parse(answer.out).item
+    expect(report.synced).toContainEqual(
+      expect.objectContaining({ external_id: "team@group.calendar.example.com", error: expect.any(String) }),
+    )
+    expect(report.synced).toContainEqual(expect.objectContaining({ external_id: "owner@example.com" }))
+  })
+
   it("sync --rescan lists the window again", async () => {
     const { json, google } = harness()
     await json("personal", "sync")

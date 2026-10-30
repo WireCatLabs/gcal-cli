@@ -54,6 +54,9 @@ const CONDITION_NOT_MET = {
 const INVALID_ID = {
   error: { errors: [{ domain: "global", reason: "invalid", message: "Invalid resource id value." }], code: 400 },
 }
+const GONE = {
+  error: { errors: [{ domain: "global", reason: "deleted" }], code: 410, message: "Resource has been deleted" },
+}
 const NOT_FOUND = { error: { errors: [{ domain: "global", reason: "notFound" }], code: 404, message: "Not Found" } }
 
 const json = (body: unknown, status = 200) =>
@@ -155,6 +158,7 @@ export const fakeGoogleWrites = (
     const event = events.get(one?.[2] ?? "")
     if (!event) return json(NOT_FOUND, 404)
     if (method === "GET") return json(event)
+    if (method === "DELETE" && event.status === "cancelled") return json(GONE, 410)
     if (headers["if-match"] === undefined)
       return json({ error: { code: 400, message: "the fake expects If-Match" } }, 400)
     if (headers["if-match"] !== event.etag) return json(CONDITION_NOT_MET, 412)
