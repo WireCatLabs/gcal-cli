@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import { packContents } from "@wirecat/cli-base/release"
@@ -8,22 +8,17 @@ import { packContents } from "@wirecat/cli-base/release"
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
-const isPackage = (value: unknown): value is { name: string; version: string; files: string[] } =>
-  isRecord(value) &&
-  typeof value.name === "string" &&
-  typeof value.version === "string" &&
-  Array.isArray(value.files) &&
-  value.files.every((entry) => typeof entry === "string")
+const isPackage = (value: unknown): value is { name: string; version: string } =>
+  isRecord(value) && typeof value.name === "string" && typeof value.version === "string"
+
+// A fixed list, not package.json's own `files`: a path added there by mistake must fail here.
+const PACKED = ["dist/", "scenarios/", "skills/", "package.json", "README.md", "CHANGELOG.md", "LICENSE"]
 
 const root = resolve(import.meta.dirname, "..")
 const pkg: unknown = JSON.parse(readFileSync(join(root, "package.json"), "utf8"))
-assert.ok(isPackage(pkg), "package.json needs a name, a version and a files list")
-const { name, version, files } = pkg
-// npm reads `files` like .gitignore: a name with no leading slash also matches the same name in any folder.
-const shipped = files
-  .map((entry) => entry.replace(/^\//, ""))
-  .map((entry) => (statSync(join(root, entry), { throwIfNoEntry: false })?.isDirectory() ? `${entry}/` : entry))
-assert.deepEqual(packContents(root, ["package.json", ...shipped], "package.json and the paths in its files list")(), [])
+assert.ok(isPackage(pkg), "package.json needs a name and a version")
+const { name, version } = pkg
+assert.deepEqual(packContents(root, PACKED, PACKED.join(", "))(), [])
 const temp = mkdtempSync(join(tmpdir(), "gcal-package-"))
 try {
   const userConfig = join(temp, "npm-user-config")
