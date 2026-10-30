@@ -33,6 +33,8 @@ export interface GoogleApiOptions {
   signal?: AbortSignal | undefined
   /** The run's own sink; without it the request is timed but not recorded. */
   events?: EventSink | undefined
+  /** The clock a `Retry-After` date is measured against. */
+  now?: () => Date
 }
 
 const scopeNames = (name: string) =>
@@ -156,7 +158,7 @@ export const googleApi = (options: GoogleApiOptions): GoogleApi => ({
         status: response.status,
         body: failure,
         mutates,
-        retryAfterMs: providerWaitMs(response.headers, () => new Date()),
+        retryAfterMs: providerWaitMs(response.headers, options.now ?? (() => new Date())),
       })
     }
     answered({ status: response.status })

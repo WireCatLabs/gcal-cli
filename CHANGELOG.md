@@ -29,6 +29,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   until the next sync.
 - **A `sync` where some calendars fail prints its report before the error.** The report, with each calendar's result
   and error, was lost and only the error printed. The command still fails with `sync.partial`.
+- **A refusal from Google for a missing or forbidden item names a reason**: `google.not-found` or `google.denied`,
+  so a script can branch on it instead of the message.
+- **A sign-in cut short by a timeout or Ctrl-C still closes the store it opened.**
 
 ### Security
 

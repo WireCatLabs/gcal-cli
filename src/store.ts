@@ -15,7 +15,7 @@ export const openGcalStore = async (env: NodeJS.ProcessEnv): Promise<MessageStor
   const { openStore, storePath } = await import("@wirecat/cli-core/store")
   const store = await openStore({ path: storePath(env), env, command: IDENTITY.command, version: IDENTITY.version })
   try {
-    // cli-core 0.449.0 does not export its `registerProvider` wrapper from `./store`; this is the call it makes.
+    // cli-core 0.475.0 still does not export its `registerProvider` wrapper from `./store`; this is the call it makes.
     await store.accounts.registerProvider(PROVIDER)
     return store
   } catch (error) {

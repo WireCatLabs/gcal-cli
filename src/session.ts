@@ -24,6 +24,8 @@ interface Common {
   fetch?: typeof fetch | undefined
   signal?: AbortSignal | undefined
   events?: EventSink | undefined
+  /** The runner's tracker, so a timeout or a signal closes what the command opened (WC-LIFE-3). */
+  trackCloseable?: ((closeable: { close: () => Promise<void> }) => void) | undefined
 }
 
 /** Which Google account a profile is, as its last sign-in left it; no keyring and no network. */
@@ -99,10 +101,13 @@ export const signIn = async (options: SignInOptions) => {
   forgetOtherStorage(env, profile, options.storage, options.keyring)
   rememberAccount(IDENTITY, profile, account, env)
   const store = await openGcalStore(env)
+  let closed: Promise<void> | undefined
+  const close = () => (closed ??= store.close())
+  options.trackCloseable?.({ close })
   try {
     await store.accounts.saveProfile(IDENTITY.command, profile, { provider: PROVIDER.name, account })
   } finally {
-    await store.close()
+    await close()
   }
   return {
     profile,

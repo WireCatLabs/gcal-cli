@@ -473,8 +473,15 @@ describe("session list", () => {
 })
 
 describe("the owner's Google client", () => {
-  it("says how to set one up when none is given", () => {
-    expect(() => googleClient({})).toThrow(/--client-file <path>.*GCAL_GOOGLE_CLIENT_ID and GCAL_GOOGLE_CLIENT_SECRET/)
+  it("says how to set one up when none is given; only the command names --client-file", async () => {
+    expect(() => googleClient({})).toThrow(/GCAL_GOOGLE_CLIENT_ID and GCAL_GOOGLE_CLIENT_SECRET/)
+    expect(() => googleClient({})).not.toThrow(/--client-file/)
+    const { gcal, env } = harness()
+    delete env.GCAL_GOOGLE_CLIENT_ID
+    delete env.GCAL_GOOGLE_CLIENT_SECRET
+    const refused = failure((await gcal(["personal", "session", "start", "--json"])).err)
+    expect(refused).toMatchObject({ code: "configuration_error", reason: "sign-in.no-client" })
+    expect(refused.message).toMatch(/GCAL_GOOGLE_CLIENT_ID.*--client-file <path>/)
   })
 
   it("reads the environment, and refuses a secret without an id", () => {

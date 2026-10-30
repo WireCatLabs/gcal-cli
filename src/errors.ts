@@ -74,8 +74,14 @@ export const googleError = ({ status, body, mutates, retryAfterMs }: GoogleFailu
           ...wait,
         })
   if (status === 403)
-    return new CliError("permission_error", "Google denied this operation; check access to the calendar", { status })
+    return new CliError("permission_error", "Google denied this operation; check access to the calendar", {
+      reason: "google.denied",
+      status,
+    })
   if (status === 404)
-    return new CliError("not_found", "Google Calendar has no such item, or this account cannot see it", { status })
+    return new CliError("not_found", "Google Calendar has no such item, or this account cannot see it", {
+      reason: "google.not-found",
+      status,
+    })
   return new CliError(statusToCode(status), `Google Calendar refused the request (HTTP ${status})`, { status })
 }
