@@ -1,6 +1,6 @@
 import { calendarSourceContract } from "@wirecat/cli-core/calendar/testing"
 import { describe, expect, it } from "vitest"
-import { googleCalendarSource } from "./calendar-source.js"
+import { entryOf, googleCalendarSource } from "./calendar-source.js"
 import { CALENDAR_READ_SCOPE } from "./google.js"
 import { googleApi } from "./google-api.js"
 import { CANCELLED_SLOT, DEAD_TOKEN, fakeGoogleCalendar, WINDOW } from "./testing/google-calendar.js"
@@ -176,5 +176,24 @@ describe("Google words to neutral ones", () => {
     expect(await source.changes(MADRID, { cursor: null, page: "events-page-held-too-long", window: WINDOW })).toEqual({
       reset: true,
     })
+  })
+})
+
+describe("an event's zone", () => {
+  it("falls back to the calendar's zone, then UTC, for a zone it does not know, every time it is asked", () => {
+    const event = {
+      id: "zoned1",
+      start: { dateTime: "2026-11-02T10:00:00+01:00", timeZone: "Not/AZone" },
+      end: { dateTime: "2026-11-02T11:00:00+01:00", timeZone: "Not/AZone" },
+    }
+    for (let round = 0; round < 2; round++) {
+      expect(entryOf(event, { timezone: "Europe/Madrid" }).timezone).toBeNull()
+      expect(
+        entryOf({ ...event, start: { date: "2026-11-02" }, end: { date: "2026-11-03" } }, { timezone: "Not/AZone" }),
+      ).toMatchObject({ startsAt: Date.parse("2026-11-02T00:00:00Z") })
+      expect(entryOf({ ...event, start: { ...event.start, timeZone: "Asia/Tokyo" } }, MADRID).timezone).toBe(
+        "Asia/Tokyo",
+      )
+    }
   })
 })

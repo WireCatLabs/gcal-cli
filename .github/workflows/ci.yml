@@ -30,6 +30,7 @@ jobs:
         node dist/bin/gcal.js commands --json >/dev/null
         node dist/bin/gcal.js doctor --json >/dev/null
       checks: |
+        pnpm smoke:node
         bash scripts/audit.sh
 
   version:
