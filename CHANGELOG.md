@@ -2,6 +2,33 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **`gcal models list` and `gcal models download <model>` fetch the model that search by meaning uses.** The search's
+  hint named `gcal models download e5-small`, which did not exist. The model goes into the folder every WireCat tool
+  shares, so one already downloaded by another WireCat tool is used as it is.
+
+### Changed — may break callers
+
+- **`search` answers a list: the events under `items`, with `page` in cursor mode, as every other list does.** It
+  answered one `item` holding `hits`, `has_more` and `untrusted`
+  (WC-OUT-4). A script reads `items` in place of
+  `item.hits`, and `page.next_cursor` is the value for `--cursor`. Each event names its own `untrusted` fields, and why
+  meaning was not searched is under `missing`. `query` and `by` are gone; each event still says `found_by`.
+- **`links review` answers its reviews under `items`, without `accounts: "all"`.** It answered one `item` holding the
+  list. Link choices are still kept per store, so every account's reviews are listed.
+- **`search --backend server` refuses `--newest`.** Google returns its matches in no stated order and gcal reads only
+  the first page of each calendar, so the newest event could be missing from a "newest first" answer. Its matches
+  are listed earliest first, and each event's `found_by` is `["google"]`, as a store search writes it.
+
+### Security
+
+- **`search --backend server` marks the right fields as written by others.** Its `untrusted` list named `title` and
+  `location`, while the answer held them under `hits`, so an agent that follows the list did not treat them as data.
+  Each event now names `title` and `location` itself.
+
 ## 0.2.0 — 30.10.2026
 
 ### Added

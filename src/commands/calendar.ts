@@ -59,14 +59,47 @@ const pathOf = (command: Command): string[] =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
-const LIST_KEYS = new Set(["items", "page", "limit", "hasMore", "meta"])
+// `links review` adds `accounts: "all"`, which the envelope has no room for: `meta.accounts` names accounts.
+const LIST_KEYS = new Set(["items", "page", "limit", "hasMore", "meta", "accounts"])
+
+const listedFields = (fields: unknown, prefix: string) =>
+  Array.isArray(fields)
+    ? fields.filter((field) => typeof field === "string" && field.startsWith(prefix)).map((f) => f.slice(prefix.length))
+    : []
 
 /**
- * cli-core's reads answer `{ items, page, limit, hasMore, meta? }` or one value; gcal prints both in its own envelope. A
- * list that says more (`links review`'s `accounts: "all"`) stays one value, since the envelope's meta has no room for it.
+ * A search answers `{ hits, has_more, next_offset?, meaning_skipped?, untrusted }`; gcal prints it as a list of hits
+ * with cursor paging (WC-OUT-4, WC-OUT-5), and each hit names its own untrusted fields, as `events list` does.
+ */
+const hitsOf = (command: Command, value: Record<string, unknown>) => {
+  const opts = command.opts<{ limit: number; exact?: boolean; newest?: boolean }>()
+  const untrusted = listedFields(value.untrusted, "hits.")
+  const { next, ...list } = listOf(pathOf(command).join(" "), {
+    items: (value.hits as unknown[]).map((hit) => ({ ...(snakeKeys(hit) as object), untrusted })),
+    limit: opts.limit,
+    has_more: value.has_more === true,
+    paging: "cursor",
+    ...(typeof value.next_offset === "number" ? { cursor: String(value.next_offset) } : {}),
+    args: {
+      words: command.processedArgs[0],
+      ...(opts.exact ? { exact: true } : {}),
+      ...(opts.newest ? { newest: true } : {}),
+    },
+    ...(typeof value.meaning_skipped === "string"
+      ? { missing: [{ field: "items", why: `not searched by meaning: ${value.meaning_skipped}` }] }
+      : {}),
+  })
+  // Without a cursor there is no next page to run: Google's search pages per calendar, and gcal does not follow it.
+  const kept = typeof value.next_offset === "number" ? next : next?.filter((one) => one.step !== "page.next")
+  return { ...list, ...(kept?.length ? { next: kept } : {}) }
+}
+
+/**
+ * cli-core's reads answer `{ items, page, limit, hasMore, meta? }` or one value; gcal prints both in its own envelope.
  * The shared reads take no `--page`, so `has_more` stays without the page step `listOf` would add: it could not run.
  */
 const bodyOf = (command: Command, value: unknown) => {
+  if (isRecord(value) && Array.isArray(value.hits)) return hitsOf(command, value)
   if (isRecord(value) && Array.isArray(value.items) && Object.keys(value).every((key) => LIST_KEYS.has(key))) {
     const { next, page, ...list } = listOf(pathOf(command).join(" "), {
       items: snakeKeys(value.items) as unknown[],
@@ -178,10 +211,11 @@ export const calendarMount = () => {
       throw new CliError("permission_error", "search --backend server asks Google; leave out --offline", {
         reason: "offline.refused",
       })
-    if (opts.exact || opts.cursor)
+    if (opts.exact || opts.cursor || opts.newest)
       throw new CliError(
         "validation_error",
-        "search --backend server takes neither --exact nor --cursor: Google ranks and pages it",
+        "search --backend server takes neither --exact, --cursor nor --newest: Google ranks and pages it, and " +
+          "returns no newest-first order",
       )
     const { store, accountId, account, api } = need()
     const calendars = (await store.calendar.calendars(accountId)).filter(
@@ -195,10 +229,9 @@ export const calendarMount = () => {
     const found = await searchGoogle(api(), calendars, {
       query: words.join(" "),
       limit: opts.limit,
-      newest: opts.newest === true,
       account: account.account,
     })
-    answers.push(() => renderAnswer(command, outputFor(command), itemOf(found)))
+    answers.push(() => renderAnswer(command, outputFor(command), hitsOf(command, found)))
   }
 
   const withRemote = (search: Recorded) => {
@@ -222,7 +255,7 @@ export const calendarMount = () => {
         command.addOption(
           new Option(
             "--backend <archive|server|both>",
-            "where to search: archive, the local store, or server, Google Calendar's own search over the synced calendars",
+            "where to search: archive, the local store, or server, Google Calendar's own search over the synced calendars, earliest first",
           )
             .choices(["archive", "server", "both"])
             .default("archive"),

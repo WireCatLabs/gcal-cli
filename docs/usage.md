@@ -80,7 +80,9 @@ when an agent runs it over MCP; `--timeout` changes it, and the number of reques
 `--max-pages <n>` lowers that number further. `--rescan` starts every calendar over.
 
 A repeating event's slots are read one by one, cancelled slots included. A deleted event in the past keeps its record;
-a deleted future event is marked cancelled. `--embed` needs the meaning model, which `gcal` never downloads by itself.
+a deleted future event is marked cancelled. `--embed` needs the meaning model, which `gcal` never downloads by itself:
+`gcal models download e5-small` fetches it once into the folder every WireCat tool shares, and `gcal models list`
+shows which models are there.
 
 `gcal` never stores a meeting's passcode or PIN. A join link is kept without its query string, and a line of the
 description that names a passcode, a password or a PIN is dropped.
@@ -101,7 +103,9 @@ gcal personal links review                                      # copies the too
 
 `search` reads the store by default (`--backend archive`). `--backend server` asks Google Calendar's own search
 instead, over the calendars that sync. It also finds events outside the synced span (a year back, three months
-ahead). It reads only, keeps nothing in the store, and needs the network; `--exact` and `--cursor` do not apply to it:
+ahead). It reads only, keeps nothing in the store, and needs the network. Google returns its matches in an order it
+does not state, so `gcal` lists them earliest first and refuses `--newest`; `--exact` and `--cursor` do not apply
+either:
 
 ```sh
 gcal personal search --backend server quarterly review
@@ -109,6 +113,9 @@ gcal personal search --backend server quarterly review
 
 `--backend both` is refused: the store and Google rank and page events in different ways, so one merged list would
 have no single order and no next page. Run the two searches one after the other.
+
+Both answer a list of events under `items`. A store search pages by cursor: with more to show, `page.next_cursor`
+is the value for `--cursor`. Each event names, under `untrusted`, the fields an invitation's sender wrote.
 
 ## When people are free
 
