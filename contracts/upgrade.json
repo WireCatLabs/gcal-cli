@@ -1,0 +1,96 @@
+{
+  "command": "node",
+  "args": ["../dist/bin/gcal.js"],
+  "previous": {
+    "entry": "./previous/node_modules/@wirecat/previous-cli/dist/bin/gcal.js",
+    "version": "0.2.0"
+  },
+  "canaries": ["wirecat-synthetic-event-canary"],
+  "cases": [
+    {
+      "id": "seed-previous-sync",
+      "args": ["{{previousEntry}}"],
+      "entry": "./seed.mjs",
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "json": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "previous-events",
+      "args": ["contract", "events", "list", "from:2026-10-01", "to:2026-10-10", "--json"],
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "previous": true,
+      "allowSensitiveOutput": true,
+      "json": {
+        "items": [{ "title": "wirecat-synthetic-event-canary" }, { "title": "Synthetic all-day", "all_day": true }]
+      },
+      "capture": {
+        "event": "/items/0/id",
+        "all_day": "/items/1/id"
+      }
+    },
+    {
+      "id": "candidate-events",
+      "args": ["contract", "events", "list", "from:2026-10-01", "to:2026-10-10", "--json"],
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "allowSensitiveOutput": true,
+      "json": {
+        "items": [
+          { "id": "{{event}}", "title": "wirecat-synthetic-event-canary", "starts_at": "2026-10-02T07:00:00.000Z" },
+          { "id": "{{all_day}}", "all_day": true, "starts_at": "2026-10-04T22:00:00.000Z" }
+        ]
+      }
+    },
+    {
+      "id": "candidate-event-show",
+      "args": ["contract", "events", "show", "{{event}}", "--json"],
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "allowSensitiveOutput": true,
+      "json": {
+        "item": {
+          "entries": [{ "external_id": "syntheticsingle1", "own_response": "accepted" }],
+          "attendees": [
+            { "email": "synthetic.guest@example.com", "response": "needs-action" },
+            { "email": "synthetic.owner@example.com", "self": true }
+          ]
+        }
+      }
+    },
+    {
+      "id": "candidate-sync-cursor",
+      "args": ["contract", "status", "--json"],
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "json": {
+        "items": [{ "external_id": "synthetic-calendar@example.com", "state": "complete", "done": 2 }]
+      }
+    },
+    {
+      "id": "candidate-search",
+      "args": ["contract", "search", "wirecat-synthetic-event-canary", "--exact", "--json"],
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "allowSensitiveOutput": true,
+      "contains": "\"ref\":\"event:1\""
+    },
+    {
+      "id": "candidate-missing-event",
+      "args": ["contract", "events", "show", "999999", "--json"],
+      "exit": 6,
+      "stream": "stderr",
+      "kind": "json",
+      "errorCode": "not_found"
+    }
+  ]
+}

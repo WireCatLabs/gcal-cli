@@ -12,13 +12,16 @@ How the tests run, and what they never touch. The rules are the handbook's
   `scripts/test-matrix-untested.ts`.
 - `pnpm contracts:check` runs the built CLI against `contracts/plan.json`: help, discovery, errors and the MCP tool
   list. `pnpm exec cli-contract contracts/plan.json --update` rewrites the snapshots; review the diff.
-- `pnpm contracts:upgrade` does not exist yet, and `.github/workflows/ci.yml` skips the step. It needs both local
-  state of the CLI's own (a store, a sync cursor, any other file its code writes and reads back) and a published
-  version to upgrade from. gcal keeps calendars and sync cursors in the shared WireCat store, but has no version on
-  npm yet; the config file and run records are cli-core's
-  ([WC-TEST-14](../../node_modules/@wirecat/cli-base/docs/standards/testing.md)). Once the CLI keeps such state and its
-  first version is on npm, add the script, as
-  [drive-cli does](https://github.com/WireCatLabs/drive-cli/blob/150b105569a98fbd0d4b66349305ad84128adfda/package.json#L37), and remove the skip.
+- `pnpm contracts:upgrade` checks that this build reads what the previous release wrote
+  ([WC-TEST-14](../../node_modules/@wirecat/cli-base/docs/standards/testing.md)). `contracts/previous/` installs that
+  release from npm (`@wirecat/previous-cli`, now `@wirecat/gcal-cli@0.2.0`). `contracts/seed.mjs` loads its own
+  modules and its own cli-core, signs nobody in, and syncs one calendar from a fake Google into the synthetic store, as
+  `gcal sync` would. `contracts/upgrade.json` then reads the events, an event's attendees, the sync cursor and search
+  with that release and with this build. After a release, move the baseline: the version in
+  `contracts/previous/package.json` and in `upgrade.json`'s `previous.version`, then `pnpm --dir contracts/previous
+  install`. A cli-core bump that migrates the store makes this build print one line on stderr the first time it opens
+  the old store; give that case the exact line as its `diagnostic`, as
+  [zoom-cli does](https://github.com/WireCatLabs/zoom-cli/blob/main/contracts/upgrade.json).
 - `pnpm smoke` installs the packed package into a temporary folder and runs it offline.
 - `pnpm audit:commands` audits the command tree beside the latest published WireCat CLIs.
 - `bin/gcal-write-check <profile> <calendar-id>` is the owner's live check of the event writes against real Google: a
