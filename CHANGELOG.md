@@ -2,6 +2,15 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **The `gcal-cli` skill is published on ClawHub as `wirecat-gcal` after each release, and tells OpenClaw that it
+  needs `gcal` and how to install it** (`metadata.openclaw`: `requires.bins` and the npm package `@wirecat/gcal-cli`).
+  With `gcal` missing from PATH, OpenClaw marks the skill not ready and offers to install the package. Claude Code and
+  Codex ignore the block.
+
 ## 0.1.1 — 29.10.2026
 
 ### Fixed

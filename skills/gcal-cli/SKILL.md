@@ -1,6 +1,14 @@
 ---
 name: gcal-cli
 description: Use gcal, a Google Calendar CLI from WireCat, from an agent — check the owner's Google sign-in, find a command, run it with the owner's profile, read JSON answers. Use when a task needs the owner's Google Calendar — sync the calendars, then list, show and search events, their people and Drive files offline, create, change or delete an event, answer an invitation, or call any Calendar API method through gcal api.
+metadata:
+  openclaw:
+    requires:
+      bins: [gcal]
+    install:
+      - kind: node
+        package: "@wirecat/gcal-cli"
+        bins: [gcal]
 ---
 
 # gcal
