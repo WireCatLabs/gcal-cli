@@ -161,6 +161,16 @@ describe("event writes over Google", () => {
     expect(google.event("review1")?.status).toBe("cancelled")
   })
 
+  it("delete of an event someone already deleted at Google succeeds and removes the stored copy", async () => {
+    const { gcal, google } = harness()
+    const event = await eventRef(gcal)
+    const held = google.event("review1")
+    if (held) held.status = "cancelled"
+    const deleted = await gcal("personal", "events", "delete", event, "--no-notify", "--yes")
+    expect(deleted.error).toBeUndefined()
+    expect(deleted.item).toMatchObject({ removed: 1 })
+  })
+
   it("a timed event becomes all-day and back, each a full update with If-Match", async () => {
     const { gcal, google } = harness()
     const event = await eventRef(gcal)

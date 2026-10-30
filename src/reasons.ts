@@ -24,6 +24,7 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
   ["sign-in.expired", "authentication_error", "Google no longer accepts this profile's sign-in"],
   ["api.unknown-method", "validation_error", "no Google Calendar method has this name"],
   ["api.scope-missing", "permission_error", "the sign-in lacks the Google permission this method needs"],
+  ["api.bad-path-id", "validation_error", 'an id in the request\'s address is empty, "." or ".."'],
   [
     "event.not-invited",
     "validation_error",

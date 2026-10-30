@@ -72,6 +72,17 @@ const listOf = (value: unknown): string[] =>
       ? value.split(",").map((item) => item.trim())
       : [String(value)]
 
+/** `new URL` folds a `.` or `..` segment into its parent, so such an id would call another endpoint. */
+const segmentOf = (key: string, value: unknown) => {
+  const text = value === undefined || value === null ? "" : String(value)
+  if (text === "" || text === "." || text === "..")
+    throw new CliError("validation_error", `${key} must name one item; an empty, "." or ".." id is refused`, {
+      reason: "api.bad-path-id",
+      sent: false,
+    })
+  return encodeURIComponent(text)
+}
+
 /** `rootUrl + servicePath + path`, path parameters encoded whole, so an id never adds a segment or a query. */
 const requestUrl = (name: string, params: Record<string, unknown>) => {
   const operation = operationOf(name)
@@ -82,9 +93,7 @@ const requestUrl = (name: string, params: Record<string, unknown>) => {
   if (operation.binding.path.includes("{+"))
     throw new CliError("configuration_error", "generated method has a reserved path expansion gcal does not send")
   const where = new Map(operation.parameters.map((parameter) => [parameter.name, parameter]))
-  const path = operation.binding.path.replace(/\{([^}]+)\}/g, (_, key: string) =>
-    encodeURIComponent(String(params[key])),
-  )
+  const path = operation.binding.path.replace(/\{([^}]+)\}/g, (_, key: string) => segmentOf(key, params[key]))
   const url = new URL(service.servicePath + path, service.rootUrl)
   for (const [key, value] of Object.entries(params)) {
     const parameter = where.get(key)

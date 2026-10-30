@@ -13,8 +13,7 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 ### Changed — may break callers
 
 - **`search` answers a list: the events under `items`, with `page` in cursor mode, as every other list does.** It
-  answered one `item` holding `hits`, `has_more` and `untrusted`
-  (WC-OUT-4). A script reads `items` in place of
+  answered one `item` holding `hits`, `has_more` and `untrusted` (WC-OUT-4). A script reads `items` in place of
   `item.hits`, and `page.next_cursor` is the value for `--cursor`. Each event names its own `untrusted` fields, and why
   meaning was not searched is under `missing`. `query` and `by` are gone; each event still says `found_by`.
 - **`links review` answers its reviews under `items`, without `accounts: "all"`.** It answered one `item` holding the
@@ -23,11 +22,21 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   the first page of each calendar, so the newest event could be missing from a "newest first" answer. Its matches
   are listed earliest first, and each event's `found_by` is `["google"]`, as a store search writes it.
 
+### Fixed
+
+- **`events delete` of an event already deleted at Google succeeds and removes the stored copy.** Google answers such a
+  delete with 410, and 404 once it no longer shows the event; gcal failed on both and kept the event in the store
+  until the next sync.
+- **A `sync` where some calendars fail prints its report before the error.** The report, with each calendar's result
+  and error, was lost and only the error printed. The command still fails with `sync.partial`.
+
 ### Security
 
 - **`search --backend server` marks the right fields as written by others.** Its `untrusted` list named `title` and
   `location`, while the answer held them under `hits`, so an agent that follows the list did not treat them as data.
   Each event now names `title` and `location` itself.
+- **`gcal api` refuses an empty, `.` or `..` id in a request's address** (`api.bad-path-id`). Such an id made the
+  address point at another Google endpoint, `calendars/primary/events/..` at the calendar itself; nothing is sent now.
 
 ## 0.2.0 — 30.10.2026
 
