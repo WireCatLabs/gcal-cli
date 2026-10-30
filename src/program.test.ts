@@ -31,6 +31,17 @@ it("lists the required root commands and config", async () => {
   )
 })
 
+it("models lists the text models search uses, and a download refuses --offline", async () => {
+  const listed = await ran(["models", "list", "kind:text", "--json"])
+  expect(listed.code).toBe(0)
+  expect(JSON.parse(listed.out).items).toContainEqual(
+    expect.objectContaining({ id: "e5-small", kind: "text", default: true }),
+  )
+  const refused = await ran(["--offline", "models", "download", "e5-small", "--json"])
+  expect(refused.code).not.toBe(0)
+  expect(JSON.parse(refused.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("model.offline")
+})
+
 it("doctor answers without a config file", async () => {
   const { code, out } = await ran(["doctor", "--json"])
   expect(code).toBe(0)

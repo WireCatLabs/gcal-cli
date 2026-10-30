@@ -12,6 +12,7 @@ const SECTIONS: Record<string, HelpSection> = {
   api: "read",
   sync: "automate",
   session: "setup",
+  models: "setup",
 }
 
 export const guide = () =>

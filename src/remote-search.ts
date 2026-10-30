@@ -1,5 +1,4 @@
 import type { StoredCalendar } from "@wirecat/cli-core/calendar"
-import { CALENDAR_UNTRUSTED_FIELDS } from "@wirecat/cli-core/calendar/mcp"
 import { entryOf } from "./calendar-source.js"
 import type { CalendarEvents } from "./generated/types.js"
 import type { GoogleApi } from "./google-api.js"
@@ -8,7 +7,6 @@ import { PROVIDER } from "./store.js"
 export interface RemoteSearchRequest {
   query: string
   limit: number
-  newest: boolean
   account: string
 }
 
@@ -49,17 +47,14 @@ export const searchGoogle = async (
         status: entry.status,
         location: entry.location ?? null,
         ...(entry.url ? { url: entry.url } : {}),
-        found_by: "google",
+        found_by: ["google"],
       })
     }
   }
-  const order = request.newest ? -1 : 1
-  hits.sort((a, b) => order * (a.starts_at ?? "").localeCompare(b.starts_at ?? ""))
+  hits.sort((a, b) => (a.starts_at ?? "").localeCompare(b.starts_at ?? ""))
   return {
-    query: request.query,
-    by: "google",
     hits: hits.slice(0, request.limit),
     has_more: more || hits.length > request.limit,
-    untrusted: CALENDAR_UNTRUSTED_FIELDS,
+    untrusted: ["hits.title", "hits.location"],
   }
 }

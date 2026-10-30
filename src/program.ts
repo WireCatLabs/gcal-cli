@@ -19,6 +19,7 @@ import type { Command } from "commander"
 import { apiCommand } from "./commands/api.js"
 import { calendarMount } from "./commands/calendar.js"
 import { doctorCommand } from "./commands/doctor.js"
+import { modelsCommand } from "./commands/models.js"
 import { sessionCommand } from "./commands/session.js"
 import { configuration } from "./config.js"
 import { FIRST_SCREEN, guide, placeInSections } from "./first-screen.js"
@@ -53,6 +54,7 @@ export const definition = (): ProgramDefinition => {
       ...calendar.commands(),
       apiCommand(),
       doctorCommand(),
+      modelsCommand(),
       guide(),
       skillCommand(IDENTITY, SKILL),
       appMcpCommand(IDENTITY, configuration, {

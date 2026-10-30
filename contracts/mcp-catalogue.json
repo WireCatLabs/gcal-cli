@@ -55,6 +55,8 @@
   "api calendar-settings-get": "read",
   "api calendar-settings-list": "read",
   "doctor": "read",
+  "models list": "read",
+  "models download": "write",
   "guide": "read",
   "skill show": "read",
   "skill install": "write",

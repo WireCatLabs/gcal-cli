@@ -31,6 +31,11 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
     { command, option: "--profiles", reason: LONG_RUNNING },
   ]),
   { command: "mcp revoke", option: "--profiles", reason: SHARED_MCP },
+  {
+    command: "models download",
+    option: "--accept-terms",
+    reason: "downloads a model from the network; cli-core's model-downloads tests drive the terms check",
+  },
   ...[undefined, "--allow-writes", "--permission"].map((option) => ({
     command: "mcp add",
     ...(option ? { option } : {}),

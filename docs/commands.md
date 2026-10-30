@@ -442,7 +442,7 @@ gcal search <words> [options]
 | `--cursor <cursor>` | continue from a page's next_offset. Default: `0`. |
 | `--exact` | every word as written, no word stems. |
 | `--newest` | latest start first instead of best first. |
-| `--backend <archive\|server\|both>` | where to search: archive, the local store, or server, Google Calendar's own search over the synced calendars. One of: `archive`, `server`, `both`. Default: `archive`. |
+| `--backend <archive\|server\|both>` | where to search: archive, the local store, or server, Google Calendar's own search over the synced calendars, earliest first. One of: `archive`, `server`, `both`. Default: `archive`. |
 
 **Returns:** find stored events by words and meaning, or with --backend server ask Google
 
@@ -1484,6 +1484,51 @@ gcal doctor
 **Returns:** check this installation; no keyring or network
 
 **Example:** `gcal doctor`, `gcal doctor --json`
+
+## `gcal models`
+
+models that run on this machine
+
+### `gcal models list`
+
+speech and embedding models, their download status and the default of each kind
+
+```sh
+gcal models list [query]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+**Returns:** model — id, kind, title, languages, size_bytes, downloaded, default, path, and 1 more; every field: gcal commands info models list
+
+**Next usually:** `gcal models download <model>`
+
+**Example:** `gcal models list`, `gcal models list kind:text`
+
+### `gcal models download`
+
+download and verify one speech or embedding model
+
+**Changes something on this computer only.**
+
+```sh
+gcal models download <model> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `model` | required | a model id from models list. |
+
+| Option | What it does |
+|---|---|
+| `--offline` | refuse a download that needs the network. |
+| `--accept-terms` | accept the model's licence terms, for a model that has its own. |
+
+**Returns:** model — id, kind, title, languages, size_bytes, downloaded, default, path, and 1 more; every field: gcal commands info models download
+
+**Example:** `gcal models download e5-small`
 
 ## `gcal guide`
 
