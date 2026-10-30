@@ -259,6 +259,13 @@ describe("the Google calls behind each write", () => {
     expect(answered.participants).toHaveLength(2)
   })
 
+  it("an event Google does not have fails with a registered reason", async () => {
+    const { writer } = adapter()
+    await expect(writer.respond(CALENDAR, "unknown1", "accepted", { etag: ETAG, notify: false })).rejects.toMatchObject(
+      { code: "not_found", details: { reason: "google.not-found", status: 404 } },
+    )
+  })
+
   it("respond refuses an event the calendar is not invited to", async () => {
     const { google, writer } = adapter()
     const made = await writer.create(

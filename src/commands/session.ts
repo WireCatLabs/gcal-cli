@@ -47,6 +47,7 @@ export const contextOf = (command: Command) => {
       keyring: environment.keyring,
       fetch: environment.fetch,
       signal: environment.signal,
+      trackCloseable: environment.trackCloseable,
     },
   }
 }
@@ -56,20 +57,23 @@ const refuseOffline = (flags: GlobalFlags) => {
     throw new CliError("permission_error", "this needs Google; leave out --offline", { reason: "offline.refused" })
 }
 
+const isGrant = (value: string): value is Grant => GRANTS.some((grant) => grant === value)
+
 const grantList = (raw: string): Grant[] => {
   const values = raw.split(",").map((value) => value.trim())
-  const unknown = values.filter((value) => !(GRANTS as readonly string[]).includes(value))
+  const unknown = values.filter((value) => !isGrant(value))
   if (unknown.length)
     throw new CliError("validation_error", `--grant takes ${GRANTS.join(", ")}; got ${unknown.join(", ")}`)
-  return [...new Set(values as Grant[])]
+  return [...new Set(values.filter(isGrant))]
 }
 
 const CREDENTIAL_STORAGES: readonly CredentialStorage[] = ["keyring", "file"]
 
 const credentialStorage = (raw: string): CredentialStorage => {
-  if (!(CREDENTIAL_STORAGES as readonly string[]).includes(raw))
+  const storage = CREDENTIAL_STORAGES.find((one) => one === raw)
+  if (!storage)
     throw new CliError("validation_error", `--credential-storage takes ${CREDENTIAL_STORAGES.join(" or ")}; got ${raw}`)
-  return raw as CredentialStorage
+  return storage
 }
 
 const answer = (command: Command, item: unknown) => renderAnswer(command, outputFor(command), itemOf(item))
@@ -110,7 +114,7 @@ const startCommand = () =>
       refuseCommandName(common.profile, commandWords(rootOf(this)), IDENTITY.command)
       refuseOffline(flags)
       const { googleClient } = await import("../google.js")
-      const client = googleClient(common.env, args.clientFile)
+      const client = await worded(common.profile, async () => googleClient(common.env, args.clientFile))
       const { streams } = outputFor(this)
       const steps = signInSteps({
         diagnostic: (line) => streams.diagnostic(`${line}\n`),

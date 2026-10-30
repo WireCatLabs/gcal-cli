@@ -1,10 +1,12 @@
 import { join } from "node:path"
+import type { KeyringStore } from "@wirecat/cli-base"
 import { resolvePaths } from "@wirecat/cli-base"
 import {
   appMcpCommand,
   commandsCommand,
   configCommand,
   createProgram as createSharedProgram,
+  environmentOf,
   outputFor,
   type ProgramDefinition,
   type ProgramOptions,
@@ -39,10 +41,15 @@ const update = appUpdate({
 
 export const definition = (): ProgramDefinition => {
   const calendar = calendarMount()
+  // cli-core asks `signedIn` with no keyring; the run's own one, a test's `memoryKeyring()`, is taken here.
+  let keyring: KeyringStore | undefined
   return {
     app: IDENTITY,
     configuration,
     configure: (program) => {
+      program.hook("preAction", (_root, action) => {
+        keyring = environmentOf(action).keyring
+      })
       calendar.configure?.(program)
       placeInSections(program)
     },
@@ -70,7 +77,7 @@ export const definition = (): ProgramDefinition => {
         skill: SKILL,
         signedIn: (profile, env) => {
           try {
-            return holdsSignIn(env, profile)
+            return holdsSignIn(env, profile, keyring)
           } catch {
             // A keyring that cannot be read fails the server's tools as well.
             return false

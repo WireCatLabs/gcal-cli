@@ -17,6 +17,8 @@ const fixFor = (error: CliError, start: string): string | undefined => {
       return typeof grant === "string"
         ? `run ${start} --grant ${grant} again and leave it ticked on the consent screen`
         : undefined
+    case "sign-in.no-client":
+      return "or pass --client-file <path> with the Desktop app client JSON from Google Cloud Console"
     case "api.scope-missing":
       return typeof grant === "string" ? `sign in again with ${start} --grant ${grant}` : undefined
     default:

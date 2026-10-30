@@ -156,6 +156,32 @@ describe("calendar commands over Google", () => {
     expect(report.synced).toContainEqual(expect.objectContaining({ external_id: "owner@example.com" }))
   })
 
+  it("stores the same times whatever the machine's zone (WC-TIME-6)", async () => {
+    const zone = process.env.TZ
+    const storedUnder = async (tz: string) => {
+      process.env.TZ = tz
+      const { json } = harness()
+      await json("personal", "sync")
+      const { items } = await json("personal", "events", "list", "from:2026-10-01", "to:2026-12-31", "--limit", "1000")
+      return items.map(({ title, starts_at, ends_at, all_day, timezone }: Record<string, unknown>) => ({
+        title,
+        starts_at,
+        ends_at,
+        all_day,
+        timezone,
+      }))
+    }
+    try {
+      const east = await storedUnder("Asia/Vladivostok")
+      const west = await storedUnder("America/Los_Angeles")
+      expect(east.length).toBeGreaterThan(0)
+      expect(west).toEqual(east)
+    } finally {
+      if (zone === undefined) delete process.env.TZ
+      else process.env.TZ = zone
+    }
+  })
+
   it("sync --rescan lists the window again", async () => {
     const { json, google } = harness()
     await json("personal", "sync")

@@ -31,6 +31,8 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
     "the calendar is not an attendee of the event, so it has no answer to give",
   ],
   ["api.disabled", "configuration_error", "the Google Calendar API is turned off for this OAuth project"],
+  ["google.denied", "permission_error", "Google denied the operation to this account"],
+  ["google.not-found", "not_found", "Google Calendar has no such item, or this account cannot see it"],
 ]
 
 export const REASONS = defineReasons(ENTRIES.map(([reason, code, message]) => ({ reason, code, message, details: [] })))

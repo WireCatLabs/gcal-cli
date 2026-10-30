@@ -139,14 +139,13 @@ export const sessionKeeper = (options: KeeperOptions): TokenKeeper =>
   })
 
 const NO_CLIENT =
-  "no Google OAuth client is set up: pass --client-file <path> with the Desktop app client JSON from Google Cloud " +
-  "Console, or set GCAL_GOOGLE_CLIENT_ID and GCAL_GOOGLE_CLIENT_SECRET"
+  "no Google OAuth client is set up: set GCAL_GOOGLE_CLIENT_ID and GCAL_GOOGLE_CLIENT_SECRET to your own Desktop app client"
 
 const ClientFile = v.object({
   installed: v.object({ client_id: v.pipe(v.string(), v.minLength(1)), client_secret: v.optional(v.string()) }),
 })
 
-/** The owner's own Google app, from `--client-file` or the environment; gcal bundles none yet. */
+/** The owner's own Google app, from a client file or the environment; gcal bundles none yet. */
 export const googleClient = (env: NodeJS.ProcessEnv, file?: string, platform = process.platform): OAuthClient => {
   if (!file) {
     const clientId = env.GCAL_GOOGLE_CLIENT_ID
