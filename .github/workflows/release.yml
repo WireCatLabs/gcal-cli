@@ -190,11 +190,12 @@ jobs:
           awk -v v="$VERSION" '$0 ~ "^## "v" " {on=1; next} /^## / && on {exit} on' CHANGELOG.md |
             gh release create "v$VERSION" --title "$VERSION" --notes-file -
 
+  # The template's own release publishes @wirecat/cli-template, which has no skill on ClawHub.
   # ClawHub's own workflow, pinned: it runs the ClawHub CLI from this commit and needs id-token only to read which
   # commit that is. It publishes the skill only when it changed, as the next patch of ClawHub's own version line.
   clawhub-dry-run:
     needs: build
-    if: inputs.dry_run
+    if: inputs.dry_run && github.repository != 'WireCatLabs/cli-template'
     permissions:
       contents: read
       id-token: write
@@ -210,7 +211,7 @@ jobs:
   # That one error warns; any other fails. Bump CLAWHUB_SHA together with the dry run's pin.
   clawhub:
     needs: tag
-    if: ${{ !inputs.dry_run }}
+    if: ${{ !inputs.dry_run && github.repository != 'WireCatLabs/cli-template' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
