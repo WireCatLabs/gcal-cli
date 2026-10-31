@@ -1,5 +1,5 @@
 import { isCliError } from "@wirecat/cli-base"
-import { zonedMoment } from "@wirecat/cli-base/query"
+import { timezoneOf, zonedMoment } from "@wirecat/cli-base/query"
 import type {
   BusyTimes,
   CalendarAccessRole,
@@ -124,9 +124,16 @@ const metadataOf = (event: CalendarEvent) => {
   return Object.keys(kept).length ? kept : null
 }
 
-/** One Google event in the neutral words (cli-core `src/meetings/event-store.ts`). */
-export const entryOf = (event: CalendarEvent, calendar: Pick<StoredCalendar, "timezone">): EntryInput => {
-  const zone = [event.start?.timeZone, calendar.timezone ?? undefined].find(zoneOk) ?? "UTC"
+/**
+ * One Google event in the neutral words (cli-core `src/meetings/event-store.ts`). An all-day date with no zone of its
+ * own or of its calendar is read in the zone in use, as cli-core's calendar commands read one (WC-TIME-3).
+ */
+export const entryOf = (
+  event: CalendarEvent,
+  calendar: Pick<StoredCalendar, "timezone">,
+  zoneInUse?: string,
+): EntryInput => {
+  const zone = [event.start?.timeZone, calendar.timezone ?? undefined].find(zoneOk) ?? zoneInUse ?? timezoneOf()
   const status = word(STATUS, event.status) ?? "confirmed"
   const recurrence = (event.recurrence ?? []).filter((line) => RECURRENCE_LINE.test(line))
   const kind = event.recurringEventId ? "occurrence" : recurrence.length ? "series" : "single"

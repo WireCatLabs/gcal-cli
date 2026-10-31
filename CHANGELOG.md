@@ -19,6 +19,11 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   together could answer one of them empty (`{"item":{"value":null}}`) or fail it with `command.crashed`, because the
   calls shared which command was running and the store it had opened. Each call now keeps its own
   ([WC-ARCH-22](https://github.com/WireCatLabs/cli-base/blob/v0.65.5/docs/standards/architecture.md#wc-arch-22--build-the-command-tree-once-keep-each-calls-state-out-of-it)).
+- **An all-day event with no time zone of its own or of its calendar starts at midnight in your computer's time zone.**
+  gcal read it as midnight UTC: on a computer in Madrid it started an hour late, and in New York on the evening before.
+  An event or calendar that names its zone is read in that zone, as before. An event already stored keeps its old
+  start until Google sends it again, after it changes
+  ([WC-TIME-3](https://github.com/WireCatLabs/cli-base/blob/v0.65.5/docs/standards/time.md#wc-time-3--read-a-time-that-has-no-zone-in-the-zone-in-use-and-say-which-zone-that-was)).
 
 ## 0.4.0 — 31.10.2026
 
