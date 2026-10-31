@@ -4,6 +4,13 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ## Unreleased
 
+### Added
+
+- **`events list` finds events from their earliest start: `starts_at>=<date>`.** `starts_at` now takes either side
+  and a range: `starts_at>=2026-11-02`, `starts_at:[2026-11-02 TO 2026-11-07}`, and `starts_at:2026-11-02` for the
+  events of one day. An event that starts exactly at the moment is kept; an all-day event is compared by its date in
+  your time zone. In 0.5.0 `starts_at>=…` was refused. `ends_at` is unchanged: an earliest end only, strictly after.
+
 ### Changed — may break callers
 
 - **`session start` falls back to a private file when the keyring fails, and never asks.** It used to
@@ -13,6 +20,15 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   `session end` no longer answer `keyring: "unreachable"`: the keyring's failure is the stderr warning.
 - A run with moved folders names its temporary keyring entry after its state folder, where it used to name it after
   its config folder; a temporary entry an older run left is no longer read. `bin/keyring-dedupe` removes it.
+- **`calendars busy` takes the standard field query, and none of its own words.** `today`, `week`, `from:` and `to:`
+  are refused. The window is the answer's own `start` and `end`: `from:2026-11-02 to:2026-11-06` is
+  `start>=2026-11-02 end<=2026-11-06`, and `today` is `start>=today end<=today`. Without `start` the window starts
+  today, without `end` it lasts seven days, so a bare `calendars busy` is still this week. `calendar:` and `person:`
+  stay and may still be repeated. Over MCP the input is `query`, no longer `words`. The first screen shows
+  `calendars busy --duration-minutes 30`.
+- **gcal needs `@wirecat/cli-base` 0.67 and `@wirecat/cli-core` 0.502**, which now build `store status`,
+  `search events <query>` and the field queries themselves; the commands, their answers and permission keys are the
+  same as in 0.5.0.
 
 ## 0.5.0 — 31.10.2026
 
