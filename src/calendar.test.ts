@@ -137,7 +137,7 @@ describe("calendar commands over Google", () => {
     expect((await json("personal", "status")).items).toMatchObject([{ state: "complete" }])
   })
 
-  it("a sync where one calendar fails still prints its report, then fails with sync.partial", async () => {
+  it("a sync where one calendar fails prints nothing and fails with sync.partial naming that calendar", async () => {
     const { gcal, json, google } = harness()
     await json("personal", "sync")
     await json("personal", "calendars", "sync", "team@group.calendar.example.com")
@@ -148,12 +148,19 @@ describe("calendar commands over Google", () => {
         : real(input, init)
     const answer = await gcal("personal", "sync", "--json")
     expect(answer.code).not.toBe(0)
-    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("sync.partial")
-    const report = JSON.parse(answer.out).item
-    expect(report.synced).toContainEqual(
+    expect(answer.out).toBe("")
+    const { error } = JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}")
+    expect(error).toMatchObject({ reason: "sync.partial", retry: expect.objectContaining({ safe: true }) })
+    expect(error.message).toContain("(Team (shared)): Google denied")
+    expect(error.details.calendars).toContainEqual(
       expect.objectContaining({ external_id: "team@group.calendar.example.com", error: expect.any(String) }),
     )
-    expect(report.synced).toContainEqual(expect.objectContaining({ external_id: "owner@example.com" }))
+    expect(error.details.calendars).toContainEqual(
+      expect.objectContaining({ external_id: "owner@example.com", state: "complete" }),
+    )
+    expect(
+      error.details.calendars.find(({ external_id }: { external_id: string }) => external_id === "owner@example.com"),
+    ).not.toHaveProperty("error")
   })
 
   it("stores the same times whatever the machine's zone (WC-TIME-6)", async () => {

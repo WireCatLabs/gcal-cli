@@ -10,16 +10,14 @@ feature: it may already be on the way. The order is approximate and can change. 
 to three months ahead, then only what changed; a big sync goes on over several runs. You can list, show and search
 events by words and by meaning, see the people in them and their Drive files, all without the network, and search
 Google Calendar itself with `search --backend server`. `calendars busy` shows when people are taken and the stretches
-free for all of them. After `session start --grant write` it creates, changes and deletes events, repeating ones
-included, switches an event between timed and all-day, and answers invitations, each write asking first. `gcal api`
-reaches every Google Calendar API method by name. Every command is in the [command reference](commands.md).
+free for all of them, `events list changed:<date>` what changed since a date, and `events list overlapping` the
+meetings that clash. After `session start --grant write` it creates, changes, moves and deletes events, repeating ones
+included, one occurrence, the whole series or "this and all following", moves an event to another calendar, switches
+an event between timed and all-day, and answers invitations; a delete asks first. `gcal api` reaches every Google
+Calendar API method by name. Every command is in the [command reference](commands.md).
 
 ## Next
 
-- **Moving an event to another calendar with `events`.** Today `gcal <profile> api calendar-events-move` moves it
-  through Google's own method, after `session start --grant write`; it asks first, like every write.
-- **Changing "this and all following" occurrences of a repeating event.** Today a change applies to one occurrence or
-  to the whole series (`--series`).
 - **Sign-in without your own Google client.** `gcal` uses WireCat's shared Google app once Google has reviewed it for
   Calendar. Until then, [make your own client](configuration.md#your-own-google-client).
 

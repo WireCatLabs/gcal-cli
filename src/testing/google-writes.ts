@@ -1,4 +1,4 @@
-// Shapes and refusals from the Calendar API reference (Events: insert, get, patch, update, delete; "Handle API errors" for
+// Shapes and refusals from the Calendar API reference (Events: insert, get, patch, update, delete, move; "Handle API errors" for
 // 409 and 412; "Resource versions" for If-Match); every value is made up.
 
 const PREFIX = "/calendar/v3/"
@@ -87,6 +87,8 @@ export const fakeGoogleWrites = (
   let version = 4_000_000_000_000_000
   const etag = () => `"${version++}"`
   for (const event of held) events.set(event.id as string, structuredClone(event) as Event)
+  // A moved event answers only on its new calendar; one never moved answers on any, as the read fake's events do.
+  const calendarOf = new Map<string, string>()
   const requests: WriteRequest[] = []
   const notified: boolean[] = []
   let loseNext = false
@@ -126,8 +128,9 @@ export const fakeGoogleWrites = (
     const body = typeof init.body === "string" ? (JSON.parse(init.body) as Record<string, unknown>) : undefined
     const one = path.match(/^calendars\/([^/]+)\/events\/([^/]+)$/u)
     const all = path.match(/^calendars\/([^/]+)\/events$/u)
+    const move = method === "POST" ? path.match(/^calendars\/([^/]+)\/events\/([^/]+)\/move$/u) : null
     const write = method !== "GET"
-    if (!(write && (one || all)) && !(method === "GET" && one && events.has(one[2] as string))) {
+    if (!(write && (one || all || move)) && !(method === "GET" && one && events.has(one[2] as string))) {
       if (fallback) return fallback(input, init)
       return json(NOT_FOUND, 404)
     }
@@ -155,8 +158,13 @@ export const fakeGoogleWrites = (
       events.set(id, event)
       return answered(json(event))
     }
-    const event = events.get(one?.[2] ?? "")
-    if (!event) return json(NOT_FOUND, 404)
+    const [, calendar, id] = one ?? move ?? []
+    const event = events.get(id ?? "")
+    if (!event || (calendarOf.has(event.id) && calendarOf.get(event.id) !== calendar)) return json(NOT_FOUND, 404)
+    if (move) {
+      calendarOf.set(event.id, url.searchParams.get("destination") ?? "")
+      return answered(json(changed(event)))
+    }
     if (method === "GET") return json(event)
     if (method === "DELETE" && event.status === "cancelled") return json(GONE, 410)
     if (headers["if-match"] === undefined)

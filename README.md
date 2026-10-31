@@ -2,8 +2,8 @@
 
 `gcal` reads your Google Calendar from the terminal, from scripts and from AI agents. It syncs the calendars you own
 into the local WireCat store, and then lists, shows and searches their events, the people in them and their Drive
-files, without the network. After `session start --grant write` it also creates, changes and deletes events and
-answers invitations; each write asks first, and mailing other people is off until you allow it.
+files, without the network. After `session start --grant write` it also creates, changes, moves and deletes events
+and answers invitations; a delete asks first, and mailing other people is off until you allow it.
 
 ## Quick start
 
@@ -44,8 +44,8 @@ an agent may change. Text from an invitation is marked `untrusted`: data to the 
 - Your calendar is on your computer, in the same store as your messages, documents and meetings from the other WireCat
   tools, so an agent can answer "what did we agree with Ana" across all of them.
 - Reads need no network after a sync, and a meeting's passcode or PIN is never stored or printed.
-- Every write is guarded: it asks first, never overwrites a change made in Google since the last sync, and never
-  mails attendees unless you allow it.
+- Every write is guarded: it never overwrites a change made in Google since the last sync, a delete asks first, and it
+  never mails attendees unless you allow it.
 
 ## Main features
 
@@ -65,15 +65,13 @@ works. See [use it](docs/usage.md#sign-in-to-google).
 ## Settings and permissions
 
 Settings live in one `config.json`; `gcal personal config show` lists them. Permissions decide what each command may
-do: a change asks first, and mailing attendees, mailing the person a calendar is shared with, deleting a whole series
+do: a change goes ahead and a delete asks first, and mailing attendees, mailing the person a calendar is shared with, deleting a whole series
 and emptying a calendar are denied until you allow them. Sharing a calendar asks first, which over MCP means an agent
 can do it without a question. See [settings](docs/configuration.md#permissions).
 
 ## Limits
 
 - Only the calendars you own sync at first; add others with `calendars sync`.
-- An event cannot move to another calendar, and a change to a repeating event applies to one occurrence or the whole
-  series, not to "this and all following".
 - Google's change notifications (`watch`) are not offered: they need a public web address.
 - What is planned is on the [roadmap](docs/roadmap.md).
 

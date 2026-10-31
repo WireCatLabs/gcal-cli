@@ -9,8 +9,32 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **`gcal models list` and `gcal models download <model>` fetch the model that search by meaning uses.** The search's
   hint named `gcal models download e5-small`, which did not exist. The model goes into the folder every WireCat tool
   shares, so one already downloaded by another WireCat tool is used as it is.
+- **`events move <event> --to-calendar <id>` moves an event, with its id, to another calendar of the same account.**
+  It refuses a calendar you cannot write to, the same calendar, an event Google does not move (focus time, out of
+  office, working location, birthdays) and an occurrence without `--series`. Over MCP it is the `events move` command.
+- **`events update --following` and `events delete --following` change or delete "this and all following"
+  occurrences.** An update ends the series just before the occurrence and starts a new series there with the change,
+  keeping the attendees; a delete only ends the series. A series that ends after a number of times needs `--repeat`
+  for the new part.
+- **`events list changed:<date>` lists what changed since a date**, from the store: each event says `change` (`new`,
+  `moved` or `cancelled`) and `changed_at`, and a moved one where it `was`.
+- **`events list overlapping` lists the meetings that clash**, each with `overlaps`, the other events. Only events that
+  take your time count: not cancelled, not all-day, not declined or marked free.
 
 ### Changed — may break callers
+
+- **Creating, changing, moving and answering events go ahead without a question by default.** `events.create`,
+  `events.update`, `events.respond` and the new `events.move` are `allow` (were `ask`); a script no longer needs `--yes`
+  for them. `events.delete` stays `ask`, `--following` included. To be asked again, set a key to `ask`, such as
+  `gcal personal config set permissions.events.create ask`. The `api.calendar.events.*` keys stop the event writes
+  once you set them; their built-in `ask` holds for the `api` commands only.
+- **A series update whose new rule ends it sooner also needs `events.delete.series`**, which is `deny` by default. A
+  new `COUNT`, an earlier `UNTIL`, or a bound on a series that had none removed the later occurrences under
+  `events.update` alone.
+- **A `sync` where a calendar fails prints nothing on stdout and fails with `sync.partial`.** Its message names each
+  failed calendar and its error, `details.calendars` holds every calendar's result (`error` on the failed ones), and
+  the error says a retry is safe. The calendars that synced are saved. A sync stopped by its time or request budget
+  still answers `state: "partial"` and succeeds.
 
 - **`search` answers a list: the events under `items`, with `page` in cursor mode, as every other list does.** It
   answered one `item` holding `hits`, `has_more` and `untrusted` (WC-OUT-4). A script reads `items` in place of
@@ -27,8 +51,15 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **`events delete` of an event already deleted at Google succeeds and removes the stored copy.** Google answers such a
   delete with 410, and 404 once it no longer shows the event; gcal failed on both and kept the event in the store
   until the next sync.
-- **A `sync` where some calendars fail prints its report before the error.** The report, with each calendar's result
-  and error, was lost and only the error printed. The command still fails with `sync.partial`.
+- **The daily full sync no longer marks events outside its window as deleted.** Older and later single events, moved
+  occurrences and ended series were marked deleted and their events cancelled. A store this damaged heals on its next
+  sync.
+- **A repeating event moved to another time no longer keeps its occurrences at the old time** after an incremental
+  sync.
+- **A `sync --rescan` stopped by its budget no longer leaves the calendars it did not reach on incremental rounds.**
+- **A create Google made but the store failed to save names the event's id**, so a repeat with `--id` finds it.
+- **`sync` writes to the store in far fewer transactions, and the daily full round asks only changed series for their
+  occurrences.** `events list` by time and `people list` read the store faster.
 - **A refusal from Google for a missing or forbidden item names a reason**: `google.not-found` or `google.denied`,
   so a script can branch on it instead of the message.
 - **A sign-in cut short by a timeout or Ctrl-C still closes the store it opened.**

@@ -20,6 +20,7 @@ const CALENDAR = {
   seenAt: null,
   deletedAt: null,
 }
+const TEAM = { ...CALENDAR, id: 2, externalId: "team@group.calendar.google.com", title: "Team", primary: false }
 const AT = Date.UTC(2026, 10, 2, 9)
 const TIMED = { title: "Example standup", startsAt: AT, endsAt: AT + 900_000, timezone: "Europe/Madrid" }
 const ETAG = INVITATION.etag
@@ -45,6 +46,7 @@ describe("calendarWriterContract over hand-written Google answers", () => {
       loseNextAnswer: google.loseNextAnswer,
       notified: google.notified,
       at: AT,
+      target: TEAM,
     }
   }))
     it(name, run)
@@ -245,6 +247,29 @@ describe("the Google calls behind each write", () => {
     await expect(
       writer.remove(CALENDAR, "unknown1", { scope: "series", etag: ETAG, notify: false }),
     ).resolves.toBeUndefined()
+  })
+
+  it("move checks the etag on a read, then moves to the destination without a body", async () => {
+    const { google, writer } = adapter()
+    const moved = await writer.move?.(CALENDAR, "review1", TEAM, { etag: ETAG, notify: false })
+    expect(google.requests.map(({ method, path }) => `${method} ${path}`)).toEqual([
+      "GET calendars/owner@example.com/events/review1",
+      "POST calendars/owner@example.com/events/review1/move",
+    ])
+    expect(google.requests[1]?.query.get("destination")).toBe(TEAM.externalId)
+    expect(google.requests[1]?.query.get("sendUpdates")).toBe("none")
+    expect(google.requests[1]?.body).toBeUndefined()
+    expect(moved).toMatchObject({ externalId: "review1", title: "Example review" })
+    expect(moved?.etag).not.toBe(ETAG)
+  })
+
+  it("move over an event that changed since the sync sends no move", async () => {
+    const { google, writer } = adapter()
+    google.changeBehind("review1")
+    await expect(writer.move?.(CALENDAR, "review1", TEAM, { etag: ETAG, notify: false })).rejects.toMatchObject({
+      details: { reason: "event.conflict" },
+    })
+    expect(google.requests.map(({ method }) => method)).toEqual(["GET"])
   })
 
   it("respond changes only the owner's answer and keeps every other attendee", async () => {

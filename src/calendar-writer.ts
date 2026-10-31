@@ -60,7 +60,9 @@ const bodyOf = (patch: EventPatch, recurring = patch.recurrence !== undefined): 
  * `start`, and clearing its `dateTime` would need a `null` the generated request check refuses. Google documents get
  * then update with etags for a partial change (https://developers.google.com/workspace/calendar/api/v3/reference/events/update).
  */
-export const googleCalendarWriter = (api: GoogleApi): CalendarWriter => {
+export type GoogleCalendarWriter = CalendarWriter & Required<Pick<CalendarWriter, "move">>
+
+export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
   const where = (calendar: StoredCalendar, eventId: string, notify: boolean) => ({
     calendarId: calendar.externalId,
     eventId,
@@ -150,6 +152,34 @@ export const googleCalendarWriter = (api: GoogleApi): CalendarWriter => {
         // https://developers.google.com/workspace/calendar/api/guides/errors
         if (![404, 410].includes(statusOf(error) as number)) throw error
       }
+    },
+
+    /**
+     * Google's move takes no If-Match (https://developers.google.com/workspace/calendar/api/v3/reference/events/move),
+     * so the etag is checked on a read just before it. An event gone from `calendar` but held by `target` is the
+     * move whose answer was lost.
+     */
+    async move(calendar, externalId, target, { etag, notify }) {
+      let event: CalendarEvent | undefined
+      try {
+        event = await get(calendar, externalId)
+      } catch (error) {
+        if (![404, 410].includes(statusOf(error) as number)) throw error
+      }
+      if (!event || event.status === "cancelled") {
+        const there = await get(target, externalId)
+        if (there.status === "cancelled")
+          throw new CliError("not_found", "the event is on neither calendar any more", { reason: "google.not-found" })
+        return entryOf(there, target)
+      }
+      if (event.etag !== etag) throw calendarConflict()
+      const moved = await api.call("calendar.events.move", {
+        calendarId: calendar.externalId,
+        eventId: externalId,
+        destination: target.externalId,
+        sendUpdates: notify ? "all" : "none",
+      })
+      return entryOf(moved as CalendarEvent, target)
     },
 
     async respond(calendar, externalId, response, { etag, notify }) {

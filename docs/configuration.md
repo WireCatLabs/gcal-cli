@@ -54,16 +54,19 @@ Without a setting of yours:
   unless `sendNotifications` is `false`, so while the key is `deny` a share must say `--send-notifications false`.
 - Emptying a calendar (`calendar.calendars.clear`, every event of the main calendar) is `deny`, and never offered over
   MCP.
-- The event writes (`events create`, `update`, `delete`, `respond`) are `ask`, each under its own key, such as
-  `events.create`.
+- The event writes that are easy to undo go ahead without a question: `events create`, `update`, `move` and `respond`
+  are `allow`, each under its own key, such as `events.create`. `events delete`, `--following` included, is `ask`.
 - `events.notify`, letting Google mail the other attendees (`--notify`), is `deny`. Over MCP `ask` lets a command
   run, so an agent could otherwise mail people.
-- `events.delete.series`, deleting every occurrence of a repeating event (`events delete --series`), is `deny`.
+- `events.delete.series`, deleting every occurrence of a repeating event (`events delete --series`), is `deny`. A
+  series update whose new `--repeat` rule ends it sooner (a new `COUNT` or an earlier `UNTIL`) needs it too.
 
-An event write also needs the key of the Google method it calls: `api.calendar.events.insert` for `create`,
-`api.calendar.events.patch` for `respond`, `api.calendar.events.patch` and `api.calendar.events.update` for `update`
-(a switch between timed and all-day sends the whole event), `api.calendar.events.delete` for `delete`. So
-`permissions.api readonly` stops the event writes too. One question covers every key of one write.
+An event write also answers to the key of the Google method it calls, once you set that key: `api.calendar.events.insert`
+for `create`, `api.calendar.events.patch` for `respond`, `api.calendar.events.patch` and `api.calendar.events.update`
+for `update` (a switch between timed and all-day sends the whole event), `api.calendar.events.delete` for `delete`,
+`api.calendar.events.move` for `move`. So `permissions.api readonly` stops the event writes too, and
+`permissions.api.calendar.events.insert ask` makes `events create` ask. The built-in `ask` of those methods holds for
+the `api` commands only. One question covers every key of one write.
 
 The `api` commands answer to the same keys. A method that has Google mail the attendees (`--send-updates` other than
 `none`, or `--send-notifications true`) also needs `events.notify`. Deleting an event, or patching it to `cancelled`,
@@ -76,7 +79,7 @@ Removing access (`calendar.acl.delete`) mails nobody, so it needs no extra key.
 ```sh
 gcal personal config set permissions.events.notify allow     # let --notify mail attendees
 gcal personal config set permissions.sharing.notify allow    # let a share mail the person it is shared with
-gcal personal config set permissions.events.create allow     # add events without the question
+gcal personal config set permissions.events.create ask       # be asked before each new event
 ```
 
 These defaults only become stricter against a broader key: `permissions.api allow` keeps both the question and the

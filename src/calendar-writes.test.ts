@@ -18,9 +18,12 @@ afterEach(async () => {
   for (const client of clients.splice(0)) await client.close()
 })
 
+const TEAM = "team@group.calendar.example.com"
+
 const harness = (
   scopes: string[] = [CALENDAR_READ_SCOPE, EVENTS_SCOPE],
   held: Record<string, unknown>[] = [INVITATION],
+  read = fakeGoogleCalendar([INVITATION]).fetch,
 ) => {
   const keyring = memoryKeyring()
   const env: NodeJS.ProcessEnv = {
@@ -39,7 +42,7 @@ const harness = (
     client: { clientId: "fixture-client.apps" },
   })
   rememberAccount(IDENTITY, "personal", "owner@example.com", env)
-  const google = fakeGoogleWrites(held, fakeGoogleCalendar([INVITATION]).fetch)
+  const google = fakeGoogleWrites(held, read)
   const fetch = google.fetch as typeof globalThis.fetch
   const gcal = async (...argv: string[]) => {
     const out: string[] = []
@@ -90,13 +93,10 @@ const at = ["--start-time", "2026-11-02T10:00+01:00", "--end-time", "2026-11-02T
 const posts = (google: ReturnType<typeof fakeGoogleWrites>) => google.requests.filter(({ method }) => method !== "GET")
 
 describe("event writes over Google", () => {
-  it("create asks once for every key, inserts with a client id, and stores the event", async () => {
+  it("create goes ahead without a question, inserts with a client id, and stores the event", async () => {
     const { gcal, google } = harness()
     await gcal("personal", "sync")
-    const unasked = await gcal(...create, ...at)
-    expect(unasked.error).toMatchObject({ code: "confirmation_required" })
-    expect(posts(google)).toEqual([])
-    const made = await gcal(...create, ...at, "--yes")
+    const made = await gcal(...create, ...at)
     expect(made.code).toBe(0)
     const [insert] = posts(google)
     expect(insert).toMatchObject({ method: "POST", body: { id: made.item.operation_id, summary: "Example planning" } })
@@ -107,19 +107,128 @@ describe("event writes over Google", () => {
     })
   })
 
-  it("a person at a terminal is asked one question per write, naming every key that asks", async () => {
+  it("a delete still asks; an api key the owner set to ask makes the shared write ask too", async () => {
     const { gcal, google, atTerminal } = harness()
-    await gcal("personal", "sync")
+    const event = await eventRef(gcal)
+    const unasked = await gcal("personal", "events", "delete", event, "--no-notify")
+    expect(unasked.error).toMatchObject({ code: "confirmation_required" })
+    expect(posts(google)).toEqual([])
     const plain = await atTerminal(...create, ...at)
     expect(plain.code).toBe(0)
-    expect(plain.asked).toHaveLength(1)
-    expect(plain.asked[0]).toContain("api.calendar.events.insert")
+    expect(plain.asked).toEqual([])
+    expect((await gcal("personal", "config", "set", "permissions.api.calendar.events.insert", "ask")).code).toBe(0)
     expect((await gcal("personal", "config", "set", "permissions.events.notify", "ask")).code).toBe(0)
     const mailing = await atTerminal(...create, ...at, "--attendee", "ana@example.com", "--notify")
     expect(mailing.code).toBe(0)
     expect(mailing.asked).toHaveLength(1)
+    expect(mailing.asked[0]).toContain("api.calendar.events.insert")
     expect(mailing.asked[0]).toContain("events.notify")
     expect(posts(google)).toHaveLength(2)
+  })
+
+  it("events move takes the event, with its id, to another calendar of the account", async () => {
+    const writable = async (input: string | URL | Request, init?: RequestInit) => {
+      const answer = await fakeGoogleCalendar([INVITATION]).fetch(input, init)
+      if (!String(input).includes("calendarList")) return answer
+      const list = (await answer.json()) as { items: { id: string; accessRole: string }[] }
+      for (const one of list.items) if (one.id === TEAM) one.accessRole = "writer"
+      return new Response(JSON.stringify(list), { headers: { "content-type": "application/json" } })
+    }
+    const { gcal, google } = harness(undefined, [INVITATION, SERIES], writable)
+    const event = await eventRef(gcal)
+    const mailed = await gcal("personal", "events", "move", event, "--to-calendar", TEAM, "--notify")
+    expect(mailed.error).toMatchObject({ code: "permission_error", details: { permission: "events.notify" } })
+    const moved = await gcal(
+      ...["personal", "events", "move", event, "--to-calendar", TEAM, "--calendar", "owner@example.com"],
+      ...["--no-notify", "--jsonl"],
+    )
+    expect(moved.error).toBeUndefined()
+    expect(posts(google).at(-1)).toMatchObject({
+      method: "POST",
+      path: "calendars/owner@example.com/events/review1/move",
+    })
+    expect(posts(google).at(-1)?.query.get("destination")).toBe(TEAM)
+    expect(moved.item).toMatchObject({ from_calendar: "1", calendar: "2", entry: { external_id: "review1" } })
+  })
+
+  it("an occurrence moves to another calendar only with --series, the whole repeating event", async () => {
+    const writable = async (input: string | URL | Request, init?: RequestInit) => {
+      const answer = await fakeGoogleCalendar([INVITATION]).fetch(input, init)
+      if (!String(input).includes("calendarList")) return answer
+      const list = (await answer.json()) as { items: { id: string; accessRole: string }[] }
+      for (const one of list.items) if (one.id === TEAM) one.accessRole = "writer"
+      return new Response(JSON.stringify(list), { headers: { "content-type": "application/json" } })
+    }
+    const { gcal, google } = harness(undefined, [INVITATION, SERIES], writable)
+    await gcal("personal", "sync")
+    const { items } = await gcal("personal", "events", "list", "from:2026-11-02", "to:2026-11-03")
+    const slot = `event:${items.find(({ title }: { title: string }) => title === "Weekly planning").id}`
+    const alone = await gcal("personal", "events", "move", slot, "--to-calendar", TEAM, "--no-notify")
+    expect(alone.error).toMatchObject({ code: "validation_error" })
+    const whole = await gcal("personal", "events", "move", slot, "--to-calendar", TEAM, "--series", "--no-notify")
+    expect(whole.error).toBeUndefined()
+    expect(posts(google).at(-1)).toMatchObject({ path: "calendars/owner@example.com/events/weekly1/move" })
+  })
+
+  it("update --following whose answer was lost names the new series, and --id finds it instead of a second", async () => {
+    const { gcal, google } = harness(undefined, [INVITATION, SERIES])
+    await gcal("personal", "sync")
+    const { items } = await gcal("personal", "events", "list", "from:2026-11-16", "to:2026-11-17")
+    const slot = `event:${items.find(({ title }: { title: string }) => title === "Weekly planning").id}`
+    const update = ["personal", "events", "update", slot, "--following", "--title", "Weekly sync", "--no-notify"]
+    google.loseNextAnswer()
+    const lost = await gcal(...update)
+    expect(lost.error).toMatchObject({ code: "outcome_unknown" })
+    const id = String(lost.error.details.operation_id)
+    const again = await gcal(...update, "--id", id)
+    expect(again.error).toBeUndefined()
+    const inserts = posts(google).filter(({ method, body }) => method === "POST" && body?.summary === "Weekly sync")
+    expect(inserts.map(({ body }) => body?.id)).toEqual([id, id])
+    expect(google.event(id)?.summary).toBe("Weekly sync")
+  })
+
+  it("update --following ends the series before the occurrence and starts a new one there", async () => {
+    const { gcal, google } = harness(undefined, [INVITATION, SERIES])
+    await gcal("personal", "sync")
+    const { items } = await gcal("personal", "events", "list", "from:2026-11-16", "to:2026-11-17")
+    const slot = items.find(({ title }: { title: string }) => title === "Weekly planning")
+    const changed = await gcal(
+      ...["personal", "events", "update", `event:${slot.id}`, "--following", "--title", "Weekly sync"],
+      "--no-notify",
+    )
+    expect(changed.error).toBeUndefined()
+    const [insert, end] = posts(google).slice(-2)
+    expect(insert).toMatchObject({ method: "POST", body: { summary: "Weekly sync" } })
+    expect(insert?.body?.recurrence).toEqual(expect.arrayContaining([expect.stringMatching(/^RRULE:FREQ=WEEKLY/u)]))
+    expect(end).toMatchObject({ method: "PATCH", path: "calendars/owner@example.com/events/weekly1" })
+    expect(JSON.stringify(end?.body?.recurrence)).toContain("UNTIL=")
+  })
+
+  it("delete --following only ends the series, and asks first", async () => {
+    const { gcal, google } = harness(undefined, [INVITATION, SERIES])
+    await gcal("personal", "sync")
+    const { items } = await gcal("personal", "events", "list", "from:2026-11-16", "to:2026-11-17")
+    const slot = items.find(({ title }: { title: string }) => title === "Weekly planning")
+    const remove = ["personal", "events", "delete", `event:${slot.id}`, "--following", "--no-notify"]
+    expect((await gcal(...remove)).error).toMatchObject({ code: "confirmation_required" })
+    const ended = await gcal(...remove, "--yes")
+    expect(ended.error).toBeUndefined()
+    expect(posts(google).at(-1)).toMatchObject({ method: "PATCH", path: "calendars/owner@example.com/events/weekly1" })
+    expect(JSON.stringify(posts(google).at(-1)?.body?.recurrence)).toContain("UNTIL=")
+    expect(google.event("weekly1")?.status).toBe("confirmed")
+  })
+
+  it("a series update whose new rule ends it sooner needs events.delete.series", async () => {
+    const { gcal, google } = harness(undefined, [INVITATION, SERIES])
+    await gcal("personal", "sync")
+    const { items } = await gcal("personal", "events", "list", "from:2026-11-02", "to:2026-11-03")
+    const slot = items.find(({ title }: { title: string }) => title === "Weekly planning")
+    const shorter = await gcal(
+      ...["personal", "events", "update", `event:${slot.id}`, "--series", "--repeat", "FREQ=WEEKLY;BYDAY=MO;COUNT=2"],
+      "--no-notify",
+    )
+    expect(shorter.error).toMatchObject({ code: "permission_error", details: { permission: "events.delete.series" } })
+    expect(posts(google)).toEqual([])
   })
 
   it("denying api stops the shared writes before Google is asked", async () => {
