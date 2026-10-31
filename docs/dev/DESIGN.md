@@ -19,11 +19,6 @@ No calendar CLI exists yet. Chosen with the owner: [drive-cli](https://github.co
 sign-in, the Google client, the store import and the command shape; [zoom-cli](https://github.com/WireCatLabs/zoom-cli)
 for events and meetings in the store.
 
-## Content languages
-
-Languages: en, ru.
-If this CLI defines a messenger, set its `speechModels` to `parakeet-v3`.
-
 ## Further answers
 
 - **Records kept:** calendars and calendar entries as source records; events and event series as entities; attendees
@@ -59,3 +54,5 @@ If this CLI defines a messenger, set its `speechModels` to `parakeet-v3`.
   the shared WireCat app gets Calendar after Drive's Google review is approved.
 
 ## Open questions for the owner
+
+None.
