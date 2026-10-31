@@ -46,8 +46,10 @@ If this CLI defines a messenger, set its `speechModels` to `parakeet-v3`.
 - **Secrets:** tokens in the system keyring through `@wirecat/cli-core/oauth` (WC-SECR), or with
   `--credential-storage file` in a mode-600 file in the state folder where no keyring works. Passcodes, PINs and the
   query string of a join link are never stored.
-- **Writes:** creating, changing and deleting events, and answering an invitation, behind `session start --grant write`
-  and a permission per write (`events.*`); mailing attendees and deleting a whole series are denied by default.
+- **Writes:** creating, changing, moving and deleting events (one occurrence, the series or `--following`), and
+  answering an invitation, behind `session start --grant write` and a permission per write (`events.*`). Create,
+  update, move and respond are allowed by default and delete asks; mailing attendees, deleting a whole series and a
+  rule that ends a series sooner are denied by default.
 - **Shared commands:** `mcp` is cli-core's `appMcpCommand` and the first screen and `guide` are cli-core's
   (`scenarios/`). `doctor` is cli-core's `appDoctorReport` plus `credential_file`, which no hook of
   `appDoctorCommand` can add. `session list` is gcal's own: cli-core has no helper for a CLI that is not a messenger

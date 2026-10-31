@@ -47,7 +47,9 @@ gcal session list                       # every profile here, and whether each h
 `session status` gives the account's email address, the permissions Google granted (`scopes`, and `grants` in
 `--grant`'s words), `state`: `saved` or `missing`, and `credential_storage`: `keyring` or `file`. With `--check`,
 `verified: true` means Google accepted the sign-in just now. `session end` removes the sign-in from where it is kept;
-it keeps which account the profile is, and your stored calendar data. `session list` takes no profile and picks none:
+it keeps which account the profile is, and your stored calendar data. In a run with moved folders it removes only that
+run's own sign-in: the answer then says `kept: "keyring"`, because the run still reads your usual sign-in, and
+`session status` still shows it. `session list` takes no profile and picks none:
 it lists the profiles named in the settings or signed in once, each with `signed_in`, `account` and
 `credential_storage`. It reads the keyring, never the network.
 

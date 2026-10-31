@@ -30,7 +30,7 @@ export const FIRST_SCREEN: FirstScreen = {
     { command: "events list week person:ana@example.com", does: "this week's events with one person" },
     { command: "calendars busy week --duration-minutes 30", does: "free stretches the calendars share" },
     { command: "events create <calendar> --title …", does: "add an event; attendees are mailed only if you say" },
-    { command: "--read-only …", does: "this run refuses every change" },
+    { command: "events list week overlapping", does: "this week's meetings that clash" },
   ],
   start: `${IDENTITY.command} personal session start`,
 }
