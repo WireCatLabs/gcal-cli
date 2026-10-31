@@ -30,10 +30,10 @@ jobs:
         node dist/bin/gcal.js commands --json >/dev/null
         node dist/bin/gcal.js doctor --json >/dev/null
       checks: |
-        pnpm smoke:node
         bash scripts/audit.sh
+        pnpm smoke:node
 
-  # package.json's engines allow Node ^22.16.0; the shared jobs above run 24 only.
+  # WC-TOOL-6: engines allows ^22.16.0; node-ci.yml runs Node 24 only.
   node-22:
     runs-on: ubuntu-latest
     steps:
@@ -45,9 +45,10 @@ jobs:
         with:
           node-version: 22.16.0
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm build
       - run: pnpm test
-      - run: pnpm build && pnpm smoke:node
+      - run: pnpm smoke:node
 
   version:
     if: github.event_name == 'pull_request'
