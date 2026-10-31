@@ -35,7 +35,6 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   failed calendar and its error, `details.calendars` holds every calendar's result (`error` on the failed ones), and
   the error says a retry is safe. The calendars that synced are saved. A sync stopped by its time or request budget
   still answers `state: "partial"` and succeeds.
-
 - **`search` answers a list: the events under `items`, with `page` in cursor mode, as every other list does.** It
   answered one `item` holding `hits`, `has_more` and `untrusted` (WC-OUT-4). A script reads `items` in place of
   `item.hits`, and `page.next_cursor` is the value for `--cursor`. Each event names its own `untrusted` fields, and why
