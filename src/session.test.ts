@@ -485,7 +485,6 @@ describe("session status and end", () => {
         state: "missing",
         account: null,
         verified: false,
-        keyring: "unreachable",
       })
       expect(status.out + status.err).not.toContain("DBus")
     }
@@ -495,7 +494,6 @@ describe("session status and end", () => {
       profile: "personal",
       ended: false,
       cached_data: "retained",
-      keyring: "unreachable",
     })
   })
 
@@ -574,11 +572,37 @@ describe("session start --credential-storage file", () => {
     },
   }
 
-  it("keeps the sign-in in a private file under the state folder where no keyring works", async () => {
+  it("falls back to the private file without asking and warns once where no keyring works", async () => {
+    const { gcal, env } = harness(noKeyring)
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true)
+    const started = await gcal(["personal", "session", "start", "--client-file", clientFile(), "--json"])
+    const warnings = stderr.mock.calls.filter(([text]) => String(text).includes("could not reach the OS keyring"))
+    stderr.mockRestore()
+    expect(started.code).toBe(0)
+    expect(item(started.out)).toMatchObject({ signed_in: true, credential_storage: "file" })
+    expect(warnings).toHaveLength(1)
+    expect(JSON.parse(readFileSync(join(env.GCAL_STATE_DIR ?? "", "credentials.json"), "utf8"))).toHaveProperty([
+      "oauth:google:personal",
+    ])
+    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
+      credential_storage: "file",
+    })
+  })
+
+  it("warns once for a run over several profiles", async () => {
+    const { gcal, env } = harness(noKeyring)
+    writeFileSync(join(env.GCAL_CONFIG_DIR ?? "", "config.json"), JSON.stringify({ profiles: { home: {}, work: {} } }))
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true)
+    expect((await gcal(["session", "list", "--json"])).code).toBe(0)
+    const warnings = stderr.mock.calls.filter(([text]) => String(text).includes("could not reach the OS keyring"))
+    stderr.mockRestore()
+    expect(warnings).toHaveLength(1)
+  })
+
+  it("keeps the sign-in in a private file under the state folder when asked", async () => {
     const { gcal, env } = harness(noKeyring)
     const fake = google()
     const start = ["personal", "session", "start", "--client-file", clientFile(), "--json"]
-    expect(failure((await gcal(start, fake)).err).code).toBe("configuration_error")
     const started = await gcal([...start, "--credential-storage", "file"], fake)
     expect(started.code).toBe(0)
     expect(item(started.out)).toMatchObject({ signed_in: true, credential_storage: "file" })

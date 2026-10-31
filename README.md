@@ -59,8 +59,8 @@ an agent may change. Text from an invitation is marked `untrusted`: data to the 
 
 Each profile is one Google account, and no command ever picks a profile for you; `gcal session list` lists them.
 `session start` signs in through the browser with read-only Calendar access; `--grant write` adds access to events.
-The sign-in is kept in the system keyring, or with `--credential-storage file` in a private file where no keyring
-works. See [use it](docs/usage.md#sign-in-to-google).
+The sign-in is kept in the system keyring; where the keyring fails, in a private file, without asking
+(`--credential-storage file` chooses the file, not recommended). See [use it](docs/usage.md#sign-in-to-google).
 
 ## Settings and permissions
 

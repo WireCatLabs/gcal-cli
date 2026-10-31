@@ -53,13 +53,16 @@ run's own sign-in: the answer then says `kept: "keyring"`, because the run still
 it lists the profiles named in the settings or signed in once, each with `signed_in`, `account` and
 `credential_storage`. It reads the keyring, never the network.
 
-On a computer with no keyring, such as a server without a desktop, keep the sign-in in a file instead. The file is
+On a computer where the keyring does not work, such as a server without a desktop, `session start` keeps the sign-in
+in a file by itself, says so once on stderr, and answers `credential_storage: "file"`. It never asks. The file is
 `credentials.json` in `gcal`'s state folder, readable by you only. `gcal doctor` shows its path and the profiles in it.
-The next `session start` without the option moves the sign-in back to the keyring.
+You can also choose the file outright, though the keyring is safer and we do not recommend it:
 
 ```sh
 gcal personal session start --credential-storage file
 ```
+
+The next `session start` that reaches the keyring moves the sign-in back there.
 
 ## Sync your calendars
 

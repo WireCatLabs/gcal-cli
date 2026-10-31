@@ -70,7 +70,7 @@ gcal session start [options]
 |---|---|
 | `--client-file <file>` | your own Desktop app OAuth client JSON from Google Cloud Console. |
 | `--no-browser` | print the sign-in URL instead of opening a browser. |
-| `--credential-storage <storage>` | where the sign-in is kept: keyring, or file for a private file where no keyring works. Default: `keyring`. |
+| `--credential-storage <storage>` | where the sign-in is kept: keyring (the default, which falls back to a private file by itself when no keyring works), or file, not recommended. Default: `keyring`. |
 | `--grant <scopes>` | also ask for these, comma-separated: write (create, change and delete events, and answer invitations), sharing (see and change who can see a calendar). |
 
 **Returns:** sign in to Google in the browser; read-only unless you pass --grant write

@@ -97,7 +97,8 @@ const startCommand = () =>
     .option("--no-browser", "print the sign-in URL instead of opening a browser")
     .option(
       "--credential-storage <storage>",
-      "where the sign-in is kept: keyring, or file for a private file where no keyring works",
+      "where the sign-in is kept: keyring (the default, which falls back to a private file by itself when no " +
+        "keyring works), or file, not recommended",
       credentialStorage,
       "keyring",
     )

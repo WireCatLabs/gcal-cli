@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs"
-import { CliError, isCliError, type KeyringStore } from "@wirecat/cli-base"
+import { CliError, type KeyringStore } from "@wirecat/cli-base"
 import { accountFileFor, type EventSink, profilesHere, rememberAccount } from "@wirecat/cli-core/cli"
 import type { OAuthClient } from "@wirecat/cli-core/oauth"
 import {
   accountEmail,
   CALENDAR_READ_SCOPE,
   type CredentialStorage,
+  fileSecretOf,
   forgetOtherStorage,
   holdsSignIn,
   SIGN_IN_SCOPES,
@@ -66,6 +67,7 @@ export interface SignInOptions extends Common {
 export const signIn = async (options: SignInOptions) => {
   const { env, profile } = options
   const keeper = sessionKeeper(options)
+  const fileBefore = fileSecretOf(env, profile)
   let account = ""
   const { scopes } = await keeper.signIn({
     scopes: [...SIGN_IN_SCOPES, ...(options.grants ?? []).map((grant) => GRANT_SCOPES[grant])],
@@ -100,7 +102,10 @@ export const signIn = async (options: SignInOptions) => {
       return undefined
     },
   })
-  forgetOtherStorage(env, profile, options.storage, options.keyring)
+  // A new sign-in always changes the saved entry, so a changed file means the keyring failed and cli-base used the file.
+  const kept: CredentialStorage =
+    options.storage === "file" || fileSecretOf(env, profile) !== fileBefore ? "file" : "keyring"
+  forgetOtherStorage(env, profile, kept, options.keyring)
   rememberAccount(IDENTITY, profile, account, env)
   const store = await openGcalStore(env)
   let closed: Promise<void> | undefined
@@ -117,7 +122,7 @@ export const signIn = async (options: SignInOptions) => {
     account,
     scopes,
     grants: grantsOf(scopes),
-    credential_storage: options.storage,
+    credential_storage: kept,
   }
 }
 
@@ -144,25 +149,11 @@ export const apiAccess = (options: Common) => {
   }
 }
 
-/**
- * The saved sign-in for a status or a sign-out. A file sign-in is read without the keyring, so a keyring out of reach
- * means this computer holds no sign-in a run can use: there is nothing to show or end (WC-SECR-4).
- */
-const reachableSession = (options: Common) => {
-  try {
-    return { session: savedSession(options) }
-  } catch (error) {
-    if (isCliError(error) && error.details.reason === "oauth.not-saved")
-      return { session: undefined, keyring: "unreachable" as const }
-    throw error
-  }
-}
-
 export const sessionStatus = async (options: Common & { check: boolean }) => {
   const { env, profile } = options
   const account = savedAccount(env, profile) ?? null
-  const { session, keyring } = reachableSession(options)
-  if (!session) return { profile, state: "missing", account, verified: false, ...(keyring ? { keyring } : {}) }
+  const session = savedSession(options)
+  if (!session) return { profile, state: "missing", account, verified: false }
   const { saved, keeper } = session
   const status = {
     profile,
@@ -191,13 +182,12 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
 }
 
 export const signOut = async (options: Common) => {
-  const { session, keyring } = reachableSession(options)
-  if (!session)
-    return { profile: options.profile, ended: false, cached_data: "retained", ...(keyring ? { keyring } : {}) }
+  const session = savedSession(options)
+  if (!session) return { profile: options.profile, ended: false, cached_data: "retained" }
   const storage = storageOf(options.env, options.profile)
   const { removed } = await session.keeper.signOut()
   // A run with moved folders removes only its own keyring entry and then reads the owner's, which it never removes.
-  if (storage === "keyring" && reachableSession(options).session)
+  if (storage === "keyring" && savedSession(options))
     return {
       profile: options.profile,
       ended: removed.includes("keyring"),
