@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { CliError, type KeyringStore } from "@wirecat/cli-base"
+import { CliError, isCliError, type KeyringStore } from "@wirecat/cli-base"
 import { accountFileFor, type EventSink, profilesHere, rememberAccount } from "@wirecat/cli-core/cli"
 import type { OAuthClient } from "@wirecat/cli-core/oauth"
 import {
@@ -142,11 +142,25 @@ export const apiAccess = (options: Common) => {
   }
 }
 
+/**
+ * The saved sign-in for a status or a sign-out. A file sign-in is read without the keyring, so a keyring out of reach
+ * means this computer holds no sign-in a run can use: there is nothing to show or end (WC-SECR-4).
+ */
+const reachableSession = (options: Common) => {
+  try {
+    return { session: savedSession(options) }
+  } catch (error) {
+    if (isCliError(error) && error.details.reason === "oauth.not-saved")
+      return { session: undefined, keyring: "unreachable" as const }
+    throw error
+  }
+}
+
 export const sessionStatus = async (options: Common & { check: boolean }) => {
   const { env, profile } = options
   const account = savedAccount(env, profile) ?? null
-  const session = savedSession(options)
-  if (!session) return { profile, state: "missing", account, verified: false }
+  const { session, keyring } = reachableSession(options)
+  if (!session) return { profile, state: "missing", account, verified: false, ...(keyring ? { keyring } : {}) }
   const { saved, keeper } = session
   const status = {
     profile,
@@ -175,12 +189,13 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
 }
 
 export const signOut = async (options: Common) => {
-  const session = savedSession(options)
-  if (!session) return { profile: options.profile, ended: false, cached_data: "retained" }
+  const { session, keyring } = reachableSession(options)
+  if (!session)
+    return { profile: options.profile, ended: false, cached_data: "retained", ...(keyring ? { keyring } : {}) }
   const storage = storageOf(options.env, options.profile)
   const { removed } = await session.keeper.signOut()
   // A run with moved folders removes only its own keyring entry and then reads the owner's, which it never removes.
-  if (storage === "keyring" && savedSession(options))
+  if (storage === "keyring" && reachableSession(options).session)
     return {
       profile: options.profile,
       ended: removed.includes("keyring"),

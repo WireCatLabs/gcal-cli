@@ -4,12 +4,21 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ## Unreleased
 
+### Changed — may break callers
+
+- **`session status` and `session end` answer where no keyring can be reached and no sign-in file is kept.** They
+  failed with `oauth.not-saved`. Now `session status` says `state: missing` with `keyring: unreachable`, and
+  `session end` says `ended: false` with `keyring: unreachable`: this run can use no sign-in, so there is nothing to
+  show or end. A sign-in kept with `--credential-storage file` is read as before. `session start` and the commands that
+  call Google still fail with `oauth.not-saved`, which [troubleshooting](docs/troubleshooting.md) explains. A script
+  that took the failure to mean "keyring out of reach" reads `keyring` in the answer instead.
+
 ### Fixed
 
 - **Calls an agent sends to `gcal mcp serve` at the same time each get their own answer.** Two calendar reads sent
   together could answer one of them empty (`{"item":{"value":null}}`) or fail it with `command.crashed`, because the
   calls shared which command was running and the store it had opened. Each call now keeps its own
-  ([WC-ARCH-22](https://github.com/WireCatLabs/cli-base/blob/main/docs/standards/architecture.md)).
+  ([WC-ARCH-22](https://github.com/WireCatLabs/cli-base/blob/v0.65.5/docs/standards/architecture.md#wc-arch-22--build-the-command-tree-once-keep-each-calls-state-out-of-it)).
 
 ## 0.4.0 — 31.10.2026
 
