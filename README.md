@@ -91,6 +91,8 @@ Run `gcal doctor` first: it needs no network and shows what is set up. Then see
 - [Settings and permissions](docs/configuration.md), [security](docs/security.md) and
   [when something goes wrong](docs/troubleshooting.md)
 - [Roadmap](docs/roadmap.md) and [changelog](CHANGELOG.md)
+- Compared with other Google Calendar tools: [comparison](docs/compare.md)
+  ([wirecat.dev](https://wirecat.dev/en/docs/gcal/compare))
 
 ## Development
 

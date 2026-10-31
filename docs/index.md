@@ -8,3 +8,5 @@ store (`sync`, `status`, `calendars`), and reads them there: `events`, `search`,
 `calendars busy` asks Google when people are free. With the write grant, `events create | update | delete | move |
 respond` change Google Calendar. It also has the commands every WireCat CLI shares: `doctor`, `commands`, `guide`, `config`,
 `skill`, `mcp`, `runs` and `upgrade`. Start with [installation](installation.md), then [usage](usage.md).
+
+How `gcal` differs from other Google Calendar tools: [comparison](compare.md).
