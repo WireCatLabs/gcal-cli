@@ -13,6 +13,11 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   giving away a calendar stays `deny`, and `events.notify`, `events.delete.series` and `sharing.notify` still hold on
   every `api` write. To keep the question, set `permissions.api ask`.
 
+### Fixed
+
+- **`session start --help` keeps each option to one short line** (WC-CMD-22). What `--grant write` and
+  `--grant sharing` allow, and when to pick `--credential-storage file`, moved below the options.
+
 ## 0.6.0 — 31.10.2026
 
 ### Added
