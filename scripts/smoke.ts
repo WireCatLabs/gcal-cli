@@ -49,6 +49,8 @@ try {
     WIRECAT_STATE_DIR: join(temp, "wirecat"),
     MESSAGING_STORE: join(temp, "never-owner.db"),
     GCAL_NO_UPDATE_CHECK: "1",
+    // The keyring is reached over D-Bus, not HOME; an unset address falls back to $XDG_RUNTIME_DIR/bus.
+    DBUS_SESSION_BUS_ADDRESS: "disabled:",
   }
   const bin = join(installed, "node_modules", name, "dist/bin/gcal.js")
   const run = (args: string[]) =>
