@@ -23,8 +23,9 @@ shows a token or the client secret; the address of the sign-in page holds neithe
 A run with moved folders (`GCAL_CONFIG_DIR`, `GCAL_STATE_DIR` or another `HOME`) reads that entry but never changes
 it: its own sign-in goes to a separate entry, `gcal-cli:<config folder>`, and its `session end` removes only that one.
 
-With `session start --credential-storage file` the same entry goes to `credentials.json` in `gcal`'s state folder
-instead, mode 600: anyone who can read your files as you can read the sign-in. Use it only where no keyring works.
+When the keyring fails, or with `session start --credential-storage file`, the same entry goes to `credentials.json` in
+`gcal`'s state folder instead, mode 600: anyone who can read your files as you can read the sign-in. `gcal` says so
+once on stderr and never asks. Choose the file only where no keyring works.
 
 `gcal` refuses an OAuth client file that other users of the computer can read. The account's email address is saved in
 `gcal`'s state folder, readable by you only, so `session status` can answer without the network.

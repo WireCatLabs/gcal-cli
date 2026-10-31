@@ -2,6 +2,18 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Changed
+
+- **`session start` falls back to a private file when the keyring fails, and never asks** (WC-SECR-4). It used to
+  stop with `oauth.not-saved` and tell you to pass `--credential-storage file`. Now it signs in, says once on stderr
+  that it used `credentials.json` in the state folder, and answers `credential_storage: "file"`. The flag still
+  chooses the file outright; the keyring is still the default and the safer choice. `session status` and
+  `session end` no longer answer `keyring: "unreachable"`: the keyring's failure is the stderr warning.
+- A run with moved folders names its temporary keyring entry after its state folder, where it used to name it after
+  its config folder; a temporary entry an older run left is no longer read. `bin/keyring-dedupe` removes it.
+
 ## 0.5.0 — 31.10.2026
 
 ### Added
