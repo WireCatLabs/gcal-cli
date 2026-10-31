@@ -34,9 +34,18 @@ export const googleProvider = (client: OAuthClient): OAuthProvider => ({
 })
 
 const standard = standardCodec("google")
+// The standard codec reads and writes only a JSON object, so this never throws on text it has handled.
+const entryObject = (text: string): Record<string, unknown> => {
+  const value: unknown = JSON.parse(text)
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    throw new CliError("authentication_error", "the saved sign-in cannot be read; sign in again", {
+      reason: "oauth.invalid",
+    })
+  return { ...value }
+}
 // Called only after the standard codec has parsed the same text.
 const secretOf = (raw: string): string | undefined => {
-  const { clientSecret } = JSON.parse(raw) as { clientSecret?: unknown }
+  const { clientSecret } = entryObject(raw)
   return typeof clientSecret === "string" && clientSecret ? clientSecret : undefined
 }
 /**
@@ -50,7 +59,7 @@ export const sessionCodec: TokenCodec = {
     return clientSecret ? { ...stored, client: { clientId: stored.client?.clientId ?? "", clientSecret } } : stored
   },
   encode: (input) => {
-    const entry = JSON.parse(standard.encode(input)) as Record<string, unknown>
+    const entry = entryObject(standard.encode(input))
     // A client without a secret must not inherit the secret of the app this profile signed in with before.
     if (input.client.clientSecret) entry.clientSecret = input.client.clientSecret
     else delete entry.clientSecret

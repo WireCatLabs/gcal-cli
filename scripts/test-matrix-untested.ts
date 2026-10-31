@@ -4,8 +4,7 @@ const GENERATED =
   "generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the " +
   "snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share"
 
-type Node = { name(): string; commands: readonly Node[]; options: readonly { long?: string }[] }
-const api = (createProgram() as unknown as Node).commands.find((command) => command.name() === "api")
+const api = createProgram().commands.find((command) => command.name() === "api")
 const generatedOptions = [
   ...new Set(
     (api?.commands ?? [])

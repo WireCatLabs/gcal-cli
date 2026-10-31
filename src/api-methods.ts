@@ -20,8 +20,9 @@ export interface ApiMethod {
   scope: string
 }
 
-export const scopesOf = (name: string): readonly string[] =>
-  (metadata.scopes as Record<string, readonly string[]>)[name] ?? []
+const SCOPES: Readonly<Record<string, readonly string[]>> = metadata.scopes
+
+export const scopesOf = (name: string): readonly string[] => SCOPES[name] ?? []
 
 /** The methods gcal can call; `service` keeps those of one Google service, as `api list service:calendar` asks. */
 export const apiMethods = (service?: string): ApiMethod[] => {

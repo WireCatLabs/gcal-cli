@@ -44,9 +44,11 @@ export const validateRequest = (name: string, params: Record<string, unknown>, b
   checkApiBody(operation, body === undefined ? undefined : apiJson(body), schemas)
 }
 
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
 export const jsonObject = (value: string): Record<string, unknown> => {
   const parsed = apiPlainJson(parseApiJson(value))
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
-    throw new CliError("validation_error", "use a JSON object")
-  return parsed as Record<string, unknown>
+  if (!isObject(parsed)) throw new CliError("validation_error", "use a JSON object")
+  return parsed
 }
