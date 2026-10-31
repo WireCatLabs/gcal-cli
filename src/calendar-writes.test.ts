@@ -10,7 +10,7 @@ import { EVENTS_SCOPE } from "./grants.js"
 import { IDENTITY } from "./identity.js"
 import { run } from "./program.js"
 import { fakeGoogleCalendar, SERIES } from "./testing/google-calendar.js"
-import { fakeGoogleWrites, INVITATION } from "./testing/google-writes.js"
+import { type Event, fakeGoogleWrites, INVITATION } from "./testing/google-writes.js"
 import { mcpClient } from "./testing/mcp.js"
 
 const clients: Client[] = []
@@ -22,7 +22,7 @@ const TEAM = "team@group.calendar.example.com"
 
 const harness = (
   scopes: string[] = [CALENDAR_READ_SCOPE, EVENTS_SCOPE],
-  held: Record<string, unknown>[] = [INVITATION],
+  held: Event[] = [INVITATION],
   read = fakeGoogleCalendar([INVITATION]).fetch,
 ) => {
   const keyring = memoryKeyring()

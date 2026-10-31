@@ -40,16 +40,18 @@ command, `api calendar-events-insert`.
 
 ```sh
 gcal personal config set permissions.api readonly                        # reads only, every method
-gcal personal config set permissions.api.calendar.events.insert allow    # add events without the question
+gcal personal config set permissions.api.calendar.events.insert ask      # be asked before each new event
 ```
 
 Without a setting of yours:
 
-- A method that changes Calendar is `ask`. At a terminal `gcal` asks before it calls Google; in a script, add `--yes`.
-  Over MCP there is no one to ask, so `ask` lets the command run.
-- Sharing a calendar (`calendar.acl.insert`, `patch`, `update`, `delete`) is `ask`, like any other change. Over MCP
-  that means an agent can share your calendar with anyone without a question. Set `permissions.api.calendar.acl deny`
-  to stop it.
+- A method that changes Calendar and is easy to undo, such as `calendar.events.insert` or `calendar.events.patch`, is
+  `allow`, as `events create` and `events update` are.
+- A method that deletes, such as `calendar.events.delete` or `calendar.calendarList.delete`, is `ask`. At a terminal
+  `gcal` asks before it calls Google; in a script, add `--yes`. Over MCP there is no one to ask, so `ask` lets the
+  command run.
+- Sharing a calendar (`calendar.acl.insert`, `patch`, `update`, `delete`) is `ask`. Over MCP that means an agent can
+  share your calendar with anyone without a question. Set `permissions.api.calendar.acl deny` to stop it.
 - Deleting a whole calendar (`calendar.calendars.delete`) and giving it to another account
   (`calendar.calendars.transferOwnership`) are `deny`: neither can be undone. Set the key to `ask` or `allow` to let
   them run.
@@ -68,8 +70,9 @@ An event write also answers to the key of the Google method it calls, once you s
 for `create`, `api.calendar.events.patch` for `respond`, `api.calendar.events.patch` and `api.calendar.events.update`
 for `update` (a switch between timed and all-day sends the whole event), `api.calendar.events.delete` for `delete`,
 `api.calendar.events.move` for `move`. So `permissions.api readonly` stops the event writes too, and
-`permissions.api.calendar.events.insert ask` makes `events create` ask. The built-in `ask` of those methods holds for
-the `api` commands only. One question covers every key of one write.
+`permissions.api.calendar.events.insert ask` makes `events create` ask. The built-in `ask` of
+`api.calendar.events.delete` holds for the `api` commands only: `events delete` asks under its own key. One question
+covers every key of one write.
 
 The `api` commands answer to the same keys. A method that has Google mail the attendees (`--send-updates` other than
 `none`, or `--send-notifications true`) also needs `events.notify`. Deleting an event, or patching it to `cancelled`,

@@ -1,6 +1,6 @@
 import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
-import type { NextStep } from "@wirecat/cli-base/standards"
+import { metaSchema, nextStepSchema } from "@wirecat/cli-base/standards"
 import type { CalendarSource, CalendarWriter } from "@wirecat/cli-core/calendar"
 import { addCalendarCommands, type CalendarCommandDeps } from "@wirecat/cli-core/calendar/cli"
 import {
@@ -16,6 +16,7 @@ import {
 import { levelFor } from "@wirecat/cli-core/sends"
 import type { MessageStore } from "@wirecat/cli-core/store"
 import { Command } from "commander"
+import * as v from "valibot"
 import type { GoogleCalendarWriter } from "../calendar-writer.js"
 import { configuration, permissions, writeKeys } from "../config.js"
 import type { GoogleApi } from "../google-api.js"
@@ -45,6 +46,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 // `links review` adds `accounts: "all"`, which the envelope has no room for: `meta.accounts` names accounts.
 const LIST_KEYS = new Set(["items", "page", "limit", "hasMore", "meta", "accounts"])
+const META = v.partial(metaSchema)
 
 const listedFields = (fields: unknown, prefix: string) =>
   Array.isArray(fields)
@@ -55,11 +57,11 @@ const listedFields = (fields: unknown, prefix: string) =>
  * A search answers `{ hits, has_more, next_offset?, meaning_skipped?, untrusted }`; gcal prints it as a list of hits
  * with cursor paging (WC-OUT-4, WC-OUT-5), and each hit names its own untrusted fields, as `events list` does.
  */
-const hitsOf = (command: Command, value: Record<string, unknown>) => {
+const hitsOf = (command: Command, hits: unknown[], value: Record<string, unknown>) => {
   const opts = command.opts<{ limit: number; exact?: boolean; newest?: boolean }>()
   const untrusted = listedFields(value.untrusted, "hits.")
   const { next, ...list } = listOf(pathOf(command).join(" "), {
-    items: (value.hits as unknown[]).map((hit) => ({ ...(snakeKeys(hit) as object), untrusted })),
+    items: hits.map((hit) => snakeKeys(isRecord(hit) ? { ...hit, untrusted } : hit)),
     limit: opts.limit,
     has_more: value.has_more === true,
     paging: "cursor",
@@ -83,15 +85,20 @@ const hitsOf = (command: Command, value: Record<string, unknown>) => {
  * The shared reads take no `--page`, so `has_more` stays without the page step `listOf` would add: it could not run.
  */
 const bodyOf = (command: Command, value: unknown) => {
-  if (isRecord(value) && Array.isArray(value.hits)) return hitsOf(command, value)
+  if (isRecord(value) && Array.isArray(value.hits)) return hitsOf(command, value.hits, value)
   if (isRecord(value) && Array.isArray(value.items) && Object.keys(value).every((key) => LIST_KEYS.has(key))) {
+    const meta = isRecord(value.meta) ? snakeKeys(value.meta) : undefined
     const { next, page, ...list } = listOf(pathOf(command).join(" "), {
-      items: snakeKeys(value.items) as unknown[],
+      items: value.items.map((item) => snakeKeys(item)),
       limit: Math.max(1, typeof value.limit === "number" ? value.limit : value.items.length),
       has_more: value.hasMore === true,
-      ...(isRecord(value.meta) ? { meta: snakeKeys(value.meta) as Parameters<typeof listOf>[1]["meta"] } : {}),
+      ...(meta && v.is(META, meta) ? { meta } : {}),
     })
-    const { next_page: _unreachable, ...shown } = page as typeof page & { next_page?: number }
+    let shown = page
+    if (page.mode === "page") {
+      const { next_page: _unreachable, ...rest } = page
+      shown = rest
+    }
     const kept = next?.filter((one) => one.step !== "page.next") ?? []
     return { ...list, page: shown, ...(kept.length > 0 ? { next: kept } : {}) }
   }
@@ -101,7 +108,7 @@ const bodyOf = (command: Command, value: unknown) => {
     const { next, ...report } = value
     return itemOf(snakeKeys(report), {
       meta: { complete: false },
-      ...(Array.isArray(next) ? { next: next as NextStep[] } : {}),
+      ...(Array.isArray(next) ? { next: next.filter((step) => v.is(nextStepSchema, step)) } : {}),
     })
   }
   return itemOf(snakeKeys(value))
@@ -133,7 +140,8 @@ const mountOnce = () => {
     respond: (...args) => google().respond(...args),
     move: (...args) => google().move(...args),
   }
-  // cli-core decides at mount whether `person:` references are shown, from whether `messages` is there.
+  // cli-core decides at mount whether `person:` references are shown, from whether `messages` is there. The cast
+  // stands for a store that throws on any use, which no honest MessageStore value can be.
   const closedStore = new Proxy({} as MessageStore, {
     get: () => {
       throw notOpen()
@@ -176,8 +184,7 @@ const mountOnce = () => {
       app: IDENTITY,
       // Read on every write, with the command's own --permission and the read-only lock, as the shared check sees them.
       settings: () => ({ ...resolved(), permissionDefaults: permissions.defaults }),
-      // The api keys guard the shared writes only once the owner sets them: their built-in `ask` is for the raw
-      // `gcal api` calls, which check no delete or series key of their own, and would undo cli-core's `allow`.
+      // An api key joins a shared write only when it stops or asks: at `allow` it would add a key to every question.
       extraKeys: (write) => writeKeys(write).filter((key) => levelFor(resolved().permissions, key).level !== "allow"),
       get env() {
         return need().env
@@ -216,6 +223,7 @@ const mountOnce = () => {
     /** After the shared checks passed: opens the store for a calendar command, for the profile's own account only. */
     prepare: async (_program: Command, environment: RunOptions) => {
       if (!action || !commands.has(action)) return
+      // cli-core types the environment as a loose record; gcal's own run() passes a GcalEnvironment.
       const gcalEnvironment = environment as GcalEnvironment
       const env = gcalEnvironment.env ?? process.env
       const { profile } = configuration.resolveSettings(action.optsWithGlobals<GlobalFlags>(), { env })

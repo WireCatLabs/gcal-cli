@@ -2,6 +2,22 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Changed — may break callers
+
+- **A raw `api` write that is easy to undo no longer asks.** `api calendar-events-insert`, `-patch`, `-move`,
+  `-quickAdd`, `calendar-calendars-insert` and the other methods that change Calendar without deleting are `allow`,
+  as `events create` and `events update` already were. A method that deletes (`calendar.events.delete`,
+  `calendar.calendarList.delete`, `calendar.acl.delete`) and sharing a calendar stay `ask`; emptying, deleting or
+  giving away a calendar stays `deny`, and `events.notify`, `events.delete.series` and `sharing.notify` still hold on
+  every `api` write. To keep the question, set `permissions.api ask`.
+
+### Fixed
+
+- **`session start --help` keeps each option to one short line** (WC-CMD-22). What `--grant write` and
+  `--grant sharing` allow, and when to pick `--credential-storage file`, moved below the options.
+
 ## 0.6.0 — 31.10.2026
 
 ### Added

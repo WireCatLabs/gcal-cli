@@ -97,16 +97,16 @@ const startCommand = () =>
     .option("--no-browser", "print the sign-in URL instead of opening a browser")
     .option(
       "--credential-storage <storage>",
-      "where the sign-in is kept: keyring (the default, which falls back to a private file by itself when no " +
-        "keyring works), or file, not recommended",
+      "where the sign-in is kept: keyring, which falls back to a private file, or file",
       credentialStorage,
       "keyring",
     )
-    .option(
-      "--grant <scopes>",
-      "also ask for these, comma-separated: write (create, change and delete events, and answer invitations), " +
-        "sharing (see and change who can see a calendar)",
-      grantList,
+    .option("--grant <scopes>", "also ask for these, comma-separated: write, sharing", grantList)
+    .addHelpText(
+      "after",
+      "\n--grant write: create, change and delete events, and answer invitations\n" +
+        "--grant sharing: see and change who can see a calendar\n" +
+        "--credential-storage file: only where no keyring works; the keyring is safer\n",
     )
     .action(async function (
       this: Command,
@@ -191,7 +191,7 @@ const listCommand = () =>
     }),
   )
     .summary("list the profiles here and whether each is signed in")
-    .description("list the profiles on this computer and whether each holds a Google sign-in; picks none")
+    .description("list the profiles on this computer and whether each is signed in; picks none")
     .action(async function (this: Command) {
       const environment = environmentOf<GcalEnvironment>(this)
       const env = environment.env ?? process.env

@@ -2,21 +2,21 @@
   {
     "rule": "option-role",
     "target": "session start --client-file",
-    "reason": "Names the owner's own Google OAuth client file while gcal bundles no app of its own; drive-cli has the same option in its baseline. Review when gcal ships the shared WireCat Google app or the vocabulary names an app-credential file.",
+    "reason": "Names the owner's own Google OAuth client file while gcal bundles no app of its own; drive-cli has the same option in its baseline. Review when gcal ships the shared WireCat Google app or the vocabulary names an app-credential file: https://github.com/WireCatLabs/cli-base/issues/424",
     "owner": "@WireCatLabs",
     "review_after": "2027-01-27"
   },
   {
     "rule": "unknown-verb",
     "target": "api call",
-    "reason": "Calls one generated Google method by its API name, the same command drive-cli has (in its baseline); no shared verb names a raw API call. Review when the vocabulary names it.",
+    "reason": "Calls one generated Google method by its API name, the same command drive-cli has (in its baseline); no shared verb names a raw API call. Review when the vocabulary names it: https://github.com/WireCatLabs/cli-base/issues/425",
     "owner": "@WireCatLabs",
     "review_after": "2027-01-27"
   },
   {
     "rule": "option-role",
     "target": "session start --credential-storage",
-    "reason": "Chooses where the sign-in is kept, keyring or a private file, for computers without a keyring; drive-cli has the same option in its baseline. Review when cli-base's vocabulary names a credential-storage role.",
+    "reason": "Chooses where the sign-in is kept, keyring or a private file, for computers without a keyring; drive-cli has the same option in its baseline. Comes out with the cli-base release that adds the word: https://github.com/WireCatLabs/cli-base/pull/419",
     "owner": "@WireCatLabs",
     "review_after": "2027-01-27"
   },

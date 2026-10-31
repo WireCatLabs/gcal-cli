@@ -6,14 +6,14 @@
  *   pnpm build && pnpm smoke:node
  */
 import { spawnSync } from "node:child_process"
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
 const COMMAND = "gcal"
 const PREFIX = "GCAL"
 
-const runtime = typeof (globalThis as { Bun?: unknown }).Bun === "undefined" ? "node" : "bun"
+const runtime = "Bun" in globalThis ? "bun" : "node"
 const failures: string[] = []
 const check = (what: string, condition: boolean) => {
   if (!condition) failures.push(what)
@@ -56,6 +56,14 @@ check("commands lists the calendar commands", run(["commands", "--json"]).stdout
 check("skill show prints the SKILL.md the package ships", run(["skill", "show"]).stdout.startsWith("---"))
 check("guide finds the scenarios the package ships", run(["guide"]).stdout.includes("set-up"))
 check("doctor names this run's store", run(["doctor", "--json"]).stdout.includes(JSON.stringify(store)))
+// A calendar command opens the store only for a profile with an account; no sign-in, no network.
+mkdirSync(join(isolated, "state", "accounts"), { recursive: true })
+writeFileSync(
+  join(isolated, "state", "accounts", "smoke.json"),
+  `${JSON.stringify({ account: "smoke@example.com" })}\n`,
+)
+const status = run(["smoke", "store", "status", "--json"])
+check("the store opens", status.status === 0 && existsSync(store))
 rmSync(isolated, { recursive: true, force: true })
 
 if (failures.length > 0) {

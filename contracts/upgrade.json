@@ -3,7 +3,7 @@
   "args": ["../dist/bin/gcal.js"],
   "previous": {
     "entry": "./previous/node_modules/@wirecat/previous-cli/dist/bin/gcal.js",
-    "version": "0.3.0"
+    "version": "0.6.0"
   },
   "canaries": ["wirecat-synthetic-event-canary"],
   "cases": [
@@ -20,7 +20,7 @@
     },
     {
       "id": "previous-events",
-      "args": ["contract", "events", "list", "from:2026-10-01", "to:2026-10-10", "--json"],
+      "args": ["contract", "events", "list", "ends_at>=2026-10-01", "starts_at<=2026-10-10", "--json"],
       "exit": 0,
       "stream": "stdout",
       "kind": "json",

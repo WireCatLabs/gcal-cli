@@ -17,15 +17,14 @@ import type {
   SyncWindow,
 } from "@wirecat/cli-core/calendar"
 import { calendarText, ENTRY_METADATA_KEYS, joinUrlWithoutQuery } from "@wirecat/cli-core/meetings"
+import * as schema from "./generated/schemas.js"
 import type {
-  CalendarCalendarList,
   CalendarCalendarListEntry,
   CalendarEvent,
   CalendarEventDateTime,
   CalendarEvents,
-  CalendarFreeBusyResponse,
 } from "./generated/types.js"
-import type { GoogleApi } from "./google-api.js"
+import { answerOf, type GoogleApi } from "./google-api.js"
 
 const PAGE_SIZE = 2500
 const SPAN = { start: 0, end: 0 }
@@ -61,7 +60,7 @@ const VISIBILITY: Record<string, EntryVisibility> = {
 const RECURRENCE_LINE = /^(RRULE|RDATE|EXDATE|EXRULE)[:;]/u
 
 const word = <T>(table: Record<string, T>, value: string | undefined): T | null =>
-  value !== undefined && Object.hasOwn(table, value) ? (table[value] as T) : null
+  (value !== undefined && Object.hasOwn(table, value) ? table[value] : undefined) ?? null
 
 const iso = (ms: number) => new Date(ms).toISOString()
 
@@ -115,11 +114,9 @@ const participantOf = (attendee: NonNullable<CalendarEvent["attendees"]>[number]
     : null
 
 const metadataOf = (event: CalendarEvent) => {
+  const fields: Record<string, unknown> = { ...event }
   const kept = Object.fromEntries(
-    ENTRY_METADATA_KEYS.filter((key) => (event as Record<string, unknown>)[key] !== undefined).map((key) => [
-      key,
-      (event as Record<string, unknown>)[key],
-    ]),
+    ENTRY_METADATA_KEYS.filter((key) => fields[key] !== undefined).map((key) => [key, fields[key]]),
   )
   return Object.keys(kept).length ? kept : null
 }
@@ -182,9 +179,9 @@ export const entryOf = (
     externalUpdatedAt: event.updated ? Date.parse(event.updated) : null,
     metadata: metadataOf(event),
     // Google leaves `attachments` out of an event that has none; a full event says so, or a removed file stays linked.
-    attachments: (event.attachments ?? [])
-      .filter((file) => file.fileId)
-      .map((file) => ({ fileId: file.fileId as string, title: file.title ?? null })),
+    attachments: (event.attachments ?? []).flatMap((file) =>
+      file.fileId ? [{ fileId: file.fileId, title: file.title ?? null }] : [],
+    ),
   }
 }
 
@@ -215,7 +212,7 @@ const statusOf = (error: unknown) => (isCliError(error) ? error.details.status :
  */
 export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
   const list = async (method: string, params: Record<string, unknown>) =>
-    (await api.call(method, params)) as CalendarEvents
+    answerOf(schema.CalendarEvents, await api.call(method, params))
 
   return {
     provider: "google-calendar",
@@ -225,10 +222,10 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
       const found: CalendarInput[] = []
       let pageToken: string | undefined
       do {
-        const page = (await api.call("calendar.calendarList.list", {
-          maxResults: 250,
-          ...(pageToken ? { pageToken } : {}),
-        })) as CalendarCalendarList
+        const page = answerOf(
+          schema.CalendarCalendarList,
+          await api.call("calendar.calendarList.list", { maxResults: 250, ...(pageToken ? { pageToken } : {}) }),
+        )
         for (const entry of page.items ?? []) {
           const calendar = calendarOf(entry)
           if (calendar) found.push(calendar)
@@ -262,7 +259,7 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
       const items = answer.items ?? []
       return {
         entries: items.filter((event) => event.id && !isRemoval(event)).map((event) => entryOf(event, calendar)),
-        removed: items.filter((event) => event.id && isRemoval(event)).map((event) => event.id as string),
+        removed: items.flatMap((event) => (event.id && isRemoval(event) ? [event.id] : [])),
         ...(answer.nextPageToken ? { nextPage: answer.nextPageToken } : { cursor: answer.nextSyncToken ?? null }),
       }
     },
@@ -304,11 +301,14 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
     // https://developers.google.com/workspace/calendar/api/v3/reference/freebusy/query — calendar.readonly suffices.
     async freeBusy({ calendars, people, window }) {
       const ids = [...calendars, ...people]
-      const answer = (await api.call(
-        "calendar.freebusy.query",
-        {},
-        { timeMin: iso(window.from), timeMax: iso(window.to), items: ids.map((id) => ({ id })) },
-      )) as CalendarFreeBusyResponse
+      const answer = answerOf(
+        schema.CalendarFreeBusyResponse,
+        await api.call(
+          "calendar.freebusy.query",
+          {},
+          { timeMin: iso(window.from), timeMax: iso(window.to), items: ids.map((id) => ({ id })) },
+        ),
+      )
       return ids.map((id): BusyTimes => {
         const one = answer.calendars?.[id]
         const error = one ? one.errors?.[0]?.reason : "notAnswered"

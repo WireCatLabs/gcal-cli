@@ -8,8 +8,9 @@ import {
   type StoredCalendar,
 } from "@wirecat/cli-core/calendar"
 import { entryOf } from "./calendar-source.js"
+import * as schema from "./generated/schemas.js"
 import type { CalendarEvent } from "./generated/types.js"
-import type { GoogleApi } from "./google-api.js"
+import { answerOf, type GoogleApi } from "./google-api.js"
 
 // https://developers.google.com/workspace/calendar/api/v3/reference/events#id — base32hex, 5 to 1024 characters.
 const GOOGLE_ID = /^[a-v0-9]{5,1024}$/u
@@ -17,6 +18,11 @@ const GOOGLE_ID = /^[a-v0-9]{5,1024}$/u
 const RESPONSE: Record<EventResponse, string> = { accepted: "accepted", tentative: "tentative", declined: "declined" }
 
 const statusOf = (error: unknown) => (isCliError(error) ? error.details.status : undefined)
+
+const isGone = (error: unknown) => {
+  const status = statusOf(error)
+  return status === 404 || status === 410
+}
 
 const iso = (ms: number) => new Date(ms).toISOString()
 
@@ -69,7 +75,7 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
     sendUpdates: notify ? "all" : "none",
   })
   const get = async (calendar: StoredCalendar, eventId: string) =>
-    (await api.call("calendar.events.get", { calendarId: calendar.externalId, eventId })) as CalendarEvent
+    answerOf(schema.CalendarEvent, await api.call("calendar.events.get", { calendarId: calendar.externalId, eventId }))
   const guarded = async <T>(write: () => Promise<T>): Promise<T> => {
     try {
       return await write()
@@ -85,23 +91,27 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
     etag: string,
     notify: boolean,
   ) =>
-    guarded(
-      async () =>
-        (await api.call("calendar.events.patch", where(calendar, eventId, notify), body, {
+    guarded(async () =>
+      answerOf(
+        schema.CalendarEvent,
+        await api.call("calendar.events.patch", where(calendar, eventId, notify), body, {
           headers: { "if-match": etag },
-        })) as CalendarEvent,
+        }),
+      ),
     )
 
-  const replace = (calendar: StoredCalendar, event: CalendarEvent, etag: string, notify: boolean) =>
-    guarded(
-      async () =>
-        (await api.call(
+  const replace = (calendar: StoredCalendar, eventId: string, event: CalendarEvent, etag: string, notify: boolean) =>
+    guarded(async () =>
+      answerOf(
+        schema.CalendarEvent,
+        await api.call(
           "calendar.events.update",
           // Without these Google ignores the event's Meet link and Drive files in the body it is given.
-          { ...where(calendar, event.id as string, notify), conferenceDataVersion: 1, supportsAttachments: true },
-          event as Record<string, unknown>,
+          { ...where(calendar, eventId, notify), conferenceDataVersion: 1, supportsAttachments: true },
+          { ...event },
           { headers: { "if-match": etag } },
-        )) as CalendarEvent,
+        ),
+      ),
     )
 
   return {
@@ -118,7 +128,7 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
           { calendarId: calendar.externalId, sendUpdates: notify ? "all" : "none" },
           { id, ...bodyOf(draft) },
         )
-        return entryOf(made as CalendarEvent, calendar)
+        return entryOf(answerOf(schema.CalendarEvent, made), calendar)
       } catch (error) {
         // Google holds an event with this id: the attempt whose answer was lost made it.
         if (statusOf(error) !== 409) throw error
@@ -133,7 +143,14 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
         const event = await get(calendar, externalId)
         if (dated !== Boolean(event.start?.date)) {
           const recurring = changes.recurrence !== undefined || (event.recurrence?.length ?? 0) > 0
-          return entryOf(await replace(calendar, { ...event, ...bodyOf(changes, recurring) }, etag, notify), calendar)
+          const replaced = await replace(
+            calendar,
+            externalId,
+            { ...event, ...bodyOf(changes, recurring) },
+            etag,
+            notify,
+          )
+          return entryOf(replaced, calendar)
         }
       }
       return entryOf(await patch(calendar, externalId, bodyOf(changes), etag, notify), calendar)
@@ -150,7 +167,7 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
         // 410 is an event deleted already, "no further action is necessary"; 404 is one Google no longer shows this
         // account. Either way nothing is left to delete, and cli-core removes the stored copy.
         // https://developers.google.com/workspace/calendar/api/guides/errors
-        if (![404, 410].includes(statusOf(error) as number)) throw error
+        if (!isGone(error)) throw error
       }
     },
 
@@ -164,7 +181,7 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
       try {
         event = await get(calendar, externalId)
       } catch (error) {
-        if (![404, 410].includes(statusOf(error) as number)) throw error
+        if (!isGone(error)) throw error
       }
       if (!event || event.status === "cancelled") {
         const there = await get(target, externalId)
@@ -179,7 +196,7 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
         destination: target.externalId,
         sendUpdates: notify ? "all" : "none",
       })
-      return entryOf(moved as CalendarEvent, target)
+      return entryOf(answerOf(schema.CalendarEvent, moved), target)
     },
 
     async respond(calendar, externalId, response, { etag, notify }) {
