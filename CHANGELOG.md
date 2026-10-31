@@ -4,7 +4,7 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ## Unreleased
 
-### Changed
+### Changed — may break callers
 
 - **`session start` falls back to a private file when the keyring fails, and never asks** (WC-SECR-4). It used to
   stop with `oauth.not-saved` and tell you to pass `--credential-storage file`. Now it signs in, says once on stderr
