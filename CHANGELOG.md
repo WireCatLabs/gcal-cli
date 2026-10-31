@@ -15,7 +15,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **`gcal search <words>` is now `gcal search events <query>`, and `gcal status` is now `gcal store status`**, the
   shape the other WireCat tools use (max: `search messages <query>`, `store status`). The old paths are gone, with no
   alias. Over MCP the command is `search events`, and its input is `query` (was `words`); a store search's next-page
-  step names `query` too. A partial sync's hint points at `store status`.
+  step names `query` too. A partial sync's hint points at `store status`. The permission keys move with them:
+  `permissions.store.status` and `permissions.search.events`; `permissions.search` still covers the search. A config
+  that still sets `permissions.status` is refused with `config.invalid`, which names
+  `gcal <profile> config unset permissions.status`.
 - **`events list` takes only the standard field query, and none of its own words.** `today`, `week`, `from:`, `to:`,
   `changed:` and `overlapping` are refused. Write the window as fields: `from:2026-11-02 to:2026-11-06` is
   `ends_at>=2026-11-02 starts_at<=2026-11-06`, and `changed:2026-10-25` is `changed_at>=2026-10-25`; `calendar:` and

@@ -32,9 +32,9 @@ Find your way with the tool itself, not this file:
   means a calendar failed: its `details.calendars` names each one's `error`, the rest is saved, and a retry is safe.
 - `gcal <profile> events list ends_at>=<date> starts_at<=<date> person:<email> --json` and `events show event:<id>` read
   the local store, without the network. The list takes field terms only: `ends_at>=` and `starts_at<` or `<=` bound the
-  window, `calendar:` and `person:` narrow it, and without a time term it starts today. `events list
-  changed_at>=<date>` lists what changed since a date (`change`: `new`, `moved` or `cancelled`; a moved one's old time
-  under `was`).
+  window, `calendar:` and `person:` narrow it, and without a time term it starts today.
+  `events list changed_at>=<date>` lists what changed since a date (`change`: `new`, `moved` or `cancelled`; a moved
+  one's old time under `was`).
 - `gcal <profile> search events <query> --json` finds stored events; `search events --backend server <query>` asks Google over the synced
   calendars, for events outside the synced span. Both answer `items`; each item's `untrusted` names the fields others
   wrote, and a store search's `page.next_cursor` goes to `--cursor`; `people list [event:<id>] --json` gives attendees.
