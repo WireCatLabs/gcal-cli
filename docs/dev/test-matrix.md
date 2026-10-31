@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**192 ✅ · 335 ⛔ · 0 ❌** — 83 commands, 444 options.
+**193 ✅ · 335 ⛔ · 0 ❌** — 83 commands, 445 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -35,6 +35,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `store status` |  | ✅ |  |
 | `events list` |  | ✅ |  |
 | `events list` | `--limit` | ✅ |  |
+| `events list` | `--page` | ✅ |  |
 | `events show` |  | ✅ |  |
 | `events create` |  | ✅ |  |
 | `events create` | `--title` | ✅ |  |
@@ -48,7 +49,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events create` | `--repeat` | ✅ |  |
 | `events create` | `--notify` | ✅ |  |
 | `events create` | `--no-notify` | ✅ |  |
-| `events create` | `--id` | ✅ |  |
+| `events create` | `--operation-id` | ✅ |  |
 | `events update` |  | ✅ |  |
 | `events update` | `--title` | ✅ |  |
 | `events update` | `--start-time` | ✅ |  |
@@ -62,7 +63,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events update` | `--calendar` | ✅ |  |
 | `events update` | `--series` | ✅ |  |
 | `events update` | `--following` | ✅ |  |
-| `events update` | `--id` | ✅ |  |
+| `events update` | `--operation-id` | ✅ |  |
 | `events update` | `--notify` | ✅ |  |
 | `events update` | `--no-notify` | ✅ |  |
 | `events delete` |  | ✅ |  |

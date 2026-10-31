@@ -2,6 +2,32 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Changed — may break callers
+
+- **`events create --id` and `events update --following --id` are now `--operation-id`**, the name every WireCat
+  write uses for a retry after `outcome_unknown` (WC-CMD-10, WC-OUT-10). The value is the same: the `operation_id`
+  the lost write's error names. `--id` is refused as an unknown option; change scripts and agent prompts that pass it.
+- **The log of what agents did over `gcal mcp` names the agent that called, not the server** (cli-core 0.509.0): the
+  client's own name, such as `claude-code`, where it was always `gcal-mcp`. A filter on `gcal-mcp` no longer finds
+  new rows. gcal now runs on cli-core 0.510.0 and cli-base 0.68.1.
+
+### Added
+
+- **`events list --page <n>`**: the next page of stored events. A list with more events than `--limit` (100) says
+  `page.next_page`, and its `next` step runs the same query one page on; until now it said `has_more` with no way to
+  read further.
+- **`search events --backend both`** asks the store and Google Calendar's own search together. The store's matches
+  come first, in the store's order, and each one Google also found has `server` in its `found_by`; then the events
+  only Google found, earliest first. One page with no cursor: it refuses `--cursor` and `--newest`, and needs the
+  network. Before, `both` was offered and always refused.
+
+### Fixed
+
+- **`search events --cursor` help** no longer names `next_offset`, a key the answer does not have; the value comes
+  from `page.next_cursor`.
+
 ## 0.8.0 — 31.10.2026
 
 ### Fixed

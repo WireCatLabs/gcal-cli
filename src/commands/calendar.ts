@@ -82,25 +82,21 @@ const hitsOf = (command: Command, hits: unknown[], value: Record<string, unknown
 
 /**
  * cli-core's reads answer `{ items, page, limit, hasMore, meta? }` or one value; gcal prints both in its own envelope.
- * The shared reads take no `--page`, so `has_more` stays without the page step `listOf` would add: it could not run.
+ * `page.next` reruns the list with the same query, one page on.
  */
 const bodyOf = (command: Command, value: unknown) => {
   if (isRecord(value) && Array.isArray(value.hits)) return hitsOf(command, value.hits, value)
   if (isRecord(value) && Array.isArray(value.items) && Object.keys(value).every((key) => LIST_KEYS.has(key))) {
     const meta = isRecord(value.meta) ? snakeKeys(value.meta) : undefined
-    const { next, page, ...list } = listOf(pathOf(command).join(" "), {
+    const query = command.processedArgs[0]
+    return listOf(pathOf(command).join(" "), {
       items: value.items.map((item) => snakeKeys(item)),
       limit: Math.max(1, typeof value.limit === "number" ? value.limit : value.items.length),
       has_more: value.hasMore === true,
+      ...(typeof value.page === "number" ? { page: value.page } : {}),
+      ...(Array.isArray(query) && query.length > 0 ? { args: { query } } : {}),
       ...(meta && v.is(META, meta) ? { meta } : {}),
     })
-    let shown = page
-    if (page.mode === "page") {
-      const { next_page: _unreachable, ...rest } = page
-      shown = rest
-    }
-    const kept = next?.filter((one) => one.step !== "page.next") ?? []
-    return { ...list, page: shown, ...(kept.length > 0 ? { next: kept } : {}) }
   }
   // A sync its budget stopped is a partial answer: `meta.complete` says so, the command's `partial` keeps exit 0, and
   // its `next` goes where the envelope prints a step: the whole line at a terminal, the command and args for an agent.

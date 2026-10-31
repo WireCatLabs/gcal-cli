@@ -170,7 +170,7 @@ describe("event writes over Google", () => {
     expect(posts(google).at(-1)).toMatchObject({ path: "calendars/owner@example.com/events/weekly1/move" })
   })
 
-  it("update --following whose answer was lost names the new series, and --id finds it instead of a second", async () => {
+  it("update --following whose answer was lost names the new series, and --operation-id finds it instead of a second", async () => {
     const { gcal, google } = harness(undefined, [INVITATION, SERIES])
     await gcal("personal", "sync")
     const { items } = await gcal("personal", "events", "list", "ends_at>=2026-11-16", "starts_at<=2026-11-17")
@@ -180,7 +180,7 @@ describe("event writes over Google", () => {
     const lost = await gcal(...update)
     expect(lost.error).toMatchObject({ code: "outcome_unknown" })
     const id = String(lost.error.details.operation_id)
-    const again = await gcal(...update, "--id", id)
+    const again = await gcal(...update, "--operation-id", id)
     expect(again.error).toBeUndefined()
     const inserts = posts(google).filter(({ method, body }) => method === "POST" && body?.summary === "Weekly sync")
     expect(inserts.map(({ body }) => body?.id)).toEqual([id, id])
@@ -414,7 +414,7 @@ describe("event writes over Google", () => {
     const allDay = await gcal(
       ...["personal", "events", "create", "owner@example.com", "--title", "Example offsite"],
       ...["--start-date", "2026-11-03", "--end-date", "2026-11-03", "--location", "Room 2"],
-      ...["--description", "Agenda", "--id", id, "--yes", "--jsonl"],
+      ...["--description", "Agenda", "--operation-id", id, "--yes", "--jsonl"],
     )
     expect(allDay.error).toBeUndefined()
     expect(posts(google).at(-1)?.body).toEqual({

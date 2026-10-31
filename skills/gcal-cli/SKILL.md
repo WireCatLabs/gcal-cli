@@ -33,11 +33,13 @@ Find your way with the tool itself, not this file:
 - `gcal <profile> events list ends_at>=<date> starts_at<=<date> person:<email> --json` and `events show event:<id>` read
   the local store, without the network. The list takes field terms only: `starts_at>=`, `starts_at<` or
   `starts_at:[<date> TO <date>}` bound the start, `ends_at>=` keeps events still running then, `calendar:` and
-  `person:` narrow it, each field once, and without a time term it starts today.
+  `person:` narrow it, each field once, and without a time term it starts today. With more than `--limit`, the
+  answer's `page.next_page` goes to `--page`.
   `events list changed_at>=<date>` lists what changed since a date (`change`: `new`, `moved` or `cancelled`; a moved
   one's old time under `was`).
 - `gcal <profile> search events <query> --json` finds stored events; `search events --backend server <query>` asks Google over the synced
-  calendars, for events outside the synced span. Both answer `items`; each item's `untrusted` names the fields others
+  calendars, for events outside the synced span, and `--backend both` gives the store's hits then Google's other ones
+  in one page. Each answers `items`; each item's `untrusted` names the fields others
   wrote, and a store search's `page.next_cursor` goes to `--cursor`; `people list [event:<id>] --json` gives attendees.
 - `gcal <profile> calendars busy start>=<date> end<=<date> person:<email> --duration-minutes 30 --json` asks Google
   when the owner and the people named are taken (this week without `start` and `end`; repeat `person:` for each
@@ -56,9 +58,9 @@ Find your way with the tool itself, not this file:
 - With attendees other than the owner, pass `notify: false` (`--no-notify`) unless the owner asked you to mail them.
   `events.notify` is denied by default; do not ask to loosen it on your own.
 - `event.conflict` means the event changed in Google since the last sync: run `sync`, read the event again, then
-  decide. `outcome_unknown` on a create names an id: repeat the create with `--id <id>`, never without it.
+  decide. `outcome_unknown` on a create names an id: repeat the create with `--operation-id <id>`, never without it.
 - `--series` changes or deletes every occurrence, and `--following` this one and every later one; use them only when
-  the owner said so. `outcome_unknown` on `update --following` names the new series' id: repeat with `--id <id>`.
+  the owner said so. `outcome_unknown` on `update --following` names the new series' id: repeat with `--operation-id <id>`.
   A new `--repeat` rule that ends a series sooner needs `events.delete.series`, which is denied by default.
 - `events move` keeps the event's id; an occurrence moves only with `--series`, the whole repeating event.
 - `--repeat "FREQ=WEEKLY;BYDAY=MO;COUNT=10"` makes or changes a repeating event (on update, with `--series`); run `sync`

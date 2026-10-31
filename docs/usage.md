@@ -122,6 +122,8 @@ touches those days. `ends_at` takes only an earliest end, and keeps an event tha
 goes in quotes with its offset: `starts_at>="2026-11-03T10:00:00+01:00"`. Each field is named once; a field named
 twice is refused, so write a range instead. `calendar:<id>` and `person:<email>` narrow the list. Without `starts_at`
 or `ends_at` the list starts at the beginning of today. `gcal personal events list --help` lists the fields.
+A page holds `--limit` events (100); when more follow, `page.next_page` is the value for `--page`, and the answer's
+`next` step runs it with the same query.
 
 `changed_at>=<date>` keeps the events first stored, moved, or cancelled or removed since that date, each with `change`
 (`new`, `moved` or `cancelled`) and `changed_at`; a moved one also says where it `was` (`starts_at`, `ends_at`). It
@@ -137,10 +139,16 @@ either:
 gcal personal search events --backend server quarterly review
 ```
 
-`--backend both` is refused: the store and Google rank and page events in different ways, so one merged list would
-have no single order and no next page. Run the two searches one after the other.
+`--backend both` runs the two together: first the store's matches in the store's order, each one Google also found
+with `server` in its `found_by`, then the events only Google found, earliest first. The two rank and page events in
+different ways, so `both` answers one page with no `next_cursor`, and refuses `--cursor` and `--newest`; raise
+`--limit` to see more. Like `server`, it needs the network.
 
-Both answer a list of events under `items`. A store search pages by cursor: with more to show, `page.next_cursor`
+```sh
+gcal personal search events --backend both quarterly review
+```
+
+Each answers a list of events under `items`. A store search pages by cursor: with more to show, `page.next_cursor`
 is the value for `--cursor`. Each event names, under `untrusted`, the fields an invitation's sender wrote.
 
 ## When people are free
@@ -229,15 +237,15 @@ gcal personal events delete event:42 --following --no-notify
   until you allow `events.notify` (see [permissions](configuration.md#permissions)).
 - A change carries the version the last sync saw. If the event changed in Google since, the write stops with
   `event.conflict`: run `sync` and try again. Nothing is overwritten.
-- A create whose answer was lost ends in `outcome_unknown` and names an id; repeat it with `--id <id>` and Google
-  finds the event instead of making a second one.
+- A create whose answer was lost ends in `outcome_unknown` and names its `operation_id`; repeat it with
+  `--operation-id <id>` and Google finds the event instead of making a second one.
 - On a repeating event, a write changes the one occurrence you name; `--series` changes the whole series, and
   `--following` this occurrence and every later one. Deleting a whole series is refused until you allow
   `events.delete.series`, and so is a new `--repeat` rule that ends the series sooner (a new `COUNT` or an earlier
   `UNTIL`).
 - `update --following` ends the series just before the occurrence and starts a new series there with your change,
   keeping the attendees. A series that ends after a number of times (`COUNT`) needs `--repeat` for the new part. If
-  ending the old series fails, the error names the new series' id; repeat with `--id <id>`. `delete --following` only
+  ending the old series fails, the error names the new series' id; repeat with `--operation-id <id>`. `delete --following` only
   ends the series, and asks first like any delete.
 - `move --to-calendar <id>` moves an event, keeping its id, to another calendar of the same account that you can
   write to. An occurrence moves only with its whole series (`--series`). Google moves only ordinary events, not
