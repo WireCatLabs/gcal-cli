@@ -138,10 +138,11 @@ interface RemoteOptions {
 const notOpen = () => new CliError("configuration_error", "the shared store is not open for this command")
 
 /**
- * cli-core's shared calendar commands over Google. The commands are mounted when the program is built, before a
- * profile is known, so the store, the account and the provider are read through getters once `prepare` opened them.
+ * cli-core's shared calendar commands over Google, mounted for one program. The commands are mounted when the program
+ * is built, before a profile is known, so the store, the account and the provider are read through getters once
+ * `prepare` opened them.
  */
-export const calendarMount = () => {
+const mountOnce = () => {
   let action: Command | undefined
   let opened: Opened | undefined
   const answers: (() => void)[] = []
@@ -290,19 +291,18 @@ export const calendarMount = () => {
     })
   }
 
+  const holder = new Recorded(IDENTITY.command)
+  addCalendarCommands(holder, deps)
+  const search = holder.commands.find((one) => one.name() === "search")
+  if (!(search instanceof Recorded)) throw new CliError("configuration_error", "cli-core mounted no search")
+  withRemote(search)
+  for (const group of holder.commands) {
+    if (group.commands.length) annotate(group, { effects: NO_EFFECTS })
+    for (const leaf of leaves(group)) commands.add(leaf)
+  }
+
   return {
-    commands: (): Command[] => {
-      const holder = new Recorded(IDENTITY.command)
-      addCalendarCommands(holder, deps)
-      const search = holder.commands.find((one) => one.name() === "search")
-      if (!(search instanceof Recorded)) throw new CliError("configuration_error", "cli-core mounted no search")
-      withRemote(search)
-      for (const group of holder.commands) {
-        if (group.commands.length) annotate(group, { effects: NO_EFFECTS })
-        for (const leaf of leaves(group)) commands.add(leaf)
-      }
-      return [...holder.commands]
-    },
+    commands: [...holder.commands],
     configure: (program: Command) => {
       program.hook("preAction", (_root, chosen) => {
         action = chosen
@@ -364,5 +364,34 @@ export const calendarMount = () => {
         close,
       }
     },
+  }
+}
+
+type Mount = ReturnType<typeof mountOnce>
+
+/**
+ * cli-core builds a new program for every MCP tool call from one definition, and runs those calls at once, so each
+ * program keeps its own action, store and answers (WC-ARCH-22).
+ */
+export const calendarMount = () => {
+  const mounts = new WeakMap<Command, Mount>()
+  const mountOf = (program: Command) => {
+    const mount = mounts.get(program)
+    if (!mount) throw new CliError("configuration_error", "the calendar commands are not mounted on this program")
+    return mount
+  }
+  return {
+    commands: (): Command[] => {
+      const mount = mountOnce()
+      for (const command of mount.commands) mounts.set(command, mount)
+      return mount.commands
+    },
+    configure: (program: Command) => {
+      const mount = program.commands.map((command) => mounts.get(command)).find((one) => one !== undefined)
+      if (!mount) throw new CliError("configuration_error", "the calendar commands are not mounted on this program")
+      mounts.set(program, mount)
+      mount.configure(program)
+    },
+    prepare: (program: Command, environment: RunOptions) => mountOf(program).prepare(program, environment),
   }
 }

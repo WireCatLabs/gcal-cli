@@ -473,4 +473,30 @@ describe("calendar commands over MCP", () => {
     expect(reviews.isError).toBeFalsy()
     expect(reviews.structuredContent.items).toEqual([])
   })
+
+  it("answers concurrent calls each with its own result (WC-ARCH-22)", async () => {
+    const { json, env, keyring, google } = harness()
+    await json("personal", "sync")
+    const client = await connect(env, keyring, google.fetch as typeof fetch)
+    const read = (command: string, words: string[] = []) =>
+      client.callTool({
+        name: "gcal_read",
+        arguments: { command, arguments: words.length ? { words } : {} },
+      }) as Promise<{
+        isError?: boolean
+        structuredContent: { items?: { title?: string; external_id?: string }[] }
+      }>
+    const answers = await Promise.all([
+      read("calendars list"),
+      read("calendars list"),
+      read("events list", ["from:2026-11-02", "to:2026-11-04"]),
+      read("calendars list"),
+    ])
+    expect(answers.map(({ isError }) => isError ?? false)).toEqual([false, false, false, false])
+    for (const index of [0, 1, 3])
+      expect(answers[index]?.structuredContent.items?.map(({ external_id }) => external_id)).toContain(
+        "owner@example.com",
+      )
+    expect(answers[2]?.structuredContent.items?.map(({ title }) => title)).toContain("Weekly planning")
+  })
 })
