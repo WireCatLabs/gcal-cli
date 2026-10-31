@@ -91,21 +91,17 @@ describe("calendar commands over Google", () => {
     expect(people.map(({ email }: { email: string }) => email)).toContain("bob@example.com")
   })
 
-  it("events list past its limit says has_more and offers no --page it cannot take", async () => {
+  it("events list past its limit offers the next page, with the same query, and that page runs", async () => {
     const { json } = harness()
     await json("personal", "sync")
-    const listed = await json(
-      "personal",
-      "events",
-      "list",
-      "ends_at>=2026-11-02",
-      "starts_at<=2026-11-04",
-      "--limit",
-      "1",
-    )
+    const query = ["ends_at>=2026-11-02", "starts_at<=2026-11-04"]
+    const listed = await json("personal", "events", "list", ...query, "--limit", "1")
     expect(listed.items).toHaveLength(1)
-    expect(listed.page).toEqual({ mode: "page", limit: 1, has_more: true })
-    expect(JSON.stringify(listed.next ?? [])).not.toContain("page")
+    expect(listed.page).toEqual({ mode: "page", limit: 1, has_more: true, next_page: 2 })
+    expect(listed.next[0]).toMatchObject({ step: "page.next", args: { query, page: 2, limit: 1 } })
+    const second = await json("personal", "events", "list", ...query, "--limit", "1", "--page", "2")
+    expect(second.items).toHaveLength(1)
+    expect(second.items[0].id).not.toBe(listed.items[0].id)
   })
 
   it("events list takes the standard field query: an end after one moment, a start before another", async () => {
@@ -351,19 +347,27 @@ describe("calendar commands over Google", () => {
     expect((await json("personal", "--offline", "search", "events", "planning")).items.length).toBeGreaterThan(0)
   })
 
-  it("search --backend archive is the store's search, both is refused and other values are rejected", async () => {
+  it("search --backend archive is the store's search, and a value that is not a backend is rejected", async () => {
     const { gcal, json, google } = harness()
-    const code = (answer: { err: string }) => JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
     await json("personal", "sync")
     google.requests.length = 0
     expect((await json("personal", "search", "events", "--backend", "archive", "planning")).items).toEqual(
       (await json("personal", "search", "events", "planning")).items,
     )
-    expect(code(await gcal("personal", "search", "events", "--backend", "both", "planning", "--json")).reason).toBe(
-      "search.one-backend",
-    )
     expect((await gcal("personal", "search", "events", "--backend", "google", "planning", "--json")).code).toBe(2)
     expect(google.requests).toEqual([])
+  })
+
+  it("search --backend both lists the stored hits, marking those Google also found, in one page", async () => {
+    const { json, google } = harness()
+    await json("personal", "sync")
+    google.requests.length = 0
+    const found = await json("personal", "search", "events", "--backend", "both", "planning")
+    expect(found.page).toMatchObject({ mode: "cursor", has_more: false })
+    expect(found.page.next_cursor).toBeUndefined()
+    expect(found.items.length).toBeGreaterThan(0)
+    expect(found.items.map((hit: { found_by: string[] }) => hit.found_by)).toContainEqual(["words", "server"])
+    expect(google.requests.length).toBeGreaterThan(0)
   })
 
   it("turns a calendar's sync on and off, links a person, and reviews links", async () => {
