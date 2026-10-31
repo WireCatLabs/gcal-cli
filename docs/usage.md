@@ -103,6 +103,7 @@ These commands read the local store, so they work without the network:
 ```sh
 gcal personal events list                                       # from today on, earliest first
 gcal personal events list ends_at>=2026-11-02 starts_at<=2026-11-06 person:ana@example.com
+gcal personal events list starts_at>=2026-11-02                 # events that start on or after a day
 gcal personal events list changed_at>=2026-10-25                # what changed since a date
 gcal personal events show event:42                              # attendees, Drive files and history
 gcal personal search events roadmap planning                    # by words, and by meaning with the model
@@ -112,13 +113,15 @@ gcal personal people link email:ana@example.com telegram:12345  # the same perso
 gcal personal links review                                      # copies the tool could not join to one event
 ```
 
-`events list` takes the field query every WireCat list takes, and no words of its own. `ends_at>=<date>` keeps the
-events that end after the start of that day, and `starts_at<=<date>` those that start before its end, so the two
-give the events of a stretch of days. An exact time goes in quotes with its offset:
-`ends_at>"2026-11-03T10:00:00+01:00"`. `starts_at` takes only a latest start and `ends_at` only an earliest end,
-because the store finds events by the moments they span; `starts_at>=…` is refused and names the `ends_at` term to
-write instead. `calendar:<id>` and `person:<email>` narrow the list. Without `starts_at` or `ends_at` the list starts
-at the beginning of today. `gcal personal events list --help` lists the fields.
+`events list` takes the field query every WireCat list takes, and no words of its own. `starts_at` bounds when an
+event starts, from either side: `starts_at>=2026-11-02` keeps the events that start on or after that day,
+`starts_at<2026-11-07` those that start before it, `starts_at:[2026-11-02 TO 2026-11-07}` both, and
+`starts_at:2026-11-02` the events of that one day. `ends_at>=<date>` keeps the events that end after the start of that
+day, so an event already running then is kept: `ends_at>=2026-11-02 starts_at<=2026-11-06` gives everything that
+touches those days. `ends_at` takes only an earliest end, and keeps an event that ends exactly then out. An exact time
+goes in quotes with its offset: `starts_at>="2026-11-03T10:00:00+01:00"`. Each field is named once; a field named
+twice is refused, so write a range instead. `calendar:<id>` and `person:<email>` narrow the list. Without `starts_at`
+or `ends_at` the list starts at the beginning of today. `gcal personal events list --help` lists the fields.
 
 `changed_at>=<date>` keeps the events first stored, moved, or cancelled or removed since that date, each with `change`
 (`new`, `moved` or `cancelled`) and `changed_at`; a moved one also says where it `was` (`starts_at`, `ends_at`). It
@@ -146,12 +149,15 @@ is the value for `--cursor`. Each event names, under `untrusted`, the fields an 
 keeps nothing: a person appears in the answer only by the address you gave.
 
 ```sh
-gcal personal calendars busy week person:ana@example.com           # busy times only, never what fills them
-gcal personal calendars busy from:2026-11-02 to:2026-11-06 person:ana@example.com --duration-minutes 30
-gcal personal calendars busy today calendar:3 --duration-minutes 60 --hours 10:00-16:00
+gcal personal calendars busy person:ana@example.com                # this week; busy times only, never what fills them
+gcal personal calendars busy start>=2026-11-02 end<=2026-11-06 person:ana@example.com --duration-minutes 30
+gcal personal calendars busy start>=today end<=today calendar:3 --duration-minutes 60 --hours 10:00-16:00
 ```
 
-- Without a time word it reads this week; without `calendar:` every calendar that syncs.
+- The query names the window by the answer's own `start` and `end`: `start>=<date>` from the start of that day,
+  `end<=<date>` through its end. Without `start` the window starts today; without `end` it lasts seven days.
+- `person:<email>` and `calendar:<id>` may be repeated, one term for each: every one named is asked. Without
+  `calendar:` every calendar that syncs is asked.
 - `--duration-minutes` adds `slots`: the stretches at least that long that are free for everyone, inside working
   hours (`--hours`, 09:00-17:00 by default) from Monday to Friday, in your time zone.
 - Google shows a person's busy times only when their calendar is shared with you or your organization. Anyone it

@@ -32,6 +32,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `sync` | `--rescan` | ✅ |  |
 | `sync` | `--max-pages` | ✅ |  |
 | `sync` | `--embed` | ✅ |  |
+| `store status` |  | ✅ |  |
 | `events list` |  | ✅ |  |
 | `events list` | `--limit` | ✅ |  |
 | `events show` |  | ✅ |  |
@@ -80,17 +81,16 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events respond` | `--calendar` | ✅ |  |
 | `events respond` | `--notify` | ✅ |  |
 | `events respond` | `--no-notify` | ✅ |  |
-| `people list` |  | ✅ |  |
-| `people link` |  | ✅ |  |
-| `links review` |  | ✅ |  |
-| `links resolve` |  | ✅ |  |
-| `store status` |  | ✅ |  |
 | `search events` |  | ✅ |  |
 | `search events` | `--limit` | ✅ |  |
 | `search events` | `--cursor` | ✅ |  |
 | `search events` | `--exact` | ✅ |  |
 | `search events` | `--newest` | ✅ |  |
 | `search events` | `--backend` | ✅ |  |
+| `people list` |  | ✅ |  |
+| `people link` |  | ✅ |  |
+| `links review` |  | ✅ |  |
+| `links resolve` |  | ✅ |  |
 | `api list` |  | ✅ |  |
 | `api show` |  | ✅ |  |
 | `api call` |  | ✅ |  |

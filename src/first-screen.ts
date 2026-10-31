@@ -29,7 +29,7 @@ export const FIRST_SCREEN: FirstScreen = {
     { command: "sync", does: "copy what changed since the last sync" },
     { command: 'search events "budget review"', does: "every stored event, by words and meaning, offline" },
     { command: "events list person:ana@example.com", does: "upcoming events with one person" },
-    { command: "calendars busy week --duration-minutes 30", does: "free stretches the calendars share" },
+    { command: "calendars busy --duration-minutes 30", does: "free stretches the calendars share this week" },
     { command: "events create <calendar> --title …", does: "add an event; attendees are mailed only if you say" },
   ],
   start: `${IDENTITY.command} personal session start`,

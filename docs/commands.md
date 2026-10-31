@@ -182,12 +182,12 @@ gcal calendars unsync <calendar>
 when calendars and people are taken, asked of the provider and not stored; with --duration-minutes, the free stretches they share
 
 ```sh
-gcal calendars busy [words] [options]
+gcal calendars busy [query] [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `words` | optional | today, week, from:<date>, to:<date>, calendar:<id>, person:<email>. |
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
 
 | Option | What it does |
 |---|---|
@@ -196,7 +196,7 @@ gcal calendars busy [words] [options]
 
 **Returns:** calendar busy — start, end, timezone, calendars, slots, unknown; every field: gcal commands info calendars busy
 
-**Example:** `gcal personal calendars busy week person:ana@example.com --json`, `gcal personal calendars busy from:2026-11-02 to:2026-11-06 person:ana@example.com --duration-minutes 30 --hours 10:00-16:00`
+**Example:** `gcal personal calendars busy person:ana@example.com --json`, `gcal personal calendars busy start>=2026-11-02 end<=2026-11-06 person:ana@example.com --duration-minutes 30 --hours 10:00-16:00`
 
 ## `gcal sync`
 
@@ -217,6 +217,22 @@ gcal sync [options]
 **Returns:** calendar sync — provider, account_id, window, calendars, synced, not_synced, complete, state, and 4 more; every field: gcal commands info sync
 
 **Example:** `gcal personal sync`, `gcal personal sync --rescan --embed`, `gcal personal sync --timeout 2m`
+
+## `gcal store`
+
+the local store of calendar events
+
+### `gcal store status`
+
+how far each synced calendar's sync is: entries done, partial or complete, and when it last moved
+
+```sh
+gcal store status
+```
+
+**Returns:** calendar sync progress — calendar_id, external_id, title, round, job, profile, done, total, and 5 more; every field: gcal commands info store status
+
+**Example:** `gcal personal store status --json`
 
 ## `gcal events`
 
@@ -240,7 +256,7 @@ gcal events list [query] [options]
 
 **Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 12 more; every field: gcal commands info events list
 
-**Example:** `gcal personal events list ends_at>=2026-11-02 starts_at<2026-11-07 --json`, `gcal personal events list ends_at>=today person:ana@example.com`
+**Example:** `gcal personal events list starts_at>=2026-11-02 starts_at<2026-11-07 --json`, `gcal personal events list ends_at>=today person:ana@example.com`
 
 ### `gcal events show`
 
@@ -404,6 +420,34 @@ gcal events respond <event> <response> [options]
 
 **Example:** `gcal personal events respond event:42 accepted --notify`
 
+## `gcal search`
+
+find stored things by text: events
+
+### `gcal search events`
+
+find stored events by words, and by meaning when its model is downloaded; with --backend server, ask the provider instead
+
+```sh
+gcal search events <query> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | required | what to find in titles, descriptions, places and attendees. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | events per page. Default: `20`. |
+| `--cursor <cursor>` | continue from a page's next_offset. Default: `0`. |
+| `--exact` | every word as written, no word stems. |
+| `--newest` | latest start first instead of best first. |
+| `--backend <archive\|server\|both>` | where to search: archive, the local store, or server, the provider's own search over the synced calendars, earliest first. One of: `archive`, `server`, `both`. Default: `archive`. |
+
+**Returns:** calendar search hit — provider, account, title, starts_at, ends_at, all_day, status, location, and 9 more; every field: gcal commands info search events
+
+**Example:** `gcal personal search events roadmap planning --json`, `gcal personal search events --backend server quarterly review`
+
 ## `gcal people`
 
 the people in the account's events
@@ -477,50 +521,6 @@ gcal links resolve <review> <choice>
 **Returns:** calendar link resolution — id, status, chosen; every field: gcal commands info links resolve
 
 **Example:** `gcal personal links resolve 7 event:42`
-
-## `gcal store`
-
-the local store of calendar events
-
-### `gcal store status`
-
-how far each synced calendar's sync is: entries done, partial or complete, and when it last moved
-
-```sh
-gcal store status
-```
-
-**Returns:** calendar sync progress — calendar_id, external_id, title, round, job, profile, done, total, and 5 more; every field: gcal commands info store status
-
-**Example:** `gcal personal store status --json`
-
-## `gcal search`
-
-find stored things by text: events
-
-### `gcal search events`
-
-find stored events by words, and by meaning when its model is downloaded; with --backend server, ask the provider instead
-
-```sh
-gcal search events <query> [options]
-```
-
-| Argument | | What it is |
-|---|---|---|
-| `query` | required | what to find in titles, descriptions, places and attendees. |
-
-| Option | What it does |
-|---|---|
-| `--limit <n>` | events per page. Default: `20`. |
-| `--cursor <cursor>` | continue from a page's next_offset. Default: `0`. |
-| `--exact` | every word as written, no word stems. |
-| `--newest` | latest start first instead of best first. |
-| `--backend <archive\|server\|both>` | where to search: archive, the local store, or server, the provider's own search over the synced calendars, earliest first. One of: `archive`, `server`, `both`. Default: `archive`. |
-
-**Returns:** calendar search hit — provider, account, title, starts_at, ends_at, all_day, status, location, and 9 more; every field: gcal commands info search events
-
-**Example:** `gcal personal search events roadmap planning --json`, `gcal personal search events --backend server quarterly review`
 
 ## `gcal api`
 

@@ -124,7 +124,7 @@ describe("calendar commands over Google", () => {
     expect(changed.every(({ change }: { change?: string }) => change !== undefined)).toBe(true)
   })
 
-  it("events list refuses the words it took before 0.5.0 and a start it cannot answer exactly", async () => {
+  it("events list refuses the words it took before 0.5.0, and finds events from their earliest start", async () => {
     const { gcal, json } = harness()
     await json("personal", "sync")
     const error = async (...query: string[]) => {
@@ -134,9 +134,12 @@ describe("calendar commands over Google", () => {
     }
     for (const word of ["today", "week", "overlapping", "from:2026-11-02", "changed:2026-10-01"])
       expect((await error(word)).code).toBe("validation_error")
-    const start = await error("starts_at>=2026-11-02")
-    expect(start.reason).toBe("query.unsupported-operator")
-    expect(start.message).toContain("ends_at>=2026-11-02")
+    expect((await error("ends_at<2026-11-02")).reason).toBe("query.unsupported-operator")
+    const from = async (...query: string[]) =>
+      (await json("personal", "events", "list", ...query)).items.map(({ title }: { title: string }) => title)
+    expect(await from('starts_at>="2026-11-03T08:00:00Z"')).toContain("Writing")
+    expect(await from('starts_at>"2026-11-03T08:00:00Z"')).not.toContain("Writing")
+    expect(await from('starts_at:["2026-11-03T08:00:00Z" TO 2026-11-04}')).toContain("Writing")
   })
 
   it("a second sync sends the token alone", async () => {
@@ -398,7 +401,7 @@ describe("calendar commands over Google", () => {
       ["calendars", "sync", "owner@example.com"],
       ["calendars", "unsync", "busy@group.calendar.example.com"],
       ["links", "review"],
-      ["calendars", "busy", "today"],
+      ["calendars", "busy", "start>=today", "end<=today"],
       ["store", "status"],
     ]
     for (const words of reads) {
@@ -445,7 +448,7 @@ describe("calendars busy over Google", () => {
     if (zone === undefined) delete process.env.TZ
     else process.env.TZ = zone
   })
-  const busy = ["personal", "calendars", "busy", "from:2026-11-02", "to:2026-11-02", "person:ana@example.com"]
+  const busy = ["personal", "calendars", "busy", "start>=2026-11-02", "end<=2026-11-02", "person:ana@example.com"]
 
   it("asks freeBusy for the synced calendars and each person, and stores nothing of theirs", async () => {
     const { json, google } = harness()

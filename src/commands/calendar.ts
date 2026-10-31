@@ -21,7 +21,6 @@ import { configuration, permissions, writeKeys } from "../config.js"
 import type { GoogleApi } from "../google-api.js"
 import { IDENTITY } from "../identity.js"
 import type { GcalEnvironment } from "./session.js"
-import { reshape } from "./shape.js"
 import { signInWords, wordedApi } from "./words.js"
 
 interface Opened {
@@ -99,9 +98,7 @@ const bodyOf = (command: Command, value: unknown) => {
   // A sync its budget stopped is a partial answer: `meta.complete` says so, the command's `partial` keeps exit 0, and
   // its `next` goes where the envelope prints a step: the whole line at a terminal, the command and args for an agent.
   if (isRecord(value) && value.state === "partial") {
-    const { next, hint, ...report } = value
-    // cli-core points at `status`, which gcal moved to `store status`.
-    if (typeof hint === "string") report.hint = hint.replace(/ status$/u, " store status")
+    const { next, ...report } = value
     return itemOf(snakeKeys(report), {
       meta: { complete: false },
       ...(Array.isArray(next) ? { next: next as NextStep[] } : {}),
@@ -199,7 +196,6 @@ const mountOnce = () => {
 
   const holder = new Command(IDENTITY.command)
   addCalendarCommands(holder, deps)
-  reshape(holder)
   for (const group of holder.commands) {
     if (group.commands.length) annotate(group, { effects: NO_EFFECTS })
     for (const leaf of leaves(group)) commands.add(leaf)

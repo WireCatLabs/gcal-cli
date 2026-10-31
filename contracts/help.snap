@@ -4,21 +4,21 @@ Usage: gcal <profile> <command> [options]
 Account commands start with your profile, a name you choose; none is ever assumed.
 
 What you can do:
-  calendars sync <calendar>                  choose calendars; only these are copied
-  sync                                       copy what changed since the last sync
-  search events "budget review"              every stored event, by words and meaning, offline
-  events list person:ana@example.com         upcoming events with one person
-  calendars busy week --duration-minutes 30  free stretches the calendars share
-  events create <calendar> --title …         add an event; attendees are mailed only if you say
+  calendars sync <calendar>             choose calendars; only these are copied
+  sync                                  copy what changed since the last sync
+  search events "budget review"         every stored event, by words and meaning, offline
+  events list person:ana@example.com    upcoming events with one person
+  calendars busy --duration-minutes 30  free stretches the calendars share this week
+  events create <calendar> --title …    add an event; attendees are mailed only if you say
 
 Works with:
-  tg                                         Telegram in the same local store: search, review and tasks offline
-  max                                        MAX in the same local store: search, review and tasks offline
-  wa                                         WhatsApp in the same local store: search, review and tasks offline
-  zm                                         Zoom meetings: transcripts and summaries, searchable with your other WireCat data
-  drive                                      Google Drive and Docs as local text, searchable with your other WireCat data
-  memo context <person>                      one person across messengers, mail, notes and meetings
-  mail                                       IMAP mail in the same local store: search your mailbox offline, next to your other WireCat data
+  tg                                    Telegram in the same local store: search, review and tasks offline
+  max                                   MAX in the same local store: search, review and tasks offline
+  wa                                    WhatsApp in the same local store: search, review and tasks offline
+  zm                                    Zoom meetings: transcripts and summaries, searchable with your other WireCat data
+  drive                                 Google Drive and Docs as local text, searchable with your other WireCat data
+  memo context <person>                 one person across messengers, mail, notes and meetings
+  mail                                  IMAP mail in the same local store: search your mailbox offline, next to your other WireCat data
 
 Start here:   gcal personal session start  (any profile name works)
 Next:         gcal commands                every command, by section
