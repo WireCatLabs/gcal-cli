@@ -71,6 +71,14 @@ const paths = (env: NodeJS.ProcessEnv) => resolvePaths({ appName: IDENTITY.appNa
 
 export type CredentialStorage = "keyring" | "file"
 
+// cli-base warns once per Credentials, and a run over several profiles makes one per profile.
+const warnedRuns = new WeakSet<NodeJS.ProcessEnv>()
+const warnOnce = (env: NodeJS.ProcessEnv) => (message: string) => {
+  if (warnedRuns.has(env)) return
+  warnedRuns.add(env)
+  process.stderr.write(`${message}\n`)
+}
+
 const credentialsOptions = (env: NodeJS.ProcessEnv, storage: CredentialStorage | "auto", keyring?: KeyringStore) => ({
   // A sign-in kept in a file is state this computer holds, not configuration to copy elsewhere; cli-base writes it 600.
   // The keyring falls back to that same file (WC-SECR-4), so `storageOf` finds it either way.
@@ -80,6 +88,7 @@ const credentialsOptions = (env: NodeJS.ProcessEnv, storage: CredentialStorage |
   env,
   isolated: isMovedRun({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
   keyring: keyring ?? systemKeyring,
+  warn: warnOnce(env),
 })
 
 const signInFile = (env: NodeJS.ProcessEnv) => new Credentials(credentialsOptions(env, "file"))

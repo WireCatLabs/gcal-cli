@@ -589,6 +589,16 @@ describe("session start --credential-storage file", () => {
     })
   })
 
+  it("warns once for a run over several profiles", async () => {
+    const { gcal, env } = harness(noKeyring)
+    writeFileSync(join(env.GCAL_CONFIG_DIR ?? "", "config.json"), JSON.stringify({ profiles: { home: {}, work: {} } }))
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true)
+    expect((await gcal(["session", "list", "--json"])).code).toBe(0)
+    const warnings = stderr.mock.calls.filter(([text]) => String(text).includes("could not reach the OS keyring"))
+    stderr.mockRestore()
+    expect(warnings).toHaveLength(1)
+  })
+
   it("keeps the sign-in in a private file under the state folder when asked", async () => {
     const { gcal, env } = harness(noKeyring)
     const fake = google()
