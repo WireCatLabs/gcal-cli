@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@wirecat/previous-cli':
-        specifier: npm:@wirecat/gcal-cli@0.3.0
-        version: '@wirecat/gcal-cli@0.3.0(zod@4.6.7)'
+        specifier: npm:@wirecat/gcal-cli@0.6.0
+        version: '@wirecat/gcal-cli@0.6.0(zod@4.6.7)'
 
 packages:
 
@@ -263,8 +263,8 @@ packages:
   '@wasm-audio-decoders/opus-ml@0.0.3':
     resolution: {integrity: sha512-SEeTmk0eb3q5etJA/NHCRWW6BivTx9tqvNTmG0kg2ynuATEQRUZnwQE6Ibvl1BBvqIGHqI57+qyJMWmJBwb5XQ==}
 
-  '@wirecat/cli-base@0.65.5':
-    resolution: {integrity: sha512-ox0GwOoLKf5W0tjJytIg49x9YR7XXzjFT1shDOKu38BdidMXjHnEZByJjeE6kup7NaejZZVL/R6Maseog6l1wQ==}
+  '@wirecat/cli-base@0.67.0':
+    resolution: {integrity: sha512-CK+QT5HnJeedgE/e7W/KgqAYYgg6I/5OSQl9ea+iCZoe4+9saEDB4O/PAcNhc2e86b1MkBEepfbMHjBG3s5mLg==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -285,20 +285,20 @@ packages:
   '@wirecat/cli-core-sqlite@1.1.0':
     resolution: {integrity: sha512-GpGlh/dAIX/nblBYCdT6DfWSLFxav9mxxeELQAfEuw+QZdT9unKxbi5xa02s/s4JS1P7n0PQx2sCABj4FlMRNw==}
 
-  '@wirecat/cli-core@0.489.0':
-    resolution: {integrity: sha512-fUTiN8sIODO08SCxQO1iAdH5YUH5zq8+xZOi+64z7FzUoXbwkRArLQwY2PS5ThgfIbEWLmKFgVRCMbRXz0AxWg==}
+  '@wirecat/cli-core@0.502.0':
+    resolution: {integrity: sha512-yNkpwf8qgw/m7oCh5iVbwUQzX4ey4bDsszX/RcNqqXLDwqOUX+jdh/39gNHiBJxd0EvAXhOrPe2UlYxBV+5BRw==}
     engines: {node: ^22.16.0 || >=24}
     hasBin: true
     peerDependencies:
       '@napi-rs/canvas': '>=0.1.69 <2'
-      '@wirecat/cli-base': '>=0.65.0 <0.66.0'
+      '@wirecat/cli-base': '>=0.67.0 <0.68.0'
       commander: '>=15'
     peerDependenciesMeta:
       '@napi-rs/canvas':
         optional: true
 
-  '@wirecat/gcal-cli@0.3.0':
-    resolution: {integrity: sha512-QjYYuxrv9i40655hZiP9i8o1JHQa0cxl7xVU0rLGFc5Q5k5PDzb4/xbcDWhLd3cAqWNuaCegY1R97OixausgTA==}
+  '@wirecat/gcal-cli@0.6.0':
+    resolution: {integrity: sha512-Y7xDjS8s7w/08e4KE5QJycwEhuq7ULZ68K1WSPaT0cwHMl2Bg4obPaBs+RJkWeTterT+kDz7hy5UOw7Owujn6A==}
     engines: {node: ^22.16.0 || >=24}
     hasBin: true
 
@@ -1056,7 +1056,7 @@ snapshots:
     dependencies:
       '@wasm-audio-decoders/common': 9.0.7
 
-  '@wirecat/cli-base@0.65.5(commander@15.0.0)':
+  '@wirecat/cli-base@0.67.0(commander@15.0.0)':
     dependencies:
       '@valibot/to-json-schema': 1.8.0(valibot@1.5.0)
       cli-table3: 0.6.5
@@ -1074,7 +1074,7 @@ snapshots:
 
   '@wirecat/cli-core-sqlite@1.1.0': {}
 
-  '@wirecat/cli-core@0.489.0(@wirecat/cli-base@0.65.5(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)':
+  '@wirecat/cli-core@0.502.0(@wirecat/cli-base@0.67.0(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)':
     dependencies:
       '@anthropic-ai/sdk': 1.3.0(zod@4.6.7)
       '@bomb.sh/tab': 0.0.22(commander@15.0.0)
@@ -1084,7 +1084,7 @@ snapshots:
       '@valibot/to-json-schema': 1.8.0(valibot@1.5.0)
       '@wasm-audio-decoders/flac': 0.2.11
       '@wasm-audio-decoders/ogg-vorbis': 0.1.20
-      '@wirecat/cli-base': 0.65.5(commander@15.0.0)
+      '@wirecat/cli-base': 0.67.0(commander@15.0.0)
       '@wirecat/cli-core-onnx': 1.2.0
       '@wirecat/cli-core-sqlite': 1.1.0
       '@xmldom/xmldom': 0.9.12
@@ -1127,10 +1127,10 @@ snapshots:
       - typescript
       - zod
 
-  '@wirecat/gcal-cli@0.3.0(zod@4.6.7)':
+  '@wirecat/gcal-cli@0.6.0(zod@4.6.7)':
     dependencies:
-      '@wirecat/cli-base': 0.65.5(commander@15.0.0)
-      '@wirecat/cli-core': 0.489.0(@wirecat/cli-base@0.65.5(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)
+      '@wirecat/cli-base': 0.67.0(commander@15.0.0)
+      '@wirecat/cli-core': 0.502.0(@wirecat/cli-base@0.67.0(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)
       commander: 15.0.0
       valibot: 1.5.0
     transitivePeerDependencies:
