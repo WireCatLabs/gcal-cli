@@ -1,6 +1,6 @@
 {
   "name": "@wirecat/gcal-cli",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Google Calendar sync, search, free/busy and event changes from the terminal and for AI agents",
   "license": "Apache-2.0",
   "author": "Viacheslav Ptsarev",
