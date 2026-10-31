@@ -126,14 +126,16 @@ const metadataOf = (event: CalendarEvent) => {
 
 /**
  * One Google event in the neutral words (cli-core `src/meetings/event-store.ts`). An all-day date with no zone of its
- * own or of its calendar is read in the zone in use, as cli-core's calendar commands read one (WC-TIME-3).
+ * own or of its calendar is read in the zone in use, as cli-core's calendar commands read one, and its `timezone`
+ * names that zone (WC-TIME-3).
  */
 export const entryOf = (
   event: CalendarEvent,
   calendar: Pick<StoredCalendar, "timezone">,
   zoneInUse?: string,
 ): EntryInput => {
-  const zone = [event.start?.timeZone, calendar.timezone ?? undefined].find(zoneOk) ?? zoneInUse ?? timezoneOf()
+  const named = [event.start?.timeZone, calendar.timezone ?? undefined].find(zoneOk)
+  const zone = named ?? zoneInUse ?? timezoneOf()
   const status = word(STATUS, event.status) ?? "confirmed"
   const recurrence = (event.recurrence ?? []).filter((line) => RECURRENCE_LINE.test(line))
   const kind = event.recurringEventId ? "occurrence" : recurrence.length ? "series" : "single"
@@ -162,7 +164,7 @@ export const entryOf = (
     allDay,
     startDate: event.start?.date ?? null,
     endDate: event.end?.date ?? null,
-    timezone: zoneOk(event.start?.timeZone) ? event.start.timeZone : null,
+    timezone: zoneOk(event.start?.timeZone) ? event.start.timeZone : allDay && !named ? zone : null,
     recurrence: kind === "series" ? recurrence : null,
     eventType: word(EVENT_TYPE, event.eventType),
     transparency: word(TRANSPARENCY, event.transparency),
