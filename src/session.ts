@@ -6,8 +6,7 @@ import {
   accountEmail,
   CALENDAR_READ_SCOPE,
   type CredentialStorage,
-  fileSecretOf,
-  forgetOtherStorage,
+  forgetKeyringCopy,
   holdsSignIn,
   SIGN_IN_SCOPES,
   sessionKeeper,
@@ -66,7 +65,6 @@ export interface SignInOptions extends Common {
 export const signIn = async (options: SignInOptions) => {
   const { env, profile } = options
   const keeper = sessionKeeper(options)
-  const fileBefore = fileSecretOf(env, profile)
   let account = ""
   const { scopes } = await keeper.signIn({
     scopes: [...SIGN_IN_SCOPES, ...(options.grants ?? []).map((grant) => GRANT_SCOPES[grant])],
@@ -101,10 +99,8 @@ export const signIn = async (options: SignInOptions) => {
       return undefined
     },
   })
-  // A new sign-in always changes the saved entry, so a changed file means the keyring failed and cli-base used the file.
-  const kept: CredentialStorage =
-    options.storage === "file" || fileSecretOf(env, profile) !== fileBefore ? "file" : "keyring"
-  forgetOtherStorage(env, profile, kept, options.keyring)
+  if (options.storage === "file") forgetKeyringCopy(env, profile, options.keyring)
+  const kept = storageOf(env, profile)
   rememberAccount(IDENTITY, profile, account, env)
   const store = await openGcalStore(env)
   let closed: Promise<void> | undefined

@@ -2,6 +2,16 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Fixed
+
+- **The keyring's file fallback now comes from cli-base 0.68.0 and cli-core 0.507.0**, with no workaround of gcal's
+  own. cli-base fixed the bug gcal worked around: removing the keyring copy after `--credential-storage file` also
+  cleared the file. A sign-in in the private file is read from there and its refreshes stay there; the next
+  `session start` that reaches the keyring moves it back and removes the file copy. Answers are as in 0.7.0, and the
+  keyring warning still comes once per run.
+
 ## 0.7.0 — 31.10.2026
 
 ### Changed — may break callers
