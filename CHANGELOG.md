@@ -12,6 +12,23 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   show or end. A sign-in kept with `--credential-storage file` is read as before. `session start` and the commands that
   call Google still fail with `oauth.not-saved`, which [troubleshooting](docs/troubleshooting.md) explains. A script
   that took the failure to mean "keyring out of reach" reads `keyring` in the answer instead.
+- **`people list` takes one event as `event:<id>`.** `gcal personal people list 42` is refused as a word with no
+  field; write `people list event:42`. Over MCP the input is `query` (`"event:42"`), no longer `event`.
+- **`search --backend server` answers as the shared search does.** Each event's `found_by` is `["server"]` (was
+  `["google"]`). The refusals have new reasons: no synced calendar is `search.no-calendars` (was
+  `calendars.none-synced`), `--offline` is `search.offline` (was `offline.refused`), `--exact`, `--cursor` or
+  `--newest` is `search.server-options`, and `--backend both` is `search.one-backend` (was `search.backend-both`).
+- **The calendar commands' help no longer lists `--json` and `--jsonl` under each command**, and their MCP tools no
+  longer take `json` or `jsonl` inputs. The global `--json` and `--jsonl` work as before; an agent that sent
+  `jsonl: true` was refused.
+- **`config show --bot` and `config set|unset --personal|--bot` are hidden.** gcal has no bots, so they had nothing
+  behind them. They are still accepted, so a script that passes one keeps working.
+
+### Added
+
+- **`calendars list` takes a query**: `synced:`, `primary:` and `access_role:` narrow the list, such as
+  `gcal personal calendars list synced:true`.
+- **`commands info` describes what each calendar command answers with**, and `--fields` can pick from it.
 
 ### Fixed
 

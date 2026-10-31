@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**226 ✅ · 337 ⛔ · 0 ❌** — 83 commands, 480 options.
+**190 ✅ · 337 ⛔ · 0 ❌** — 83 commands, 444 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -23,35 +23,19 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `session end` |  | ✅ |  |
 | `session list` |  | ✅ |  |
 | `calendars list` |  | ✅ |  |
-| `calendars list` | `--json` | ✅ |  |
-| `calendars list` | `--jsonl` | ✅ |  |
 | `calendars sync` |  | ✅ |  |
-| `calendars sync` | `--json` | ✅ |  |
-| `calendars sync` | `--jsonl` | ✅ |  |
 | `calendars unsync` |  | ✅ |  |
-| `calendars unsync` | `--json` | ✅ |  |
-| `calendars unsync` | `--jsonl` | ✅ |  |
 | `calendars busy` |  | ✅ |  |
-| `calendars busy` | `--json` | ✅ |  |
-| `calendars busy` | `--jsonl` | ✅ |  |
 | `calendars busy` | `--duration-minutes` | ✅ |  |
 | `calendars busy` | `--hours` | ✅ |  |
 | `sync` |  | ✅ |  |
-| `sync` | `--json` | ✅ |  |
-| `sync` | `--jsonl` | ✅ |  |
 | `sync` | `--rescan` | ✅ |  |
 | `sync` | `--max-pages` | ✅ |  |
 | `sync` | `--embed` | ✅ |  |
 | `status` |  | ✅ |  |
-| `status` | `--json` | ✅ |  |
-| `status` | `--jsonl` | ✅ |  |
 | `events list` |  | ✅ |  |
-| `events list` | `--json` | ✅ |  |
-| `events list` | `--jsonl` | ✅ |  |
 | `events list` | `--limit` | ✅ |  |
 | `events show` |  | ✅ |  |
-| `events show` | `--json` | ✅ |  |
-| `events show` | `--jsonl` | ✅ |  |
 | `events create` |  | ✅ |  |
 | `events create` | `--title` | ✅ |  |
 | `events create` | `--start-time` | ✅ |  |
@@ -65,8 +49,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events create` | `--notify` | ✅ |  |
 | `events create` | `--no-notify` | ✅ |  |
 | `events create` | `--id` | ✅ |  |
-| `events create` | `--json` | ✅ |  |
-| `events create` | `--jsonl` | ✅ |  |
 | `events update` |  | ✅ |  |
 | `events update` | `--title` | ✅ |  |
 | `events update` | `--start-time` | ✅ |  |
@@ -83,50 +65,32 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events update` | `--id` | ✅ |  |
 | `events update` | `--notify` | ✅ |  |
 | `events update` | `--no-notify` | ✅ |  |
-| `events update` | `--json` | ✅ |  |
-| `events update` | `--jsonl` | ✅ |  |
 | `events delete` |  | ✅ |  |
 | `events delete` | `--calendar` | ✅ |  |
 | `events delete` | `--series` | ✅ |  |
 | `events delete` | `--following` | ✅ |  |
 | `events delete` | `--notify` | ✅ |  |
 | `events delete` | `--no-notify` | ✅ |  |
-| `events delete` | `--json` | ✅ |  |
-| `events delete` | `--jsonl` | ✅ |  |
 | `events move` |  | ✅ |  |
 | `events move` | `--calendar` | ✅ |  |
 | `events move` | `--to-calendar` | ✅ |  |
 | `events move` | `--series` | ✅ |  |
 | `events move` | `--notify` | ✅ |  |
 | `events move` | `--no-notify` | ✅ |  |
-| `events move` | `--json` | ✅ |  |
-| `events move` | `--jsonl` | ✅ |  |
 | `events respond` |  | ✅ |  |
 | `events respond` | `--calendar` | ✅ |  |
 | `events respond` | `--notify` | ✅ |  |
 | `events respond` | `--no-notify` | ✅ |  |
-| `events respond` | `--json` | ✅ |  |
-| `events respond` | `--jsonl` | ✅ |  |
 | `search` |  | ✅ |  |
-| `search` | `--json` | ✅ |  |
-| `search` | `--jsonl` | ✅ |  |
 | `search` | `--limit` | ✅ |  |
 | `search` | `--cursor` | ✅ |  |
 | `search` | `--exact` | ✅ |  |
 | `search` | `--newest` | ✅ |  |
 | `search` | `--backend` | ✅ |  |
 | `people list` |  | ✅ |  |
-| `people list` | `--json` | ✅ |  |
-| `people list` | `--jsonl` | ✅ |  |
 | `people link` |  | ✅ |  |
-| `people link` | `--json` | ✅ |  |
-| `people link` | `--jsonl` | ✅ |  |
 | `links review` |  | ✅ |  |
-| `links review` | `--json` | ✅ |  |
-| `links review` | `--jsonl` | ✅ |  |
 | `links resolve` |  | ✅ |  |
-| `links resolve` | `--json` | ✅ |  |
-| `links resolve` | `--jsonl` | ✅ |  |
 | `api list` |  | ✅ |  |
 | `api show` |  | ✅ |  |
 | `api call` |  | ✅ |  |

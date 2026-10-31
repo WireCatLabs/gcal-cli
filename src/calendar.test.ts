@@ -240,7 +240,7 @@ describe("calendar commands over Google", () => {
         calendar: expect.any(String),
         external_id: "focus1",
         title: "Writing",
-        found_by: ["google"],
+        found_by: ["server"],
         untrusted: ["title", "location"],
       }),
       expect.objectContaining({ external_id: "focus1" }),
@@ -268,13 +268,13 @@ describe("calendar commands over Google", () => {
     const { gcal, json, google } = harness()
     const code = (answer: { err: string }) => JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
     expect(code(await gcal("personal", "search", "--backend", "server", "planning", "--json")).reason).toBe(
-      "calendars.none-synced",
+      "search.no-calendars",
     )
     await json("personal", "sync")
     google.requests.length = 0
     expect(
       code(await gcal("personal", "--offline", "search", "--backend", "server", "planning", "--json")).reason,
-    ).toBe("offline.refused")
+    ).toBe("search.offline")
     expect(code(await gcal("personal", "search", "--backend", "server", "planning", "--exact", "--json")).code).toBe(
       "validation_error",
     )
@@ -297,7 +297,7 @@ describe("calendar commands over Google", () => {
       (await json("personal", "search", "planning")).items,
     )
     expect(code(await gcal("personal", "search", "--backend", "both", "planning", "--json")).reason).toBe(
-      "search.backend-both",
+      "search.one-backend",
     )
     expect((await gcal("personal", "search", "--backend", "google", "planning", "--json")).code).toBe(2)
     expect(google.requests).toEqual([])

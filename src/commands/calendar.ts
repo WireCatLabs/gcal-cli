@@ -9,14 +9,13 @@ import {
   listOf,
   NO_EFFECTS,
   outputFor,
-  overrideSharedContract,
   type RunOptions,
   renderAnswer,
   snakeKeys,
 } from "@wirecat/cli-core/cli"
 import { levelFor } from "@wirecat/cli-core/sends"
 import type { MessageStore } from "@wirecat/cli-core/store"
-import { Command, Option } from "commander"
+import { Command } from "commander"
 import type { GoogleCalendarWriter } from "../calendar-writer.js"
 import { configuration, permissions, writeKeys } from "../config.js"
 import type { GoogleApi } from "../google-api.js"
@@ -33,25 +32,8 @@ interface Opened {
   /** Built on first use: a local read never reads the sign-in. */
   source: () => CalendarSource
   writer: () => GoogleCalendarWriter
-  api: () => GoogleApi
   close: () => Promise<void>
 }
-
-type Handler = Parameters<Command["action"]>[0]
-
-/** Keeps each command's action, through Commander's documented `createCommand` hook, so gcal can hand back to it. */
-class Recorded extends Command {
-  handler: Handler | undefined
-  override createCommand(name?: string): Command {
-    return new Recorded(name)
-  }
-  override action(handler: Handler): this {
-    this.handler = handler
-    return super.action(handler)
-  }
-}
-
-const REMOTE_READ_LOCAL_READ = { remote: "read", local: "read" } as const
 
 const leaves = (command: Command): Command[] => (command.commands.length ? command.commands.flatMap(leaves) : [command])
 
@@ -125,16 +107,6 @@ const bodyOf = (command: Command, value: unknown) => {
   return itemOf(snakeKeys(value))
 }
 
-type Backend = "archive" | "server" | "both"
-
-interface RemoteOptions {
-  backend: Backend
-  limit: number
-  cursor: number
-  exact?: boolean
-  newest?: boolean
-}
-
 const notOpen = () => new CliError("configuration_error", "the shared store is not open for this command")
 
 /**
@@ -187,6 +159,7 @@ const mountOnce = () => {
       return need().source()
     },
     freeBusy: true,
+    serverSearch: true,
     embed: async (max) => {
       const { store, env } = need()
       const { embedEvents } = await import("@wirecat/cli-core/services")
@@ -221,81 +194,8 @@ const mountOnce = () => {
     for (const answer of answers.splice(0)) answer()
   }
 
-  const remoteSearch = async (words: string[], opts: RemoteOptions, command: Command) => {
-    const flags = command.optsWithGlobals<GlobalFlags>()
-    if (flags.offline)
-      throw new CliError("permission_error", "search --backend server asks Google; leave out --offline", {
-        reason: "offline.refused",
-      })
-    if (opts.exact || opts.cursor || opts.newest)
-      throw new CliError(
-        "validation_error",
-        "search --backend server takes neither --exact, --cursor nor --newest: Google ranks and pages it, and " +
-          "returns no newest-first order",
-      )
-    const { store, accountId, account, api } = need()
-    const calendars = (await store.calendar.calendars(accountId)).filter(
-      ({ synced, deletedAt }) => synced && !deletedAt,
-    )
-    if (calendars.length === 0)
-      throw new CliError("validation_error", "no calendar syncs yet; run sync, or calendars sync <calendar>", {
-        reason: "calendars.none-synced",
-      })
-    const { searchGoogle } = await import("../remote-search.js")
-    const found = await searchGoogle(api(), calendars, {
-      query: words.join(" "),
-      limit: opts.limit,
-      account: account.account,
-    })
-    answers.push(() => renderAnswer(command, outputFor(command), hitsOf(command, found)))
-  }
-
-  const withRemote = (search: Recorded) => {
-    const local = search.handler
-    if (!local) throw new CliError("configuration_error", "cli-core's search has no action to hand back to")
-    overrideSharedContract(
-      search,
-      "gcal's search can also ask Google's own text search (--backend server), read only: a scope of the same search (WC-CMD-6, WC-CMD-7).",
-      (command) => {
-        annotate(command, {
-          effects: REMOTE_READ_LOCAL_READ,
-          examples: [
-            `${IDENTITY.command} personal search roadmap planning --json`,
-            `${IDENTITY.command} personal search --backend server quarterly review`,
-          ],
-        })
-        command.description(
-          "find stored events by words, and by meaning when its model is downloaded; with --backend server, ask Google instead",
-        )
-        command.summary("find stored events by words and meaning, or with --backend server ask Google")
-        command.addOption(
-          new Option(
-            "--backend <archive|server|both>",
-            "where to search: archive, the local store, or server, Google Calendar's own search over the synced calendars, earliest first",
-          )
-            .choices(["archive", "server", "both"])
-            .default("archive"),
-        )
-      },
-    )
-    search.action(async function (this: Command, ...args: unknown[]) {
-      const [words, opts, command] = args as [string[], RemoteOptions, Command]
-      if (opts.backend === "both")
-        throw new CliError(
-          "validation_error",
-          "search --backend both is not offered: the store's search and Google's rank and page events differently, so " +
-            "one merged list would have no single order or next page; run --backend archive and --backend server",
-          { reason: "search.backend-both" },
-        )
-      return opts.backend === "server" ? remoteSearch(words, opts, command) : local.apply(this, args)
-    })
-  }
-
-  const holder = new Recorded(IDENTITY.command)
+  const holder = new Command(IDENTITY.command)
   addCalendarCommands(holder, deps)
-  const search = holder.commands.find((one) => one.name() === "search")
-  if (!(search instanceof Recorded)) throw new CliError("configuration_error", "cli-core mounted no search")
-  withRemote(search)
   for (const group of holder.commands) {
     if (group.commands.length) annotate(group, { effects: NO_EFFECTS })
     for (const leaf of leaves(group)) commands.add(leaf)
@@ -361,7 +261,6 @@ const mountOnce = () => {
         accountId,
         account: key,
         env,
-        api: googleOf,
         source: () => (source ??= googleCalendarSource(googleOf())),
         writer: () => (writer ??= googleCalendarWriter(googleOf())),
         close,

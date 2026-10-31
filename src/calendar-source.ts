@@ -285,6 +285,20 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
       return slots
     },
 
+    // Google's own text search also finds events outside the sync window; read only and stored nowhere.
+    async search(calendar, { query, limit }) {
+      const page = await list("calendar.events.list", {
+        calendarId: calendar.externalId,
+        q: query,
+        maxResults: limit,
+        singleEvents: false,
+      })
+      return {
+        entries: (page.items ?? []).filter((event) => event.id).map((event) => entryOf(event, calendar)),
+        more: Boolean(page.nextPageToken),
+      }
+    },
+
     // https://developers.google.com/workspace/calendar/api/v3/reference/freebusy/query — calendar.readonly suffices.
     async freeBusy({ calendars, people, window }) {
       const ids = [...calendars, ...people]
