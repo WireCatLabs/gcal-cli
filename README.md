@@ -12,7 +12,7 @@ npm install -g @wirecat/gcal-cli
 gcal doctor
 gcal personal session start --client-file ~/client_secret.json
 gcal personal sync
-gcal personal events list week
+gcal personal events list
 ```
 
 You need Node.js 22.16 or a later 22.x, or 24 or later. `personal` is a profile: a name you choose for one Google
@@ -22,7 +22,7 @@ says how to make one. `gcal guide` gives step-by-step scenarios.
 ## What you can do
 
 - Sync your calendars, then list and show events by time, person or calendar, offline.
-- Search events by words, and by meaning with the embedding model; `search --backend server` asks Google's own search.
+- Search events by words, and by meaning with the embedding model; `search events --backend server` asks Google's own search.
 - Find when people are free with `calendars busy`, and the stretches free for all of them.
 - See who was in a meeting, and link a person to the same person in Telegram, WhatsApp or MAX.
 - Create, change and delete events, repeating ones included, and accept or decline invitations.
@@ -50,7 +50,7 @@ an agent may change. Text from an invitation is marked `untrusted`: data to the 
 ## Main features
 
 - Incremental sync: after the first one, `sync` asks Google only for what changed. A big sync goes on over several
-  runs, and `gcal personal status` shows how far it is.
+  runs, and `gcal personal store status` shows how far it is.
 - A repeating event's occurrences are stored one by one, cancelled ones included.
 - JSON output on every command (`--json`), and errors as JSON with a code to branch on.
 - One permission key per command and per Google Calendar method.

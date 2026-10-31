@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**190 ✅ · 337 ⛔ · 0 ❌** — 83 commands, 444 options.
+**192 ✅ · 335 ⛔ · 0 ❌** — 83 commands, 444 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -32,7 +32,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `sync` | `--rescan` | ✅ |  |
 | `sync` | `--max-pages` | ✅ |  |
 | `sync` | `--embed` | ✅ |  |
-| `status` |  | ✅ |  |
 | `events list` |  | ✅ |  |
 | `events list` | `--limit` | ✅ |  |
 | `events show` |  | ✅ |  |
@@ -81,16 +80,17 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events respond` | `--calendar` | ✅ |  |
 | `events respond` | `--notify` | ✅ |  |
 | `events respond` | `--no-notify` | ✅ |  |
-| `search` |  | ✅ |  |
-| `search` | `--limit` | ✅ |  |
-| `search` | `--cursor` | ✅ |  |
-| `search` | `--exact` | ✅ |  |
-| `search` | `--newest` | ✅ |  |
-| `search` | `--backend` | ✅ |  |
 | `people list` |  | ✅ |  |
 | `people link` |  | ✅ |  |
 | `links review` |  | ✅ |  |
 | `links resolve` |  | ✅ |  |
+| `store status` |  | ✅ |  |
+| `search events` |  | ✅ |  |
+| `search events` | `--limit` | ✅ |  |
+| `search events` | `--cursor` | ✅ |  |
+| `search events` | `--exact` | ✅ |  |
+| `search events` | `--newest` | ✅ |  |
+| `search events` | `--backend` | ✅ |  |
 | `api list` |  | ✅ |  |
 | `api show` |  | ✅ |  |
 | `api call` |  | ✅ |  |
@@ -228,13 +228,13 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-calendars-clear` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-clear` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-clear` | `--dry-run` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-calendars-delete` |  | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-calendars-delete` |  | ✅ |  |
 | `api calendar-calendars-delete` | `--alt` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-delete` | `--fields` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-delete` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-delete` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-delete` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-calendars-delete` | `--calendar-id` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-calendars-delete` | `--calendar-id` | ✅ |  |
 | `api calendar-calendars-delete` | `--dry-run` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-calendars-get` |  | ✅ |  |
 | `api calendar-calendars-get` | `--alt` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |

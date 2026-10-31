@@ -328,7 +328,7 @@ describe("writes", () => {
     expect(toCalendar(fake.requests)).toEqual([])
   })
 
-  it("denies emptying a calendar until the owner allows it, and asks before sharing or giving one away", async () => {
+  it("denies emptying, deleting or giving a calendar away until the owner allows it, and asks before sharing", async () => {
     const { gcal } = harness()
     const clear = ["personal", "api", "call", "calendar.calendars.clear", "--params", '{"calendarId":"primary"}']
     expect(failure((await gcal([...clear, "--yes", "--json"])).err)).toMatchObject({
@@ -349,19 +349,33 @@ describe("writes", () => {
       "true",
     ]
     const given = failure((await gcal([...give, "--new-data-owner", "a@example.com", "--yes", "--json"])).err)
-    expect(given.reason).toBe("api.scope-missing")
-    expect(given.message).toContain("calendar.calendars")
+    expect(given).toMatchObject({
+      code: "permission_error",
+      details: { permission: "api.calendar.calendars.transferOwnership" },
+    })
+    const deleted = ["personal", "api", "calendar-calendars-delete", "--calendar-id", "team@example.com", "--yes"]
+    expect(failure((await gcal([...deleted, "--json"])).err)).toMatchObject({
+      code: "permission_error",
+      details: { permission: "api.calendar.calendars.delete" },
+    })
+    expect(
+      (await gcal(["personal", "config", "set", "permissions.api.calendar.calendars.transferOwnership", "ask"])).code,
+    ).toBe(0)
+    const allowed = failure((await gcal([...give, "--new-data-owner", "a@example.com", "--yes", "--json"])).err)
+    expect(allowed.reason).toBe("api.scope-missing")
+    expect(allowed.message).toContain("calendar.calendars")
     expect((await gcal(["personal", "config", "set", "permissions.api", "allow"])).code).toBe(0)
     expect(failure((await gcal([...clear, "--yes", "--json"])).err).code).toBe("permission_error")
     expect((await gcal(["personal", "config", "set", "permissions.api.calendar.calendars.clear", "ask"])).code).toBe(0)
     expect(failure((await gcal([...clear, "--yes", "--json"])).err).reason).toBe("api.scope-missing")
   })
 
-  it("defaults sharing and giving a calendar away to ask, and emptying one to deny", () => {
+  it("defaults sharing to ask, and emptying, deleting or giving a calendar away to deny", () => {
     for (const method of ["insert", "patch", "update", "delete"])
       expect(permissions.defaults[`api.calendar.acl.${method}`]).toBe("ask")
-    expect(permissions.defaults["api.calendar.calendars.transferOwnership"]).toBe("ask")
-    expect(permissions.defaults["api.calendar.calendars.clear"]).toBe("deny")
+    for (const method of ["clear", "delete", "transferOwnership"])
+      expect(permissions.defaults[`api.calendar.calendars.${method}`]).toBe("deny")
+    expect(permissions.defaults["api.calendar.calendars.patch"]).toBe("ask")
   })
 
   it("shares a calendar after session start --grant sharing", async () => {

@@ -10,11 +10,11 @@ steps:
     why: only the calendars you choose are copied
   - run: gcal personal sync
     why: copies their events; a later run copies only what changed
-  - run: gcal personal status
+  - run: gcal personal store status
     why: how far each calendar's copy is, and when it last moved
 look:
   - a calendar whose sync is partial; run sync again until it is complete
-  - gcal personal search "planning" finds events offline once they are copied
+  - gcal personal search events "planning" finds events offline once they are copied
 ---
 
 Nothing leaves the computer except the Google requests the sync makes; search and reading run offline.

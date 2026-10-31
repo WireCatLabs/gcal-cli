@@ -6,11 +6,10 @@ Account commands start with your profile, a name you choose; none is ever assume
 What you can do:
   calendars sync <calendar>                  choose calendars; only these are copied
   sync                                       copy what changed since the last sync
-  search "budget review"                     every stored event, by words and meaning, offline
-  events list week person:ana@example.com    this week's events with one person
+  search events "budget review"              every stored event, by words and meaning, offline
+  events list person:ana@example.com         upcoming events with one person
   calendars busy week --duration-minutes 30  free stretches the calendars share
   events create <calendar> --title …         add an event; attendees are mailed only if you say
-  events list week overlapping               this week's meetings that clash
 
 Works with:
   tg                                         Telegram in the same local store: search, review and tasks offline

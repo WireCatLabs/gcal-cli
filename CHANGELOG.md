@@ -12,6 +12,25 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Changed — may break callers
 
+- **`gcal search <words>` is now `gcal search events <query>`, and `gcal status` is now `gcal store status`**, the
+  shape the other WireCat tools use (max: `search messages <query>`, `store status`). The old paths are gone, with no
+  alias. Over MCP the command is `search events`, and its input is `query` (was `words`); a store search's next-page
+  step names `query` too. A partial sync's hint points at `store status`.
+- **`events list` takes only the standard field query, and none of its own words.** `today`, `week`, `from:`, `to:`,
+  `changed:` and `overlapping` are refused. Write the window as fields: `from:2026-11-02 to:2026-11-06` is
+  `ends_at>=2026-11-02 starts_at<=2026-11-06`, and `changed:2026-10-25` is `changed_at>=2026-10-25`; `calendar:` and
+  `person:` stay. Over MCP the input is `query` (`"ends_at>=2026-11-02"`), no longer `words`. What callers lose:
+  - `today` and `week`: write the dates. The query language has `today` but no word for a day ahead, so the end of a
+    window is an ISO date.
+  - `overlapping` and the `overlaps` field: no standard term asks for events that clash, so the list no longer finds
+    them. Compare `starts_at` and `ends_at` of the listed events instead.
+  - `starts_at>=…` is refused and names the `ends_at>=…` term to write instead: the store finds events by the moments
+    they span, so it can bound only the latest start and the earliest end. An event that ends exactly at the
+    `ends_at` moment is left out.
+  - Without a time term the list still starts at the beginning of today.
+- **Deleting a whole Google calendar and giving it to another account are `deny` by default**, as emptying one is.
+  `api.calendar.calendars.delete` and `api.calendar.calendars.transferOwnership` were `ask`, which over MCP runs with no
+  question. Set either key to `ask` or `allow` to let it run.
 - **`session status` and `session end` answer where no keyring can be reached and no sign-in file is kept.** They
   failed with `oauth.not-saved`. Now `session status` says `state: missing` with `keyring: unreachable`, and
   `session end` says `ended: false` with `keyring: unreachable`: this run can use no sign-in, so there is nothing to

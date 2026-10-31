@@ -72,7 +72,7 @@ gcal personal sync                          # what changed since the last sync
 gcal personal calendars list                # every calendar of the account, and which of them sync
 gcal personal calendars sync 3             # sync calendar 3 of the list from now on; unsync stops it
 gcal personal sync --embed                  # also index new events for search by meaning
-gcal personal status                        # how far each calendar's sync is, and when it last moved
+gcal personal store status                  # how far each calendar's sync is, and when it last moved
 ```
 
 A sync stops on its own before its time limit and saves every page as it goes, so nothing is lost. A big first sync
@@ -98,32 +98,37 @@ description that names a passcode, a password or a PIN is dropped.
 These commands read the local store, so they work without the network:
 
 ```sh
-gcal personal events list week                                  # this week's events, earliest first
-gcal personal events list from:2026-11-02 to:2026-11-06 person:ana@example.com
-gcal personal events list changed:2026-10-25                    # what changed since a date
-gcal personal events list week overlapping                      # meetings that clash
+gcal personal events list                                       # from today on, earliest first
+gcal personal events list ends_at>=2026-11-02 starts_at<=2026-11-06 person:ana@example.com
+gcal personal events list changed_at>=2026-10-25                # what changed since a date
 gcal personal events show event:42                              # attendees, Drive files and history
-gcal personal search roadmap planning                           # by words, and by meaning with the model
+gcal personal search events roadmap planning                    # by words, and by meaning with the model
 gcal personal people list                                       # everyone in this week's events
 gcal personal people list event:42                              # one event's attendees
 gcal personal people link email:ana@example.com telegram:12345  # the same person in another WireCat tool
 gcal personal links review                                      # copies the tool could not join to one event
 ```
 
-`changed:<date>` keeps the events first stored, moved, or cancelled or removed since that date, each with `change`
+`events list` takes the field query every WireCat list takes, and no words of its own. `ends_at>=<date>` keeps the
+events that end after the start of that day, and `starts_at<=<date>` those that start before its end, so the two
+give the events of a stretch of days. An exact time goes in quotes with its offset:
+`ends_at>"2026-11-03T10:00:00+01:00"`. `starts_at` takes only a latest start and `ends_at` only an earliest end,
+because the store finds events by the moments they span; `starts_at>=…` is refused and names the `ends_at` term to
+write instead. `calendar:<id>` and `person:<email>` narrow the list. Without `starts_at` or `ends_at` the list starts
+at the beginning of today. `gcal personal events list --help` lists the fields.
+
+`changed_at>=<date>` keeps the events first stored, moved, or cancelled or removed since that date, each with `change`
 (`new`, `moved` or `cancelled`) and `changed_at`; a moved one also says where it `was` (`starts_at`, `ends_at`). It
 reads what the syncs saved, so it sees only what a sync brought in, and a meeting moved and moved back is no change.
-`overlapping` keeps the timed events that clash with another one, each with `overlaps`, the other events' ids. An event
-counts only when it takes your time: not cancelled, not all-day, and not declined or marked free by you.
 
-`search` reads the store by default (`--backend archive`). `--backend server` asks Google Calendar's own search
+`search events` reads the store by default (`--backend archive`). `--backend server` asks Google Calendar's own search
 instead, over the calendars that sync. It also finds events outside the synced span (a year back, three months
 ahead). It reads only, keeps nothing in the store, and needs the network. Google returns its matches in an order it
 does not state, so `gcal` lists them earliest first and refuses `--newest`; `--exact` and `--cursor` do not apply
 either:
 
 ```sh
-gcal personal search --backend server quarterly review
+gcal personal search events --backend server quarterly review
 ```
 
 `--backend both` is refused: the store and Google rank and page events in different ways, so one merged list would
@@ -258,8 +263,8 @@ gcal personal mcp check                             # start it once, as the agen
 client. `gcal guide agent-access` walks through it.
 
 The server offers every command, the ones that write included. The profile's permissions decide what runs; see
-[settings](configuration.md#permissions). That includes sharing a calendar (`acl`) and giving it to another account
-(`calendars.transferOwnership`): an agent can do both without a question. Two commands are never offered to an agent:
+[settings](configuration.md#permissions). That includes sharing a calendar (`acl`): an agent can do it without a question. Deleting a whole calendar
+(`calendars.delete`) and giving it to another account (`calendars.transferOwnership`) are denied until you allow them. Two commands are never offered to an agent:
 `api call`, and `calendars.clear`, which empties a calendar. You run those yourself, in a terminal. Nor are the
 commands that set up the sign-in and the agent link: `session start` and `session end`, and `mcp serve`, `mcp add`,
 `mcp config`, `mcp check`, `mcp revoke` and `mcp server start | stop | status`.

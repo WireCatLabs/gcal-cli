@@ -6,7 +6,8 @@ import { IDENTITY } from "./identity.js"
 
 const SECTIONS: Record<string, HelpSection> = {
   calendars: "read",
-  status: "read",
+  store: "read",
+  search: "read",
   people: "read",
   links: "organise",
   api: "read",
@@ -26,11 +27,10 @@ export const FIRST_SCREEN: FirstScreen = {
   can: [
     { command: "calendars sync <calendar>", does: "choose calendars; only these are copied" },
     { command: "sync", does: "copy what changed since the last sync" },
-    { command: 'search "budget review"', does: "every stored event, by words and meaning, offline" },
-    { command: "events list week person:ana@example.com", does: "this week's events with one person" },
+    { command: 'search events "budget review"', does: "every stored event, by words and meaning, offline" },
+    { command: "events list person:ana@example.com", does: "upcoming events with one person" },
     { command: "calendars busy week --duration-minutes 30", does: "free stretches the calendars share" },
     { command: "events create <calendar> --title …", does: "add an event; attendees are mailed only if you say" },
-    { command: "events list week overlapping", does: "this week's meetings that clash" },
   ],
   start: `${IDENTITY.command} personal session start`,
 }

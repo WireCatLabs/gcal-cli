@@ -5,11 +5,14 @@ import { SHARING_NOTIFY_KEY } from "./api-keys.js"
 import { operations } from "./generated/manifest.js"
 import { IDENTITY } from "./identity.js"
 
-/**
- * Deleting every event of the main calendar stays with the owner at a terminal. Sharing and giving a calendar away are
- * offered to agents at `ask`, which over MCP runs without a question: the owner chose that (NEED-1857).
- */
+/** Deleting every event of the main calendar stays with the owner at a terminal. */
 export const OWNER_ONLY = /^calendar\.calendars\.clear$/
+
+/**
+ * Losing a whole calendar is denied until the owner allows it (NEED-2051): `ask` runs without a question over MCP.
+ * Sharing stays `ask` (NEED-1857).
+ */
+const DENIED = /^calendar\.calendars\.(clear|delete|transferOwnership)$/
 
 export const apiKey = (method: string): string => `api.${method}`
 
@@ -25,7 +28,7 @@ const WRITE_METHODS: Record<CalendarWrite, string[]> = {
 
 export const writeKeys = (write: CalendarWrite): string[] => WRITE_METHODS[write].map(apiKey)
 
-const apiDefault = (id: string): Level => (OWNER_ONLY.test(id) ? "deny" : "ask")
+const apiDefault = (id: string): Level => (DENIED.test(id) ? "deny" : "ask")
 
 const keyOf = (path: readonly string[]) => {
   if (path[0] !== "api" || path[1] === undefined) return commandPathKey(path)

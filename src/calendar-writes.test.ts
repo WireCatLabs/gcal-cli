@@ -84,7 +84,7 @@ const harness = (
 
 const eventRef = async (gcal: ReturnType<typeof harness>["gcal"]) => {
   await gcal("personal", "sync")
-  const { items } = await gcal("personal", "events", "list", "from:2026-11-05", "to:2026-11-06")
+  const { items } = await gcal("personal", "events", "list", "ends_at>=2026-11-05", "starts_at<=2026-11-06")
   return `event:${items.find(({ title }: { title: string }) => title === "Example review").id}`
 }
 
@@ -161,7 +161,7 @@ describe("event writes over Google", () => {
     }
     const { gcal, google } = harness(undefined, [INVITATION, SERIES], writable)
     await gcal("personal", "sync")
-    const { items } = await gcal("personal", "events", "list", "from:2026-11-02", "to:2026-11-03")
+    const { items } = await gcal("personal", "events", "list", "ends_at>=2026-11-02", "starts_at<=2026-11-03")
     const slot = `event:${items.find(({ title }: { title: string }) => title === "Weekly planning").id}`
     const alone = await gcal("personal", "events", "move", slot, "--to-calendar", TEAM, "--no-notify")
     expect(alone.error).toMatchObject({ code: "validation_error" })
@@ -173,7 +173,7 @@ describe("event writes over Google", () => {
   it("update --following whose answer was lost names the new series, and --id finds it instead of a second", async () => {
     const { gcal, google } = harness(undefined, [INVITATION, SERIES])
     await gcal("personal", "sync")
-    const { items } = await gcal("personal", "events", "list", "from:2026-11-16", "to:2026-11-17")
+    const { items } = await gcal("personal", "events", "list", "ends_at>=2026-11-16", "starts_at<=2026-11-17")
     const slot = `event:${items.find(({ title }: { title: string }) => title === "Weekly planning").id}`
     const update = ["personal", "events", "update", slot, "--following", "--title", "Weekly sync", "--no-notify"]
     google.loseNextAnswer()
@@ -190,7 +190,7 @@ describe("event writes over Google", () => {
   it("update --following ends the series before the occurrence and starts a new one there", async () => {
     const { gcal, google } = harness(undefined, [INVITATION, SERIES])
     await gcal("personal", "sync")
-    const { items } = await gcal("personal", "events", "list", "from:2026-11-16", "to:2026-11-17")
+    const { items } = await gcal("personal", "events", "list", "ends_at>=2026-11-16", "starts_at<=2026-11-17")
     const slot = items.find(({ title }: { title: string }) => title === "Weekly planning")
     const changed = await gcal(
       ...["personal", "events", "update", `event:${slot.id}`, "--following", "--title", "Weekly sync"],
@@ -207,7 +207,7 @@ describe("event writes over Google", () => {
   it("delete --following only ends the series, and asks first", async () => {
     const { gcal, google } = harness(undefined, [INVITATION, SERIES])
     await gcal("personal", "sync")
-    const { items } = await gcal("personal", "events", "list", "from:2026-11-16", "to:2026-11-17")
+    const { items } = await gcal("personal", "events", "list", "ends_at>=2026-11-16", "starts_at<=2026-11-17")
     const slot = items.find(({ title }: { title: string }) => title === "Weekly planning")
     const remove = ["personal", "events", "delete", `event:${slot.id}`, "--following", "--no-notify"]
     expect((await gcal(...remove)).error).toMatchObject({ code: "confirmation_required" })
@@ -221,7 +221,7 @@ describe("event writes over Google", () => {
   it("a series update whose new rule ends it sooner needs events.delete.series", async () => {
     const { gcal, google } = harness(undefined, [INVITATION, SERIES])
     await gcal("personal", "sync")
-    const { items } = await gcal("personal", "events", "list", "from:2026-11-02", "to:2026-11-03")
+    const { items } = await gcal("personal", "events", "list", "ends_at>=2026-11-02", "starts_at<=2026-11-03")
     const slot = items.find(({ title }: { title: string }) => title === "Weekly planning")
     const shorter = await gcal(
       ...["personal", "events", "update", `event:${slot.id}`, "--series", "--repeat", "FREQ=WEEKLY;BYDAY=MO;COUNT=2"],
@@ -307,7 +307,7 @@ describe("event writes over Google", () => {
   it("update --series --repeat patches the series' rule and keeps its EXDATE", async () => {
     const { gcal, google } = harness(undefined, [INVITATION, SERIES])
     await gcal("personal", "sync")
-    const { items } = await gcal("personal", "events", "list", "from:2026-11-02", "to:2026-11-03")
+    const { items } = await gcal("personal", "events", "list", "ends_at>=2026-11-02", "starts_at<=2026-11-03")
     const slot = items.find(({ title }: { title: string }) => title === "Weekly planning")
     const changed = await gcal(
       ...["personal", "events", "update", `event:${slot.id}`, "--series", "--repeat", "FREQ=WEEKLY;BYDAY=MO,TH"],
