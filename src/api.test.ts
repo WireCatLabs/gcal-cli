@@ -133,7 +133,10 @@ describe("api list and show", () => {
   it("refuses a method it does not know", async () => {
     const { gcal } = harness()
     const refused = await gcal(["api", "show", "calendar.events.watch", "--json"])
-    expect(failure(refused.err).reason).toBe("api.unknown-method")
+    expect(failure(refused.err)).toMatchObject({
+      reason: "api.unknown-method",
+      message: "unknown Google Calendar method; run gcal api list",
+    })
   })
 })
 
@@ -256,7 +259,7 @@ describe("reading through the API", () => {
 
 describe("checking a request before it leaves", () => {
   it.each([
-    [["calendar.nothing.here"], "api.unknown-method"],
+    [["calendar.nothing.here"], "api.unknown-method unknown Google Calendar method; run gcal api list"],
     [["calendar.events.list", "--params", '{"calendarId":"primary","noSuchParameter":1}'], "unknown or unsupported"],
     [["calendar.events.list", "--params", "{}"], "required API parameter: calendarId"],
     [["calendar.events.list", "--params", '{"calendarId":"primary","alt":"media"}'], "--alt is one of json"],

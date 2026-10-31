@@ -191,10 +191,13 @@ describe("an event's zone", () => {
       const allDay = { ...event, start: { date: "2026-11-02" }, end: { date: "2026-11-03" } }
       expect(entryOf(allDay, { timezone: "Not/AZone" }, "Europe/Madrid")).toMatchObject({
         startsAt: Date.parse("2026-11-01T23:00:00Z"),
+        timezone: "Europe/Madrid",
       })
       expect(entryOf(allDay, { timezone: null }, "Asia/Tokyo")).toMatchObject({
         startsAt: Date.parse("2026-11-01T15:00:00Z"),
+        timezone: "Asia/Tokyo",
       })
+      expect(entryOf(allDay, MADRID, "Asia/Tokyo").timezone).toBeNull()
       expect(entryOf({ ...event, start: { ...event.start, timeZone: "Asia/Tokyo" } }, MADRID).timezone).toBe(
         "Asia/Tokyo",
       )

@@ -54,7 +54,7 @@ import { apiKey, configuration, OWNER_ONLY, permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
 import { requestSchema } from "../schema.js"
 import { contextOf } from "./session.js"
-import { worded } from "./words.js"
+import { methodInWords, worded } from "./words.js"
 
 const EVENT_ANSWERS = new Set(["CalendarEvent", "CalendarEvents"])
 
@@ -261,13 +261,19 @@ const showCommand = () =>
     .description("show one method's request schema and contract, without calling Google")
     .argument("<method>", "Google method name, as api list prints it")
     .action(function (this: Command, method: string) {
+      let operation: ReturnType<typeof operationOf>
+      try {
+        operation = operationOf(method)
+      } catch (error) {
+        throw methodInWords(error)
+      }
       renderAnswer(
         this,
         outputFor(this),
         itemOf({
-          operation: operationOf(method),
+          operation,
           request_schema: requestSchema(method),
-          ...(EVENT_ANSWERS.has(operationOf(method).response?.schema ?? "") ? { answer: CONFERENCE_SECRETS_NOTE } : {}),
+          ...(EVENT_ANSWERS.has(operation.response?.schema ?? "") ? { answer: CONFERENCE_SECRETS_NOTE } : {}),
         }),
       )
     })

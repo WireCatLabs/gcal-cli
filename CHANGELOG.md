@@ -4,6 +4,12 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ## Unreleased
 
+### Added
+
+- **`calendars list` takes a query**: `synced:`, `primary:` and `access_role:` narrow the list, such as
+  `gcal personal calendars list synced:true`.
+- **`commands info` describes what each calendar command answers with**, and `--fields` can pick from it.
+
 ### Changed — may break callers
 
 - **`session status` and `session end` answer where no keyring can be reached and no sign-in file is kept.** They
@@ -24,12 +30,6 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **`config show --bot` and `config set|unset --personal|--bot` are hidden.** gcal has no bots, so they had nothing
   behind them. They are still accepted, so a script that passes one keeps working.
 
-### Added
-
-- **`calendars list` takes a query**: `synced:`, `primary:` and `access_role:` narrow the list, such as
-  `gcal personal calendars list synced:true`.
-- **`commands info` describes what each calendar command answers with**, and `--fields` can pick from it.
-
 ### Fixed
 
 - **Calls an agent sends to `gcal mcp serve` at the same time each get their own answer.** Two calendar reads sent
@@ -38,8 +38,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   ([WC-ARCH-22](https://github.com/WireCatLabs/cli-base/blob/v0.65.5/docs/standards/architecture.md#wc-arch-22--build-the-command-tree-once-keep-each-calls-state-out-of-it)).
 - **An all-day event with no time zone of its own or of its calendar starts at midnight in your computer's time zone.**
   gcal read it as midnight UTC: on a computer in Madrid it started an hour late, and in New York on the evening before.
-  An event or calendar that names its zone is read in that zone, as before. An event already stored keeps its old
-  start until Google sends it again, after it changes
+  Such an event's `timezone` now names the zone it was read in, where it was `null`. An event or calendar that names
+  its zone is read in that zone, as before. An event already stored keeps its old start until Google sends it again,
+  after it changes
   ([WC-TIME-3](https://github.com/WireCatLabs/cli-base/blob/v0.65.5/docs/standards/time.md#wc-time-3--read-a-time-that-has-no-zone-in-the-zone-in-use-and-say-which-zone-that-was)).
 
 ## 0.4.0 — 31.10.2026

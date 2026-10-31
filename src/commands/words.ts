@@ -2,6 +2,8 @@ import { CliError, isCliError } from "@wirecat/cli-base"
 import type { GoogleApi } from "../google-api.js"
 import { IDENTITY } from "../identity.js"
 
+const LIST_METHODS = `run ${IDENTITY.command} api list`
+
 const fixFor = (error: CliError, start: string): string | undefined => {
   const { reason, grant, next } = error.details
   switch (reason) {
@@ -19,6 +21,8 @@ const fixFor = (error: CliError, start: string): string | undefined => {
         : undefined
     case "sign-in.no-client":
       return "or pass --client-file <path> with the Desktop app client JSON from Google Cloud Console"
+    case "api.unknown-method":
+      return LIST_METHODS
     case "api.scope-missing":
       return typeof grant === "string" ? `sign in again with ${start} --grant ${grant}` : undefined
     default:
@@ -35,6 +39,12 @@ export const inWords = (error: unknown, profile: string): unknown => {
   const fix = fixFor(error, signInWords(profile))
   return fix ? new CliError(error.code, `${error.message}; ${fix}`, error.details) : error
 }
+
+/** A method name the api layers do not know, with the command that lists the ones they do; needs no profile. */
+export const methodInWords = (error: unknown): unknown =>
+  isCliError(error) && error.details.reason === "api.unknown-method"
+    ? new CliError(error.code, `${error.message}; ${LIST_METHODS}`, error.details)
+    : error
 
 export const worded = async <T>(profile: string, act: () => Promise<T>): Promise<T> => {
   try {
