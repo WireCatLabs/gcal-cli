@@ -9,9 +9,8 @@ feature: it may already be on the way. The order is approximate and can change. 
 `gcal` signs in to your Google account and syncs the calendars you own into the local WireCat store, from a year back
 to three months ahead, then only what changed; a big sync goes on over several runs. You can list, show and search
 events by words and by meaning, see the people in them and their Drive files, all without the network, and search
-Google Calendar itself with `search --backend server`. `calendars busy` shows when people are taken and the stretches
-free for all of them, `events list changed:<date>` what changed since a date, and `events list overlapping` the
-meetings that clash. After `session start --grant write` it creates, changes, moves and deletes events, repeating ones
+Google Calendar itself with `search events --backend server`. `calendars busy` shows when people are taken and the stretches
+free for all of them, and `events list changed_at>=<date>` what changed since a date. After `session start --grant write` it creates, changes, moves and deletes events, repeating ones
 included, one occurrence, the whole series or "this and all following", moves an event to another calendar, switches
 an event between timed and all-day, and answers invitations; a delete asks first. `gcal api` reaches every Google
 Calendar API method by name. Every command is in the [command reference](commands.md).

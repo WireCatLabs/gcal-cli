@@ -9,7 +9,7 @@ steps=(
   "sync: sync, again until every calendar is complete (at most \$GCAL_LIVE_SYNC_RUNS runs, 40 by default)"
   "sync-again: sync, and every calendar's round is changes, not full"
   "embed: sync --embed, skipped when no meaning model is downloaded"
-  "search: --offline search <word> (counts)"
+  "search: --offline search events <word> (counts)"
   "memo: memo search all <word> (counts), when memo is installed"
 )
 
@@ -113,7 +113,7 @@ else
   stop embed "$failed"
 fi
 
-run search gcal "$profile" --offline search "$word" --json || stop search "$failed"
+run search gcal "$profile" --offline search events "$word" --json || stop search "$failed"
 echo "search: $(summary '`${(a.item.hits ?? a.items ?? []).length} events found`' <<<"$answer")"
 
 if command -v memo >/dev/null; then

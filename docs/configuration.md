@@ -47,9 +47,12 @@ Without a setting of yours:
 
 - A method that changes Calendar is `ask`. At a terminal `gcal` asks before it calls Google; in a script, add `--yes`.
   Over MCP there is no one to ask, so `ask` lets the command run.
-- Sharing a calendar (`calendar.acl.insert`, `patch`, `update`, `delete`) and giving it to another account
-  (`calendar.calendars.transferOwnership`) are `ask`, like any other change. Over MCP that means an agent can share
-  your calendar with anyone, or give it away, without a question. Set `permissions.api.calendar.acl deny` to stop it.
+- Sharing a calendar (`calendar.acl.insert`, `patch`, `update`, `delete`) is `ask`, like any other change. Over MCP
+  that means an agent can share your calendar with anyone without a question. Set `permissions.api.calendar.acl deny`
+  to stop it.
+- Deleting a whole calendar (`calendar.calendars.delete`) and giving it to another account
+  (`calendar.calendars.transferOwnership`) are `deny`: neither can be undone. Set the key to `ask` or `allow` to let
+  them run.
 - `sharing.notify`, letting Google mail the person a calendar is shared with, is `deny`. Google sends that mail
   unless `sendNotifications` is `false`, so while the key is `deny` a share must say `--send-notifications false`.
 - Emptying a calendar (`calendar.calendars.clear`, every event of the main calendar) is `deny`, and never offered over

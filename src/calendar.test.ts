@@ -79,7 +79,7 @@ describe("calendar commands over Google", () => {
       ["team@group.calendar.example.com", false],
       ["busy@group.calendar.example.com", false],
     ])
-    const events = (await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04")).items
+    const events = (await json("personal", "events", "list", "ends_at>=2026-11-02", "starts_at<=2026-11-04")).items
     expect(events.map(({ title }: { title: string }) => title)).toContain("Weekly planning")
     const planning = events.find(({ title }: { title: string }) => title === "Weekly planning")
     const shown = (await json("personal", "events", "show", `event:${planning.id}`)).item
@@ -94,10 +94,49 @@ describe("calendar commands over Google", () => {
   it("events list past its limit says has_more and offers no --page it cannot take", async () => {
     const { json } = harness()
     await json("personal", "sync")
-    const listed = await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04", "--limit", "1")
+    const listed = await json(
+      "personal",
+      "events",
+      "list",
+      "ends_at>=2026-11-02",
+      "starts_at<=2026-11-04",
+      "--limit",
+      "1",
+    )
     expect(listed.items).toHaveLength(1)
     expect(listed.page).toEqual({ mode: "page", limit: 1, has_more: true })
     expect(JSON.stringify(listed.next ?? [])).not.toContain("page")
+  })
+
+  it("events list takes the standard field query: an end after one moment, a start before another", async () => {
+    const { json } = harness()
+    await json("personal", "sync")
+    const titles = async (...query: string[]) =>
+      (await json("personal", "events", "list", ...query)).items.map(({ title }: { title: string }) => title)
+    expect(await titles('ends_at>"2026-11-03T09:59:00Z"', 'starts_at<"2026-11-03T12:00:00Z"')).toContain("Writing")
+    expect(await titles('ends_at>"2026-11-03T10:00:00Z"', 'starts_at<"2026-11-03T12:00:00Z"')).not.toContain("Writing")
+    expect(await titles('ends_at>"2026-11-03T07:00:00Z"', 'starts_at<"2026-11-03T08:00:00Z"')).not.toContain("Writing")
+    expect(await titles('ends_at>"2026-11-03T07:00:00Z"', 'starts_at<="2026-11-03T08:00:00Z"')).toContain("Writing")
+    expect(await titles("ends_at>=2026-11-04", "starts_at<=2026-11-04")).toContain("Home")
+    expect(await titles("ends_at>=2026-11-05", "starts_at<=2026-11-05")).not.toContain("Home")
+    const changed = (await json("personal", "events", "list", "changed_at>=2026-01-01")).items
+    expect(changed.length).toBeGreaterThan(0)
+    expect(changed.every(({ change }: { change?: string }) => change !== undefined)).toBe(true)
+  })
+
+  it("events list refuses the words it took before 0.5.0 and a start it cannot answer exactly", async () => {
+    const { gcal, json } = harness()
+    await json("personal", "sync")
+    const error = async (...query: string[]) => {
+      const answer = await gcal("personal", "events", "list", ...query, "--json")
+      expect(answer.code).toBe(2)
+      return JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
+    }
+    for (const word of ["today", "week", "overlapping", "from:2026-11-02", "changed:2026-10-01"])
+      expect((await error(word)).code).toBe("validation_error")
+    const start = await error("starts_at>=2026-11-02")
+    expect(start.reason).toBe("query.unsupported-operator")
+    expect(start.message).toContain("ends_at>=2026-11-02")
   })
 
   it("a second sync sends the token alone", async () => {
@@ -117,13 +156,13 @@ describe("calendar commands over Google", () => {
       state: "partial",
       stopped: "requests",
       progress: { calendars: 1, calendars_done: 0, requests: 2 },
-      hint: "run sync again to continue; see progress: gcal personal status",
+      hint: "run sync again to continue; see progress: gcal personal store status",
     })
     expect(stopped.meta.complete).toBe(false)
     expect(stopped.next).toEqual([
       expect.objectContaining({ command: "sync", args: { max_pages: 2 }, line: "gcal personal sync --max-pages 2" }),
     ])
-    expect((await json("personal", "status")).items).toMatchObject([
+    expect((await json("personal", "store", "status")).items).toMatchObject([
       { external_id: "owner@example.com", state: "partial", profile: "personal", total: null },
     ])
     google.requests.length = 0
@@ -134,7 +173,7 @@ describe("calendar commands over Google", () => {
     const done = await json("personal", "sync")
     expect(done.item).toMatchObject({ state: "complete", complete: true })
     expect(done.next).toBeUndefined()
-    expect((await json("personal", "status")).items).toMatchObject([{ state: "complete" }])
+    expect((await json("personal", "store", "status")).items).toMatchObject([{ state: "complete" }])
   })
 
   it("a sync where one calendar fails prints nothing and fails with sync.partial naming that calendar", async () => {
@@ -169,7 +208,15 @@ describe("calendar commands over Google", () => {
       process.env.TZ = tz
       const { json } = harness()
       await json("personal", "sync")
-      const { items } = await json("personal", "events", "list", "from:2026-10-01", "to:2026-12-31", "--limit", "1000")
+      const { items } = await json(
+        "personal",
+        "events",
+        "list",
+        "ends_at>=2026-10-01",
+        "starts_at<=2026-12-31",
+        "--limit",
+        "1000",
+      )
       return items.map(({ title, starts_at, ends_at, all_day, timezone }: Record<string, unknown>) => ({
         title,
         starts_at,
@@ -200,7 +247,7 @@ describe("calendar commands over Google", () => {
   it("search finds a synced event by its words", async () => {
     const { json } = harness()
     await json("personal", "sync")
-    expect((await json("personal", "search", "planning")).items).toContainEqual(
+    expect((await json("personal", "search", "events", "planning")).items).toContainEqual(
       expect.objectContaining({ title: "Weekly planning", untrusted: expect.arrayContaining(["title", "location"]) }),
     )
   })
@@ -218,11 +265,20 @@ describe("calendar commands over Google", () => {
       ],
     })
     await json("personal", "sync")
-    const first = await json("personal", "search", "planning", "--limit", "1")
+    const first = await json("personal", "search", "events", "planning", "--limit", "1")
     expect(first.items).toHaveLength(1)
     expect(first.page).toMatchObject({ mode: "cursor", limit: 1, has_more: true, next_cursor: "1" })
-    expect(first.next[0]).toMatchObject({ step: "page.next", args: { words: ["planning"], cursor: "1", limit: 1 } })
-    const second = await json("personal", "search", "planning", "--limit", "1", "--cursor", first.page.next_cursor)
+    expect(first.next[0]).toMatchObject({ step: "page.next", args: { query: ["planning"], cursor: "1", limit: 1 } })
+    const second = await json(
+      "personal",
+      "search",
+      "events",
+      "planning",
+      "--limit",
+      "1",
+      "--cursor",
+      first.page.next_cursor,
+    )
     expect(second.items[0].ref).not.toBe(first.items[0].ref)
   })
 
@@ -231,7 +287,7 @@ describe("calendar commands over Google", () => {
     await json("personal", "sync")
     await json("personal", "calendars", "sync", "team@group.calendar.example.com")
     google.requests.length = 0
-    const found = await json("personal", "search", "--backend", "server", "writing", "--limit", "5")
+    const found = await json("personal", "search", "events", "--backend", "server", "writing", "--limit", "5")
     expect(found.page).toEqual({ mode: "cursor", limit: 5, has_more: false })
     expect(found.items).toEqual([
       expect.objectContaining({
@@ -257,35 +313,39 @@ describe("calendar commands over Google", () => {
   it("search --backend server never stores what it found, and keeps passcodes out", async () => {
     const { json } = harness()
     await json("personal", "sync")
-    const remote = (await json("personal", "search", "--backend", "server", "planning")).items
+    const remote = (await json("personal", "search", "events", "--backend", "server", "planning")).items
     expect(JSON.stringify(remote)).not.toMatch(/998877|fixturepwd|123456789/u)
-    const before = (await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04")).items.length
-    await json("personal", "search", "--backend", "server", "planning")
-    expect((await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04")).items.length).toBe(before)
+    const before = (await json("personal", "events", "list", "ends_at>=2026-11-02", "starts_at<=2026-11-04")).items
+      .length
+    await json("personal", "search", "events", "--backend", "server", "planning")
+    expect(
+      (await json("personal", "events", "list", "ends_at>=2026-11-02", "starts_at<=2026-11-04")).items.length,
+    ).toBe(before)
   })
 
   it("search --backend server refuses --offline, --exact, --cursor and --newest, and needs a synced calendar", async () => {
     const { gcal, json, google } = harness()
     const code = (answer: { err: string }) => JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
-    expect(code(await gcal("personal", "search", "--backend", "server", "planning", "--json")).reason).toBe(
+    expect(code(await gcal("personal", "search", "events", "--backend", "server", "planning", "--json")).reason).toBe(
       "search.no-calendars",
     )
     await json("personal", "sync")
     google.requests.length = 0
     expect(
-      code(await gcal("personal", "--offline", "search", "--backend", "server", "planning", "--json")).reason,
+      code(await gcal("personal", "--offline", "search", "events", "--backend", "server", "planning", "--json")).reason,
     ).toBe("search.offline")
-    expect(code(await gcal("personal", "search", "--backend", "server", "planning", "--exact", "--json")).code).toBe(
-      "validation_error",
-    )
     expect(
-      code(await gcal("personal", "search", "--backend", "server", "planning", "--cursor", "2", "--json")).code,
+      code(await gcal("personal", "search", "events", "--backend", "server", "planning", "--exact", "--json")).code,
     ).toBe("validation_error")
-    expect(code(await gcal("personal", "search", "--backend", "server", "planning", "--newest", "--json")).code).toBe(
-      "validation_error",
-    )
+    expect(
+      code(await gcal("personal", "search", "events", "--backend", "server", "planning", "--cursor", "2", "--json"))
+        .code,
+    ).toBe("validation_error")
+    expect(
+      code(await gcal("personal", "search", "events", "--backend", "server", "planning", "--newest", "--json")).code,
+    ).toBe("validation_error")
     expect(google.requests).toEqual([])
-    expect((await json("personal", "--offline", "search", "planning")).items.length).toBeGreaterThan(0)
+    expect((await json("personal", "--offline", "search", "events", "planning")).items.length).toBeGreaterThan(0)
   })
 
   it("search --backend archive is the store's search, both is refused and other values are rejected", async () => {
@@ -293,13 +353,13 @@ describe("calendar commands over Google", () => {
     const code = (answer: { err: string }) => JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
     await json("personal", "sync")
     google.requests.length = 0
-    expect((await json("personal", "search", "--backend", "archive", "planning")).items).toEqual(
-      (await json("personal", "search", "planning")).items,
+    expect((await json("personal", "search", "events", "--backend", "archive", "planning")).items).toEqual(
+      (await json("personal", "search", "events", "planning")).items,
     )
-    expect(code(await gcal("personal", "search", "--backend", "both", "planning", "--json")).reason).toBe(
+    expect(code(await gcal("personal", "search", "events", "--backend", "both", "planning", "--json")).reason).toBe(
       "search.one-backend",
     )
-    expect((await gcal("personal", "search", "--backend", "google", "planning", "--json")).code).toBe(2)
+    expect((await gcal("personal", "search", "events", "--backend", "google", "planning", "--json")).code).toBe(2)
     expect(google.requests).toEqual([])
   })
 
@@ -323,21 +383,23 @@ describe("calendar commands over Google", () => {
   it("answers every read in JSON lines, and pages search and events", async () => {
     const { json, gcal } = harness()
     await json("personal", "sync")
-    const [event] = (await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04", "--limit", "1")).items
+    const [event] = (
+      await json("personal", "events", "list", "ends_at>=2026-11-02", "starts_at<=2026-11-04", "--limit", "1")
+    ).items
     expect(event).toBeDefined()
     const reads = [
       ["calendars", "list"],
       ["sync"],
       ["events", "list", "--limit", "2"],
       ["events", "show", `event:${event.id}`],
-      ["search", "planning", "--limit", "1", "--cursor", "0", "--exact", "--newest"],
+      ["search", "events", "planning", "--limit", "1", "--cursor", "0", "--exact", "--newest"],
       ["people", "list"],
       ["people", "link", "email:bob@example.com", "me"],
       ["calendars", "sync", "owner@example.com"],
       ["calendars", "unsync", "busy@group.calendar.example.com"],
       ["links", "review"],
       ["calendars", "busy", "today"],
-      ["status"],
+      ["store", "status"],
     ]
     for (const words of reads) {
       const answer = await gcal("personal", ...words, "--jsonl")
@@ -352,9 +414,9 @@ describe("calendar commands over Google", () => {
     const answer = await gcal("personal", "sync", "--embed", "--json")
     expect(answer.code).not.toBe(0)
     expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.code).toBe("not_found")
-    expect((await json("personal", "events", "list", "from:2026-11-02", "to:2026-11-04")).items.length).toBeGreaterThan(
-      0,
-    )
+    expect(
+      (await json("personal", "events", "list", "ends_at>=2026-11-02", "starts_at<=2026-11-04")).items.length,
+    ).toBeGreaterThan(0)
   })
 
   it("a profile that never signed in is told to, and no other account is read", async () => {
@@ -450,7 +512,7 @@ describe("calendar commands over MCP", () => {
     const client = await connect(env, keyring, google.fetch as typeof fetch)
     const listed = (await client.callTool({
       name: "gcal_read",
-      arguments: { command: "events list", arguments: { words: ["from:2026-11-02", "to:2026-11-04"] } },
+      arguments: { command: "events list", arguments: { query: "ends_at>=2026-11-02 starts_at<=2026-11-04" } },
     })) as { structuredContent: { items: { title: string }[] }; content: { text: string }[] }
     const titles = listed.structuredContent.items.map(({ title }) => title)
     expect(titles).toContain("Weekly planning")
@@ -460,7 +522,7 @@ describe("calendar commands over MCP", () => {
     expect(listed.content[0]?.text).not.toMatch(/\\u001b/u)
     const remote = (await client.callTool({
       name: "gcal_read",
-      arguments: { command: "search", arguments: { words: ["ignore"], backend: "server" } },
+      arguments: { command: "search events", arguments: { query: ["ignore"], backend: "server" } },
     })) as { isError?: boolean; structuredContent: { items: { title: string; untrusted: string[] }[] } }
     expect(remote.isError).toBeFalsy()
     expect(remote.structuredContent.items.length).toBeGreaterThan(0)
@@ -478,10 +540,10 @@ describe("calendar commands over MCP", () => {
     const { json, env, keyring, google } = harness()
     await json("personal", "sync")
     const client = await connect(env, keyring, google.fetch as typeof fetch)
-    const read = (command: string, words: string[] = []) =>
+    const read = (command: string, query?: string) =>
       client.callTool({
         name: "gcal_read",
-        arguments: { command, arguments: words.length ? { words } : {} },
+        arguments: { command, arguments: query ? { query } : {} },
       }) as Promise<{
         isError?: boolean
         structuredContent: { items?: { title?: string; external_id?: string }[] }
@@ -489,7 +551,7 @@ describe("calendar commands over MCP", () => {
     const answers = await Promise.all([
       read("calendars list"),
       read("calendars list"),
-      read("events list", ["from:2026-11-02", "to:2026-11-04"]),
+      read("events list", "ends_at>=2026-11-02 starts_at<=2026-11-04"),
       read("calendars list"),
     ])
     expect(answers.map(({ isError }) => isError ?? false)).toEqual([false, false, false, false])

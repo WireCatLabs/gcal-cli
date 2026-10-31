@@ -36,7 +36,7 @@
     },
     {
       "id": "candidate-events",
-      "args": ["contract", "events", "list", "from:2026-10-01", "to:2026-10-10", "--json"],
+      "args": ["contract", "events", "list", "ends_at>=2026-10-01", "starts_at<=2026-10-10", "--json"],
       "exit": 0,
       "stream": "stdout",
       "kind": "json",
@@ -67,7 +67,7 @@
     },
     {
       "id": "candidate-sync-cursor",
-      "args": ["contract", "status", "--json"],
+      "args": ["contract", "store", "status", "--json"],
       "exit": 0,
       "stream": "stdout",
       "kind": "json",
@@ -77,7 +77,7 @@
     },
     {
       "id": "candidate-search",
-      "args": ["contract", "search", "wirecat-synthetic-event-canary", "--exact", "--json"],
+      "args": ["contract", "search", "events", "wirecat-synthetic-event-canary", "--exact", "--json"],
       "exit": 0,
       "stream": "stdout",
       "kind": "json",
