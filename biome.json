@@ -19,8 +19,7 @@
         "!**/*.test.ts",
         "!src/commands/**",
         "!src/calendar-source.ts",
-        "!src/calendar-writer.ts",
-        "!src/remote-search.ts"
+        "!src/calendar-writer.ts"
       ],
       "linter": {
         "rules": {
@@ -35,7 +34,7 @@
                   },
                   {
                     "group": ["**/generated/types.js", "./generated/types.js", "../generated/types.js"],
-                    "message": "Google's generated types stay in the adapters (calendar-source.ts, calendar-writer.ts, remote-search.ts), which translate them into cli-core's calendar entry (WC-ARCH-3)"
+                    "message": "Google's generated types stay in the adapters (calendar-source.ts, calendar-writer.ts), which translate them into cli-core's calendar entry (WC-ARCH-3)"
                   }
                 ]
               }
@@ -45,7 +44,7 @@
       }
     },
     {
-      "includes": ["src/calendar-source.ts", "src/calendar-writer.ts", "src/remote-search.ts"],
+      "includes": ["src/calendar-source.ts", "src/calendar-writer.ts"],
       "linter": {
         "rules": {
           "style": {

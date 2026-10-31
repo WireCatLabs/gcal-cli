@@ -4,6 +4,12 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ## Unreleased
 
+### Added
+
+- **`calendars list` takes a query**: `synced:`, `primary:` and `access_role:` narrow the list, such as
+  `gcal personal calendars list synced:true`.
+- **`commands info` describes what each calendar command answers with**, and `--fields` can pick from it.
+
 ### Changed — may break callers
 
 - **`session status` and `session end` answer where no keyring can be reached and no sign-in file is kept.** They
@@ -23,12 +29,6 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   `jsonl: true` was refused.
 - **`config show --bot` and `config set|unset --personal|--bot` are hidden.** gcal has no bots, so they had nothing
   behind them. They are still accepted, so a script that passes one keeps working.
-
-### Added
-
-- **`calendars list` takes a query**: `synced:`, `primary:` and `access_role:` narrow the list, such as
-  `gcal personal calendars list synced:true`.
-- **`commands info` describes what each calendar command answers with**, and `--fields` can pick from it.
 
 ### Fixed
 
