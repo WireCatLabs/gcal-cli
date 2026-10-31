@@ -2,6 +2,14 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Fixed
+
+- **gcal keeps the shared local store at the same version as the other WireCat tools (store version 40).** The store
+  gains the trigram index that notes and documents search uses; gcal has no notes of its own, but an older gcal no
+  longer leaves a store written by a newer tool without the index entries it should write.
+
 ## 0.3.0 — 31.10.2026
 
 ### Added
