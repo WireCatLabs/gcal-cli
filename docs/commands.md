@@ -334,7 +334,7 @@ gcal events create <calendar> [options]
 
 ### `gcal events update`
 
-change an event; with --series every occurrence of the repeating event; new times or dates switch it between timed and all-day
+change an event; with --series every occurrence of the repeating event, with --following this occurrence and every later one; new times or dates switch it between timed and all-day
 
 **Changes something in the service.**
 
@@ -359,18 +359,20 @@ gcal events update <event> [options]
 | `--repeat <rule>` | how it repeats, with --series: an RFC 5545 rule: FREQ=DAILY\|WEEKLY\|MONTHLY, and INTERVAL, BYDAY (MO,WE; in MONTHLY also 1MO or -1FR), COUNT or UNTIL (a date, YYYYMMDD, for an all-day event; a UTC time, YYYYMMDDTHHMMSSZ, for a timed one). |
 | `--calendar <id>` | the calendar, when the event is on more than one of the account's. |
 | `--series` | change the whole repeating event, not only this occurrence. |
+| `--following` | change this occurrence and every later one: the repeating event ends before it and a new one starts with the change. |
+| `--id <id>` | with --following, the id an outcome_unknown named: a retry finds that new series. |
 | `--notify` | the provider mails the other attendees; needs events.notify allowed; this or --no-notify is required when there are other attendees. |
 | `--no-notify` | the provider mails nobody. |
 | `--json` | one JSON value. |
 | `--jsonl` | one JSON object per item. |
 
-**Returns:** change an event; with --series every occurrence of the repeating event; new…
+**Returns:** change an event; with --series every occurrence of the repeating event, with…
 
-**Example:** `gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --notify`, `gcal personal events update event:42 --series --repeat 'FREQ=WEEKLY;BYDAY=TU;UNTIL=20261231T230000Z' --no-notify`
+**Example:** `gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --notify`, `gcal personal events update event:42 --series --repeat 'FREQ=WEEKLY;BYDAY=TU;UNTIL=20261231T230000Z' --no-notify`, `gcal personal events update event:42 --following --start-time 2026-11-09T10:00 --end-time 2026-11-09T10:30 --no-notify`
 
 ### `gcal events delete`
 
-delete an event; a whole repeating event needs events.delete.series allowed first
+delete an event; a whole repeating event, or every later occurrence, needs events.delete.series allowed first
 
 **Changes something in the service.**
 
@@ -386,14 +388,43 @@ gcal events delete <event> [options]
 |---|---|
 | `--calendar <id>` | the calendar, when the event is on more than one of the account's. |
 | `--series` | delete the whole repeating event, not only this occurrence. |
+| `--following` | delete this occurrence and every later one: the repeating event ends before it. |
 | `--notify` | the provider mails the other attendees; needs events.notify allowed; this or --no-notify is required when there are other attendees. |
 | `--no-notify` | the provider mails nobody. |
 | `--json` | one JSON value. |
 | `--jsonl` | one JSON object per item. |
 
-**Returns:** delete an event; a whole repeating event needs events.delete.series allowed…
+**Returns:** delete an event; a whole repeating event, or every later occurrence, needs…
 
-**Example:** `gcal personal events delete event:42 --no-notify`
+**Example:** `gcal personal events delete event:42 --no-notify`, `gcal personal events delete event:42 --following --no-notify`
+
+### `gcal events move`
+
+move an event, with its id, to another calendar of the account; a repeating one moves whole
+
+**Changes something in the service.**
+
+```sh
+gcal events move <event> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `event` | required | the event's id, or event:<id>. |
+
+| Option | What it does |
+|---|---|
+| `--calendar <id>` | the calendar, when the event is on more than one of the account's. |
+| `--to-calendar <id>` | the calendar to move it to: its id, or the provider's id. |
+| `--series` | move the whole repeating event an occurrence belongs to. |
+| `--notify` | the provider mails the other attendees; needs events.notify allowed; this or --no-notify is required when there are other attendees. |
+| `--no-notify` | the provider mails nobody. |
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** move an event, with its id, to another calendar of the account; a repeating…
+
+**Example:** `gcal personal events move event:42 --to-calendar 4 --no-notify`
 
 ### `gcal events respond`
 

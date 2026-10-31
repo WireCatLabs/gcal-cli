@@ -20,6 +20,7 @@ const WRITE_METHODS: Record<CalendarWrite, string[]> = {
   update: ["calendar.events.patch", "calendar.events.update"],
   delete: ["calendar.events.delete"],
   respond: ["calendar.events.patch"],
+  move: ["calendar.events.move"],
 }
 
 export const writeKeys = (write: CalendarWrite): string[] => WRITE_METHODS[write].map(apiKey)

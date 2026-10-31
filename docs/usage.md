@@ -79,6 +79,10 @@ may need several runs: the answer then says `state: "partial"` and ends with the
 when an agent runs it over MCP; `--timeout` changes it, and the number of requests to Google follows it.
 `--max-pages <n>` lowers that number further. `--rescan` starts every calendar over.
 
+When a calendar fails to sync, `sync` prints nothing on stdout and fails with `sync.partial`. The message names each
+failed calendar and its error; `details.calendars` holds every calendar's result, with `error` on the failed ones. The
+calendars that did sync are saved, and running `sync` again is safe.
+
 A repeating event's slots are read one by one, cancelled slots included. A deleted event in the past keeps its record;
 a deleted future event is marked cancelled. `--embed` needs the meaning model, which `gcal` never downloads by itself:
 `gcal models download e5-small` fetches it once into the folder every WireCat tool shares, and `gcal models list`
@@ -94,12 +98,20 @@ These commands read the local store, so they work without the network:
 ```sh
 gcal personal events list week                                  # this week's events, earliest first
 gcal personal events list from:2026-11-02 to:2026-11-06 person:ana@example.com
+gcal personal events list changed:2026-10-25                    # what changed since a date
+gcal personal events list week overlapping                      # meetings that clash
 gcal personal events show event:42                              # attendees, Drive files and history
 gcal personal search roadmap planning                           # by words, and by meaning with the model
 gcal personal people list                                       # everyone in this week's events
 gcal personal people link email:ana@example.com telegram:12345  # the same person in another WireCat tool
 gcal personal links review                                      # copies the tool could not join to one event
 ```
+
+`changed:<date>` keeps the events first stored, moved, or cancelled or removed since that date, each with `change`
+(`new`, `moved` or `cancelled`) and `changed_at`; a moved one also says where it `was` (`starts_at`, `ends_at`). It
+reads what the syncs saved, so it sees only what a sync brought in, and a meeting moved and moved back is no change.
+`overlapping` keeps the timed events that clash with another one, each with `overlaps`, the other events' ids. An event
+counts only when it takes your time: not cancelled, not all-day, and not declined or marked free by you.
 
 `search` reads the store by default (`--backend archive`). `--backend server` asks Google Calendar's own search
 instead, over the calendars that sync. It also finds events outside the synced span (a year back, three months
@@ -174,7 +186,7 @@ A profile signed in without `--grant write` reads only:
 
 ## Change events
 
-After `session start --grant write`, `events create | update | delete | respond` change Google Calendar and the store
+After `session start --grant write`, `events create | update | delete | move | respond` change Google Calendar and the store
 together. A calendar is named by its id from `calendars list`, such as `3` below. They are cli-core's shared calendar
 writes; Google is reached through the same generated methods as `gcal api`.
 
@@ -186,19 +198,33 @@ gcal personal events create 3 --title "Standup" --start-time 2026-11-02T09:30 --
 gcal personal events update event:42 --series --repeat "FREQ=WEEKLY;BYDAY=TU" --no-notify
 gcal personal events update event:42 --start-date 2026-11-02 --end-date 2026-11-02 --no-notify
 gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --no-notify
+gcal personal events update event:42 --following --start-time 2026-11-09T10:00 --end-time 2026-11-09T10:30 --no-notify
 gcal personal events respond event:42 accepted --notify
+gcal personal events move event:42 --to-calendar 4 --no-notify
 gcal personal events delete event:42 --no-notify
+gcal personal events delete event:42 --following --no-notify
 ```
 
-- Each write asks first; `--yes` answers for a script, and `--dry-run` shows the write without making it.
+- Creating, changing, moving and answering go ahead without a question. A delete asks first; `--yes` answers for a
+  script. `--dry-run` shows any write without making it. To be asked before the others too, set their keys to `ask`
+  (see [permissions](configuration.md#permissions)).
 - With attendees other than you, say whether Google mails them: `--notify` or `--no-notify`. `--notify` is refused
   until you allow `events.notify` (see [permissions](configuration.md#permissions)).
 - A change carries the version the last sync saw. If the event changed in Google since, the write stops with
   `event.conflict`: run `sync` and try again. Nothing is overwritten.
 - A create whose answer was lost ends in `outcome_unknown` and names an id; repeat it with `--id <id>` and Google
   finds the event instead of making a second one.
-- On a repeating event, a write changes the one occurrence you name; `--series` changes the whole series. Deleting a
-  whole series is refused until you allow `events.delete.series`.
+- On a repeating event, a write changes the one occurrence you name; `--series` changes the whole series, and
+  `--following` this occurrence and every later one. Deleting a whole series is refused until you allow
+  `events.delete.series`, and so is a new `--repeat` rule that ends the series sooner (a new `COUNT` or an earlier
+  `UNTIL`).
+- `update --following` ends the series just before the occurrence and starts a new series there with your change,
+  keeping the attendees. A series that ends after a number of times (`COUNT`) needs `--repeat` for the new part. If
+  ending the old series fails, the error names the new series' id; repeat with `--id <id>`. `delete --following` only
+  ends the series, and asks first like any delete.
+- `move --to-calendar <id>` moves an event, keeping its id, to another calendar of the same account that you can
+  write to. An occurrence moves only with its whole series (`--series`). Google moves only ordinary events, not
+  focus time, out of office, working location or birthdays.
 - `--repeat` takes an RFC 5545 rule: `FREQ` is `DAILY`, `WEEKLY` or `MONTHLY`, with `INTERVAL`, `BYDAY` (`MO,WE`; in
   a monthly rule also `1MO` or `-1FR`) and `COUNT` or `UNTIL`. `UNTIL` is a date, `20261231`, for an all-day event,
   and a UTC time, `20261231T230000Z`, for a timed one. A new rule needs `--series`, and keeps the series' excluded

@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**215 ✅ · 337 ⛔ · 0 ❌** — 82 commands, 470 options.
+**226 ✅ · 337 ⛔ · 0 ❌** — 83 commands, 480 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -79,6 +79,8 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events update` | `--repeat` | ✅ |  |
 | `events update` | `--calendar` | ✅ |  |
 | `events update` | `--series` | ✅ |  |
+| `events update` | `--following` | ✅ |  |
+| `events update` | `--id` | ✅ |  |
 | `events update` | `--notify` | ✅ |  |
 | `events update` | `--no-notify` | ✅ |  |
 | `events update` | `--json` | ✅ |  |
@@ -86,10 +88,19 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events delete` |  | ✅ |  |
 | `events delete` | `--calendar` | ✅ |  |
 | `events delete` | `--series` | ✅ |  |
+| `events delete` | `--following` | ✅ |  |
 | `events delete` | `--notify` | ✅ |  |
 | `events delete` | `--no-notify` | ✅ |  |
 | `events delete` | `--json` | ✅ |  |
 | `events delete` | `--jsonl` | ✅ |  |
+| `events move` |  | ✅ |  |
+| `events move` | `--calendar` | ✅ |  |
+| `events move` | `--to-calendar` | ✅ |  |
+| `events move` | `--series` | ✅ |  |
+| `events move` | `--notify` | ✅ |  |
+| `events move` | `--no-notify` | ✅ |  |
+| `events move` | `--json` | ✅ |  |
+| `events move` | `--jsonl` | ✅ |  |
 | `events respond` |  | ✅ |  |
 | `events respond` | `--calendar` | ✅ |  |
 | `events respond` | `--notify` | ✅ |  |

@@ -14,8 +14,10 @@ import {
   renderAnswer,
   snakeKeys,
 } from "@wirecat/cli-core/cli"
+import { levelFor } from "@wirecat/cli-core/sends"
 import type { MessageStore } from "@wirecat/cli-core/store"
 import { Command, Option } from "commander"
+import type { GoogleCalendarWriter } from "../calendar-writer.js"
 import { configuration, permissions, writeKeys } from "../config.js"
 import type { GoogleApi } from "../google-api.js"
 import { IDENTITY } from "../identity.js"
@@ -30,7 +32,7 @@ interface Opened {
   env: NodeJS.ProcessEnv
   /** Built on first use: a local read never reads the sign-in. */
   source: () => CalendarSource
-  writer: () => CalendarWriter
+  writer: () => GoogleCalendarWriter
   api: () => GoogleApi
   close: () => Promise<void>
 }
@@ -148,6 +150,16 @@ export const calendarMount = () => {
     if (!opened) throw notOpen()
     return opened
   }
+  // cli-core mounts `events move` only when the writer has `move`, and reads that before any store is open.
+  const google = () => need().writer()
+  const writer: CalendarWriter = {
+    provider: "google-calendar",
+    create: (...args) => google().create(...args),
+    update: (...args) => google().update(...args),
+    remove: (...args) => google().remove(...args),
+    respond: (...args) => google().respond(...args),
+    move: (...args) => google().move(...args),
+  }
   // cli-core decides at mount whether `person:` references are shown, from whether `messages` is there.
   const closedStore = new Proxy({} as MessageStore, {
     get: () => {
@@ -186,47 +198,26 @@ export const calendarMount = () => {
       answers.push(() => renderAnswer(at, outputFor(at), body))
     },
     writes: {
-      get writer() {
-        return need().writer()
-      },
+      writer,
       app: IDENTITY,
       // Read on every write, with the command's own --permission and the read-only lock, as the shared check sees them.
-      settings: () => {
-        if (!action) throw notOpen()
-        return {
-          ...configuration.resolveSettings(action.optsWithGlobals<GlobalFlags>(), { env: need().env }),
-          permissionDefaults: permissions.defaults,
-        }
-      },
-      extraKeys: writeKeys,
+      settings: () => ({ ...resolved(), permissionDefaults: permissions.defaults }),
+      // The api keys guard the shared writes only once the owner sets them: their built-in `ask` is for the raw
+      // `gcal api` calls, which check no delete or series key of their own, and would undo cli-core's `allow`.
+      extraKeys: (write) => writeKeys(write).filter((key) => levelFor(resolved().permissions, key).level !== "allow"),
       get env() {
         return need().env
       },
     },
   }
 
-  const flush = () => {
-    for (const answer of answers.splice(0)) answer()
+  const resolved = () => {
+    if (!action) throw notOpen()
+    return configuration.resolveSettings(action.optsWithGlobals<GlobalFlags>(), { env: need().env })
   }
 
-  // cli-core's sync prints its report, then fails when a calendar did not sync: the report must still reach the
-  // caller, after the store closed (WC-LIFE-4), and never when the close failed.
-  const keepAnswerOnFailure = (leaf: Command) => {
-    const handler = leaf instanceof Recorded ? leaf.handler : undefined
-    if (!handler) return
-    leaf.action(async function (this: Command, ...args: unknown[]) {
-      try {
-        return await handler.apply(this, args)
-      } catch (error) {
-        const closed = await (opened?.close() ?? Promise.resolve()).then(
-          () => true,
-          () => false,
-        )
-        if (closed) flush()
-        else answers.length = 0
-        throw error
-      }
-    })
+  const flush = () => {
+    for (const answer of answers.splice(0)) answer()
   }
 
   const remoteSearch = async (words: string[], opts: RemoteOptions, command: Command) => {
@@ -308,10 +299,7 @@ export const calendarMount = () => {
       withRemote(search)
       for (const group of holder.commands) {
         if (group.commands.length) annotate(group, { effects: NO_EFFECTS })
-        for (const leaf of leaves(group)) {
-          keepAnswerOnFailure(leaf)
-          commands.add(leaf)
-        }
+        for (const leaf of leaves(group)) commands.add(leaf)
       }
       return [...holder.commands]
     },
@@ -359,7 +347,7 @@ export const calendarMount = () => {
       const key = { provider: PROVIDER.name, account }
       const accountId = await store.accounts.saveAccount(key, { name: null })
       let source: CalendarSource | undefined
-      let writer: CalendarWriter | undefined
+      let writer: GoogleCalendarWriter | undefined
       let api: GoogleApi | undefined
       const { keyring, fetch, signal } = gcalEnvironment
       const googleOf = () =>
