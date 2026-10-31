@@ -33,6 +33,8 @@ const run = (args: string[], env: Record<string, string> = {}) =>
       [`${PREFIX}_NO_UPDATE_CHECK`]: "1",
       WIRECAT_STATE_DIR: join(isolated, "wirecat"),
       MESSAGING_STORE: store,
+      // The keyring is reached over D-Bus, not HOME; an unset address falls back to $XDG_RUNTIME_DIR/bus.
+      DBUS_SESSION_BUS_ADDRESS: "disabled:",
       ...env,
     },
   })

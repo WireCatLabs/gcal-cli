@@ -7,8 +7,10 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 command=$(node --input-type=module -e "import('$root/dist/identity.js').then((m) => console.log(m.IDENTITY.command))")
 scratch=$(mktemp -d)
 trap 'rm -rf "$scratch"' EXIT
-# A CLI that starts may move the store under HOME; every CLI run here gets a throwaway one.
+# A CLI that starts may move the store under HOME; every CLI run here gets a throwaway one. The keyring is reached over
+# D-Bus, not HOME, and an unset address falls back to $XDG_RUNTIME_DIR/bus, so `disabled:` is what keeps it out.
 export HOME="$scratch/home" MESSAGING_STORE="$scratch/store" WIRECAT_STATE_DIR="$scratch/state"
+export DBUS_SESSION_BUS_ADDRESS="disabled:"
 mkdir -p "$HOME"
 npm install -g --prefix "$scratch/prefix" --ignore-scripts --no-audit --no-fund --loglevel error \
   @wirecat/tg-cli @wirecat/max-cli @wirecat/whatsapp-cli @wirecat/cli-memo @wirecat/drive-cli @wirecat/zoom-cli
