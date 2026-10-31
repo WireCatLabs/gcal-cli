@@ -475,11 +475,28 @@ describe("session status and end", () => {
     expect(item(status.out)).toMatchObject({ state: "saved", credential_storage: "keyring", verified: true })
   })
 
-  it("says the keyring could not be reached, and keeps its reason out of the answer", async () => {
+  it("with no keyring and no sign-in file, status says missing and end has nothing to end", async () => {
     const { gcal } = harness(brokenKeyring("Platform failure: DBus error: Failed to connect to socket"), "default")
-    const refused = await gcal(["personal", "session", "status", "--check", "--json"])
-    expect(failure(refused.err)).toMatchObject({ code: "configuration_error", reason: "oauth.not-saved" })
-    expect(refused.err).not.toContain("DBus")
+    for (const check of [[], ["--check"]]) {
+      const status = await gcal(["personal", "session", "status", ...check, "--json"])
+      expect(status.code).toBe(0)
+      expect(item(status.out)).toEqual({
+        profile: "personal",
+        state: "missing",
+        account: null,
+        verified: false,
+        keyring: "unreachable",
+      })
+      expect(status.out + status.err).not.toContain("DBus")
+    }
+    const ended = await gcal(["personal", "session", "end", "--json"])
+    expect(ended.code).toBe(0)
+    expect(item(ended.out)).toEqual({
+      profile: "personal",
+      ended: false,
+      cached_data: "retained",
+      keyring: "unreachable",
+    })
   })
 
   it("refuses --check offline", async () => {
