@@ -105,6 +105,7 @@ gcal personal events list week overlapping                      # meetings that 
 gcal personal events show event:42                              # attendees, Drive files and history
 gcal personal search roadmap planning                           # by words, and by meaning with the model
 gcal personal people list                                       # everyone in this week's events
+gcal personal people list event:42                              # one event's attendees
 gcal personal people link email:ana@example.com telegram:12345  # the same person in another WireCat tool
 gcal personal links review                                      # copies the tool could not join to one event
 ```
