@@ -13,7 +13,15 @@
   "extends": ["./config/wirecat/biome.base.json"],
   "overrides": [
     {
-      "includes": ["src/**", "!src/testing/mcp.ts", "!**/*.test.ts"],
+      "includes": [
+        "src/**",
+        "!src/testing/mcp.ts",
+        "!**/*.test.ts",
+        "!src/commands/**",
+        "!src/calendar-source.ts",
+        "!src/calendar-writer.ts",
+        "!src/remote-search.ts"
+      ],
       "linter": {
         "rules": {
           "style": {
@@ -24,6 +32,54 @@
                   {
                     "group": ["@modelcontextprotocol/**"],
                     "message": "cli-core serves MCP; commands and services do not know the protocol"
+                  },
+                  {
+                    "group": ["**/generated/types.js", "./generated/types.js", "../generated/types.js"],
+                    "message": "Google's generated types stay in the adapters (calendar-source.ts, calendar-writer.ts, remote-search.ts), which translate them into cli-core's calendar entry (WC-ARCH-3)"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/calendar-source.ts", "src/calendar-writer.ts", "src/remote-search.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@modelcontextprotocol/**"],
+                    "message": "cli-core serves MCP; commands and services do not know the protocol"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/commands/**", "!**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@modelcontextprotocol/**"],
+                    "message": "cli-core serves MCP; commands and services do not know the protocol"
+                  },
+                  {
+                    "group": ["**/generated/**", "./generated/*", "../generated/*"],
+                    "message": "commands speak cli-core's calendar model; Google's generated types and tables stay below them (WC-ARCH-1, WC-ARCH-3)"
                   }
                 ]
               }

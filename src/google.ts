@@ -122,6 +122,7 @@ export interface KeeperOptions {
   storage?: CredentialStorage | undefined
   env: NodeJS.ProcessEnv
   profile: string
+  signInCommand: string
   client: OAuthClient
   keyring?: KeyringStore | undefined
   fetch?: typeof fetch | undefined
@@ -134,7 +135,7 @@ export const sessionKeeper = (options: KeeperOptions): TokenKeeper =>
     storage: sessionStorage(options.env, options.profile, options.keyring, options.storage),
     lockDir: paths(options.env).config,
     fetch: options.fetch ?? globalThis.fetch,
-    signInCommand: `${IDENTITY.command} ${options.profile} session start`,
+    signInCommand: options.signInCommand,
     ...(options.signal ? { signal: options.signal } : {}),
   })
 
