@@ -253,8 +253,8 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
         // Google states no lifetime for a page token, and a run may resume one held since an earlier run: a refused
         // one asks the engine to start that round over.
         // https://developers.google.com/workspace/calendar/api/v3/reference/events/list
-        if (page ? [400, 410].includes(statusOf(error) as number) : cursor !== null && statusOf(error) === 410)
-          return { reset: true }
+        const status = statusOf(error)
+        if (page ? status === 400 || status === 410 : cursor !== null && status === 410) return { reset: true }
         throw error
       }
       const items = answer.items ?? []
