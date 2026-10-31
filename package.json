@@ -31,6 +31,7 @@
     "lint:fix": "biome check --write .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:slow": "vitest run --reporter=json --outputFile=coverage/tests.json >/dev/null; cli-dev slow-tests",
     "test:matrix": "vitest run >/dev/null && pnpm build >/dev/null && pnpm test:matrix:check",
     "test:matrix:check": "cli-dev test-matrix --program scripts/command-program.ts --untested scripts/test-matrix-untested.ts --name gcal --check && git diff --exit-code -- docs/dev/test-matrix.md",
     "generate": "node --experimental-strip-types scripts/generate.ts && pnpm build && node --experimental-strip-types scripts/commands.ts",
