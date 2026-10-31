@@ -8,7 +8,7 @@ export { operations, schemas }
 export const operationOf = (name: string): ManifestOperation => {
   const operation = operations.find((item) => item.id === name)
   if (!operation)
-    throw new CliError("validation_error", "unknown Google Calendar method; run gcal api list", {
+    throw new CliError("validation_error", "unknown Google Calendar method", {
       reason: "api.unknown-method",
     })
   return operation

@@ -44,7 +44,7 @@ export const apiMethods = (service?: string): ApiMethod[] => {
 export const apiMethod = (name: string): ApiMethod => {
   const found = apiMethods().find((method) => method.name === name)
   if (!found)
-    throw new CliError("validation_error", "unknown Google Calendar method; run gcal api list", {
+    throw new CliError("validation_error", "unknown Google Calendar method", {
       reason: "api.unknown-method",
     })
   return found
