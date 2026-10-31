@@ -375,28 +375,69 @@ describe("session status and end", () => {
     })
   })
 
-  it("in a run with moved folders, end keeps the shared system keyring entry and says so", async () => {
+  const fakeSystemKeyring = (entries: Map<string, string>) => {
+    const spies = [
+      vi
+        .spyOn(systemKeyring, "get")
+        .mockImplementation((service, account) => entries.get(`${service}/${account}`) ?? null),
+      vi.spyOn(systemKeyring, "set").mockImplementation((service, account, secret) => {
+        entries.set(`${service}/${account}`, secret)
+      }),
+      vi
+        .spyOn(systemKeyring, "delete")
+        .mockImplementation((service, account) => entries.delete(`${service}/${account}`)),
+      vi.spyOn(process.stderr, "write").mockReturnValue(true),
+    ]
+    return () => {
+      for (const spy of spies) spy.mockRestore()
+    }
+  }
+  const OWNER_ENTRY = "gcal-cli/oauth:google:personal"
+  const SIGN_IN = {
+    tokens: { accessToken: ACCESS, refreshToken: REFRESH, expiresAt: Date.now() + 3_600_000, scopes: [] },
+    client: { clientId: "fixture-client.apps" },
+  }
+  /** The owner's entry as gcal saves it: written in a moved run, then moved under the shared service. */
+  const withOwnerSignIn = (entries: Map<string, string>, env: NodeJS.ProcessEnv) => {
+    sessionStorage(env, "personal").write(SIGN_IN)
+    const [key, value] = [...entries].find(([one]) => one !== OWNER_ENTRY) ?? []
+    if (!key || !value) throw new Error("the moved run saved no sign-in")
+    entries.delete(key)
+    entries.set(OWNER_ENTRY, value)
+  }
+
+  it("in a run with moved folders, end keeps the owner's keyring sign-in and says the run still reads it", async () => {
     const entries = new Map<string, string>()
-    const get = vi.spyOn(systemKeyring, "get").mockImplementation((service, account) => {
-      return entries.get(`${service}/${account}`) ?? null
-    })
-    const set = vi.spyOn(systemKeyring, "set").mockImplementation((service, account, secret) => {
-      entries.set(`${service}/${account}`, secret)
-    })
-    const remove = vi.spyOn(systemKeyring, "delete").mockReturnValue(true)
-    const warn = vi.spyOn(process.stderr, "write").mockReturnValue(true)
+    const restore = fakeSystemKeyring(entries)
     try {
       const { gcal, env } = harness(systemKeyring)
-      sessionStorage(env, "personal").write({
-        tokens: { accessToken: ACCESS, refreshToken: REFRESH, expiresAt: Date.now() + 3_600_000, scopes: [] },
-        client: { clientId: "fixture-client.apps" },
-      })
+      withOwnerSignIn(entries, env)
       const ended = await gcal(["personal", "session", "end", "--json"])
       expect(item(ended.out)).toMatchObject({ profile: "personal", ended: false, kept: "keyring" })
-      expect(remove).not.toHaveBeenCalled()
-      expect(entries.size).toBe(1)
+      expect(item(ended.out).why).toContain("still signed in")
+      expect([...entries.keys()]).toEqual([OWNER_ENTRY])
     } finally {
-      for (const spy of [get, set, remove, warn]) spy.mockRestore()
+      restore()
+    }
+  })
+
+  it("a sign-in in a run with moved folders goes to the run's own entry, which end removes", async () => {
+    const entries = new Map<string, string>()
+    const restore = fakeSystemKeyring(entries)
+    try {
+      const { gcal, env } = harness(systemKeyring)
+      withOwnerSignIn(entries, env)
+      const owner = entries.get(OWNER_ENTRY)
+      sessionStorage(env, "personal").write(SIGN_IN)
+      expect(entries.size).toBe(2)
+      expect(entries.get(OWNER_ENTRY)).toBe(owner)
+      const ended = await gcal(["personal", "session", "end", "--json"])
+      expect(item(ended.out)).toMatchObject({ ended: true, kept: "keyring" })
+      expect(item(ended.out).why).toContain("still signed in")
+      expect([...entries.keys()]).toEqual([OWNER_ENTRY])
+      expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({ state: "saved" })
+    } finally {
+      restore()
     }
   })
 

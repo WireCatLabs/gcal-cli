@@ -47,6 +47,8 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- **`gcal --help` no longer offers a `--read-only` option, which does not exist.** `GCAL_READ_ONLY=1` is how a run
+  refuses every change.
 - **`events delete` of an event already deleted at Google succeeds and removes the stored copy.** Google answers such a
   delete with 410, and 404 once it no longer shows the event; gcal failed on both and kept the event in the store
   until the next sync.
@@ -76,8 +78,13 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   address point at another Google endpoint, `calendars/primary/events/..` at the calendar itself; nothing is sent now.
 - **`session end` in a run with moved folders keeps the owner's sign-in in the system keyring, and says so.** A run
   with `GCAL_CONFIG_DIR`, `GCAL_STATE_DIR` or a moved `HOME` uses the keyring entry every run of gcal shares; ending
-  the session there would have signed the owner out everywhere. It now answers `ended: false` with `kept: "keyring"`.
-  A run in the normal folders ends the sign-in as before.
+  the session there would have signed the owner out everywhere. It now answers `kept: "keyring"` and says the run is
+  still signed in; `ended` is `true` only when the run had a sign-in of its own to remove. A run in the normal folders
+  ends the sign-in as before.
+- **A sign-in in a run with moved folders no longer replaces the owner's sign-in in the system keyring.** It goes to
+  the run's own entry, `gcal-cli:<config folder>`, which the run reads first and its `session end` removes; the run
+  otherwise reads the owner's entry and never changes it. So a test sign-in with another Google account can no longer
+  switch the owner's profile.
 
 ## 0.2.0 — 30.10.2026
 

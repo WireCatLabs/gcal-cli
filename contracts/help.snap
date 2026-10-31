@@ -10,7 +10,7 @@ What you can do:
   events list week person:ana@example.com    this week's events with one person
   calendars busy week --duration-minutes 30  free stretches the calendars share
   events create <calendar> --title …         add an event; attendees are mailed only if you say
-  --read-only …                              this run refuses every change
+  events list week overlapping               this week's meetings that clash
 
 Works with:
   tg                                         Telegram in the same local store: search, review and tasks offline

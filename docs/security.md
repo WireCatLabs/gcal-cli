@@ -20,6 +20,8 @@ The Google sign-in is kept in the system keyring, under the service `gcal-cli`, 
 holds your OAuth client's ID and secret, so refreshing the sign-in does not need the client file again. Google says a
 Desktop app's client secret is not confidential, but `gcal` still never prints it. No command, error, log or run record
 shows a token or the client secret; the address of the sign-in page holds neither. `session end` removes the entry.
+A run with moved folders (`GCAL_CONFIG_DIR`, `GCAL_STATE_DIR` or another `HOME`) reads that entry but never changes
+it: its own sign-in goes to a separate entry, `gcal-cli:<config folder>`, and its `session end` removes only that one.
 
 With `session start --credential-storage file` the same entry goes to `credentials.json` in `gcal`'s state folder
 instead, mode 600: anyone who can read your files as you can read the sign-in. Use it only where no keyring works.
