@@ -26,10 +26,13 @@ const fixFor = (error: CliError, start: string): string | undefined => {
   }
 }
 
+/** The command that signs a profile in; the layers below take these words from here and never write them. */
+export const signInWords = (profile: string): string => `${IDENTITY.command} ${profile} session start`
+
 /** The sign-in layers name a reason; the command to type is written here, where the commands are known. */
 export const inWords = (error: unknown, profile: string): unknown => {
   if (!isCliError(error)) return error
-  const fix = fixFor(error, `${IDENTITY.command} ${profile} session start`)
+  const fix = fixFor(error, signInWords(profile))
   return fix ? new CliError(error.code, `${error.message}; ${fix}`, error.details) : error
 }
 

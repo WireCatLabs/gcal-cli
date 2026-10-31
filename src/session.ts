@@ -20,6 +20,8 @@ import { openGcalStore, PROVIDER } from "./store.js"
 interface Common {
   env: NodeJS.ProcessEnv
   profile: string
+  /** cli-core's sign-in keeper puts these words in its failures; the command layer writes them (WC-ARCH-16). */
+  signInCommand: string
   keyring?: KeyringStore | undefined
   fetch?: typeof fetch | undefined
   signal?: AbortSignal | undefined

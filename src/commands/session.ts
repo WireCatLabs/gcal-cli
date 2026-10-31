@@ -25,7 +25,7 @@ import { configuration } from "../config.js"
 import type { CredentialStorage } from "../google.js"
 import { GRANTS, type Grant } from "../grants.js"
 import { IDENTITY } from "../identity.js"
-import { worded } from "./words.js"
+import { signInWords, worded } from "./words.js"
 
 /** What a test hands `run()` in place of Google and the system browser. */
 export interface GcalEnvironment extends BaseEnvironment {
@@ -44,6 +44,7 @@ export const contextOf = (command: Command) => {
     common: {
       env,
       profile,
+      signInCommand: signInWords(profile),
       keyring: environment.keyring,
       fetch: environment.fetch,
       signal: environment.signal,

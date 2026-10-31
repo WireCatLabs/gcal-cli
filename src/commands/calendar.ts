@@ -22,7 +22,7 @@ import { configuration, permissions, writeKeys } from "../config.js"
 import type { GoogleApi } from "../google-api.js"
 import { IDENTITY } from "../identity.js"
 import type { GcalEnvironment } from "./session.js"
-import { wordedApi } from "./words.js"
+import { signInWords, wordedApi } from "./words.js"
 
 interface Opened {
   profile: string
@@ -351,7 +351,10 @@ const mountOnce = () => {
       let api: GoogleApi | undefined
       const { keyring, fetch, signal } = gcalEnvironment
       const googleOf = () =>
-        (api ??= wordedApi(googleApi(apiAccess({ env, profile, keyring, fetch, signal })), profile))
+        (api ??= wordedApi(
+          googleApi(apiAccess({ env, profile, signInCommand: signInWords(profile), keyring, fetch, signal })),
+          profile,
+        ))
       opened = {
         profile,
         store,
