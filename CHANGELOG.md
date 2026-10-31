@@ -2,7 +2,7 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
-## Unreleased
+## 0.5.0 — 31.10.2026
 
 ### Added
 
