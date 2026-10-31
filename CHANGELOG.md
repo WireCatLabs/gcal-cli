@@ -2,6 +2,13 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+- gcal now runs on cli-core 0.512.0. Nothing changes for gcal's commands or its MCP server: cli-core 0.512.0 renamed
+  `id` to `operation_id` in its own calendar MCP tools, which gcal does not serve. gcal's agents write through
+  `gcal_write`, whose `events create` and `events update` already take `operation_id` since 0.9.0, and page
+  `events list` through `gcal_read` with `page`.
+
 ## 0.9.0 — 31.10.2026
 
 ### Changed — may break callers
