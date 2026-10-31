@@ -267,7 +267,7 @@ export const fakeGoogleCalendar = (extra: Record<string, unknown>[] = []) => {
           items: [...FULL_1.items, ...FULL_2.items, ...extra].filter(
             (one) =>
               one.status !== "cancelled" &&
-              String((one as Record<string, unknown>).summary ?? "")
+              String(("summary" in one ? one.summary : undefined) ?? "")
                 .toLowerCase()
                 .includes(words.toLowerCase()),
           ),

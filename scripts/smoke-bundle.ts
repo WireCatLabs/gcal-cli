@@ -13,7 +13,7 @@ import { join } from "node:path"
 const COMMAND = "gcal"
 const PREFIX = "GCAL"
 
-const runtime = typeof (globalThis as { Bun?: unknown }).Bun === "undefined" ? "node" : "bun"
+const runtime = "Bun" in globalThis ? "bun" : "node"
 const failures: string[] = []
 const check = (what: string, condition: boolean) => {
   if (!condition) failures.push(what)

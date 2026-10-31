@@ -1,17 +1,11 @@
 import { CliError } from "@wirecat/cli-base"
 import { statusToCode } from "@wirecat/cli-base/http"
 
-interface GoogleErrorBody {
-  error?: {
-    status?: string
-    errors?: { reason?: string }[]
-    details?: { "@type"?: string; reason?: string }[]
-  }
-}
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null
 
 const reasonsOf = (body: unknown): string[] => {
-  const error = (body as GoogleErrorBody | undefined)?.error
-  if (!error || typeof error !== "object") return []
+  const error = isRecord(body) ? body.error : undefined
+  if (!isRecord(error)) return []
   return [
     ...(Array.isArray(error.errors) ? error.errors.map((item) => item?.reason) : []),
     ...(Array.isArray(error.details)

@@ -34,9 +34,8 @@ interface Common {
 /** Which Google account a profile is, as its last sign-in left it; no keyring and no network. */
 export const savedAccount = (env: NodeJS.ProcessEnv, profile: string): string | undefined => {
   try {
-    const { account } = JSON.parse(readFileSync(accountFileFor(IDENTITY, profile, env), "utf8")) as {
-      account?: unknown
-    }
+    const saved: unknown = JSON.parse(readFileSync(accountFileFor(IDENTITY, profile, env), "utf8"))
+    const account = typeof saved === "object" && saved !== null && "account" in saved ? saved.account : undefined
     return typeof account === "string" ? account : undefined
   } catch {
     return undefined

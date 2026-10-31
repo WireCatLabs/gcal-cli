@@ -45,8 +45,8 @@ export const cancels = (method: string, body: Record<string, unknown> | undefine
 
 /** Google omits `recurrence` for single events and for one occurrence of a series. */
 export const isSeries = (event: unknown): boolean => {
-  const recurrence = (event as { recurrence?: unknown } | null)?.recurrence
-  return Array.isArray(recurrence) && recurrence.length > 0
+  if (typeof event !== "object" || event === null || !("recurrence" in event)) return false
+  return Array.isArray(event.recurrence) && event.recurrence.length > 0
 }
 
 /**

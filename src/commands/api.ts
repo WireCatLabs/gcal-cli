@@ -230,10 +230,13 @@ const callGoogle = async (
   renderAnswer(
     command,
     outputFor(command),
-    itemOf({
-      ...(snakeKeys({ ...shown, ...(operationId ? { operation_id: operationId } : {}) }) as Record<string, unknown>),
-      ...(untrusted ? { untrusted } : {}),
-    }),
+    itemOf(
+      snakeKeys({
+        ...shown,
+        ...(operationId ? { operation_id: operationId } : {}),
+        ...(untrusted ? { untrusted } : {}),
+      }),
+    ),
   )
 }
 

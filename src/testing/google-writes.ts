@@ -5,7 +5,7 @@ const PREFIX = "/calendar/v3/"
 // https://developers.google.com/workspace/calendar/api/v3/reference/events#id
 const GOOGLE_ID = /^[a-v0-9]{5,1024}$/u
 
-type Event = Record<string, unknown> & { id: string; etag: string }
+export type Event = Record<string, unknown> & { id: string; etag: string }
 
 /** An invitation the owner has not answered yet, on the primary calendar of the read fake. */
 export const INVITATION: Event = {
@@ -80,13 +80,13 @@ export interface WriteRequest {
  * objects, as Google's patch does; an update replaces the whole event. Anything else goes to `fallback`, the read fake.
  */
 export const fakeGoogleWrites = (
-  held: Record<string, unknown>[] = [INVITATION],
+  held: Event[] = [INVITATION],
   fallback?: (input: string | URL | Request, init?: RequestInit) => Promise<Response>,
 ) => {
   const events = new Map<string, Event>()
   let version = 4_000_000_000_000_000
   const etag = () => `"${version++}"`
-  for (const event of held) events.set(event.id as string, structuredClone(event) as Event)
+  for (const event of held) events.set(event.id, structuredClone(event))
   // A moved event answers only on its new calendar; one never moved answers on any, as the read fake's events do.
   const calendarOf = new Map<string, string>()
   const requests: WriteRequest[] = []
@@ -108,8 +108,8 @@ export const fakeGoogleWrites = (
     for (const [key, value] of Object.entries(body)) {
       if (key === "attendeesOmitted") continue
       if (key === "attendees" && body.attendeesOmitted === true && Array.isArray(value)) {
-        const attendees = (event.attendees ?? []) as Record<string, unknown>[]
-        for (const answer of value as Record<string, unknown>[]) {
+        const attendees = Array.isArray(event.attendees) ? event.attendees : []
+        for (const answer of value) {
           const one = attendees.find(({ email }) => email === answer.email)
           if (one) Object.assign(one, answer)
         }
@@ -124,17 +124,17 @@ export const fakeGoogleWrites = (
     const url = new URL(String(input))
     const path = decodeURIComponent(url.pathname.slice(PREFIX.length))
     const method = init.method ?? "GET"
-    const headers = (init.headers ?? {}) as Record<string, string>
-    const body = typeof init.body === "string" ? (JSON.parse(init.body) as Record<string, unknown>) : undefined
+    const ifMatch = new Headers(init.headers).get("if-match") ?? undefined
+    const body: Record<string, unknown> | undefined = typeof init.body === "string" ? JSON.parse(init.body) : undefined
     const one = path.match(/^calendars\/([^/]+)\/events\/([^/]+)$/u)
     const all = path.match(/^calendars\/([^/]+)\/events$/u)
     const move = method === "POST" ? path.match(/^calendars\/([^/]+)\/events\/([^/]+)\/move$/u) : null
     const write = method !== "GET"
-    if (!(write && (one || all || move)) && !(method === "GET" && one && events.has(one[2] as string))) {
+    if (!(write && (one || all || move)) && !(method === "GET" && one && events.has(one[2] ?? ""))) {
       if (fallback) return fallback(input, init)
       return json(NOT_FOUND, 404)
     }
-    requests.push({ method, path, query: url.searchParams, ifMatch: headers["if-match"], body })
+    requests.push({ method, path, query: url.searchParams, ifMatch, body })
     if (write) notified.push(url.searchParams.get("sendUpdates") === "all")
     if (all && method === "POST") {
       const id = typeof body?.id === "string" ? body.id : `generated${events.size}`
@@ -167,16 +167,15 @@ export const fakeGoogleWrites = (
     }
     if (method === "GET") return json(event)
     if (method === "DELETE" && event.status === "cancelled") return json(GONE, 410)
-    if (headers["if-match"] === undefined)
-      return json({ error: { code: 400, message: "the fake expects If-Match" } }, 400)
-    if (headers["if-match"] !== event.etag) return json(CONDITION_NOT_MET, 412)
+    if (ifMatch === undefined) return json({ error: { code: 400, message: "the fake expects If-Match" } }, 400)
+    if (ifMatch !== event.etag) return json(CONDITION_NOT_MET, 412)
     if (method === "DELETE") {
       changed(event).status = "cancelled"
       return answered(new Response(null, { status: 204 }))
     }
     const merged =
       method === "PUT"
-        ? changed({ ...structuredClone(body ?? {}), id: event.id } as Event)
+        ? changed({ ...structuredClone(body ?? {}), id: event.id, etag: event.etag })
         : patched(structuredClone(event), body ?? {})
     // Patch merges objects, so a timed event given a date keeps its dateTime; Google refuses a time that is both.
     if ([merged.start, merged.end].some((time) => isObject(time) && "date" in time && "dateTime" in time))

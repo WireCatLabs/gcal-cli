@@ -44,20 +44,18 @@ const keyOf = (path: readonly string[]) => {
   return operation ? apiKey(operation.id) : commandPathKey(path)
 }
 
-export const configuration: Configuration = settingsFor(IDENTITY, {
-  permissions: commandPermissions({
-    keyOf,
-    extra: [...operations.map((operation) => apiKey(operation.id)), ...CALENDAR_WRITE_KEYS, SHARING_NOTIFY_KEY],
-    defaults: {
-      ...Object.fromEntries(
-        operations
-          .filter((operation) => operation.effect !== "read" && apiDefault(operation) !== "allow")
-          .map((operation) => [apiKey(operation.id), apiDefault(operation)]),
-      ),
-      ...CALENDAR_WRITE_DEFAULTS,
-      [SHARING_NOTIFY_KEY]: "deny",
-    },
-  }),
+export const permissions = commandPermissions({
+  keyOf,
+  extra: [...operations.map((operation) => apiKey(operation.id)), ...CALENDAR_WRITE_KEYS, SHARING_NOTIFY_KEY],
+  defaults: {
+    ...Object.fromEntries(
+      operations
+        .filter((operation) => operation.effect !== "read" && apiDefault(operation) !== "allow")
+        .map((operation) => [apiKey(operation.id), apiDefault(operation)]),
+    ),
+    ...CALENDAR_WRITE_DEFAULTS,
+    [SHARING_NOTIFY_KEY]: "deny",
+  },
 })
 
-export const permissions = configuration.permissions as NonNullable<Configuration["permissions"]>
+export const configuration: Configuration = settingsFor(IDENTITY, { permissions })

@@ -29,7 +29,7 @@ const credentialFile = (state: string) => {
   const mode = privateFiles({ files: [path], dirs: [] })
   let profiles: string[] | null
   try {
-    profiles = Object.keys(JSON.parse(readFileSync(path, "utf8")) as object)
+    profiles = Object.keys(JSON.parse(readFileSync(path, "utf8")))
       .filter((account) => account.startsWith(ACCOUNT))
       .map((account) => account.slice(ACCOUNT.length))
   } catch {

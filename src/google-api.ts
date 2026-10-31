@@ -9,6 +9,8 @@ import { metadata } from "./generated/metadata.js"
 import { ACLS_SCOPE, EVENTS_SCOPE } from "./grants.js"
 
 const MAX_BYTES = 50 * 1024 * 1024
+const SERVICES = new Map(Object.entries(metadata.services))
+const SCHEMAS = new Map<string, v.GenericSchema>(Object.entries(schemas))
 const TIMEOUT_MS = 30_000
 
 export interface CallOptions {
@@ -89,8 +91,7 @@ const segmentOf = (key: string, value: unknown) => {
 const requestUrl = (name: string, params: Record<string, unknown>) => {
   const operation = operationOf(name)
   if (operation.binding.kind !== "http") throw new CliError("configuration_error", "generated method is not HTTP")
-  const services = metadata.services as Record<string, { rootUrl: string; servicePath: string }>
-  const service = services[operation.tags[0] ?? ""]
+  const service = SERVICES.get(operation.tags[0] ?? "")
   if (!service) throw new CliError("configuration_error", "generated method names no known Google service")
   if (operation.binding.path.includes("{+"))
     throw new CliError("configuration_error", "generated method has a reserved path expansion gcal does not send")
@@ -110,6 +111,14 @@ const requestUrl = (name: string, params: Record<string, unknown>) => {
     operation: `${operation.binding.method} /${service.servicePath}${operation.binding.path}`,
     response: operation.response?.schema,
   }
+}
+
+/** A method's answer as its generated type: `call` returns it unknown, so the schema both checks and names it. */
+export const answerOf = <T>(schema: v.GenericSchema<unknown, T>, data: unknown): T => {
+  const parsed = v.safeParse(schema, data)
+  if (!parsed.success)
+    throw new CliError("invalid_response", "Google Calendar's answer does not match the API contract")
+  return parsed.output
 }
 
 /** Google Calendar over plain fetch: the token goes in the Authorization header only, never into an address. */
@@ -170,7 +179,7 @@ export const googleApi = (options: GoogleApiOptions): GoogleApi => ({
       if (isCliError(error) && error.code !== "invalid_response") throw error
       throw new CliError("invalid_response", "Google Calendar answered with something other than bounded JSON")
     }
-    const schema = request.response ? (schemas as Record<string, v.GenericSchema>)[request.response] : undefined
+    const schema = request.response ? SCHEMAS.get(request.response) : undefined
     if (schema && !v.safeParse(schema, data).success)
       throw new CliError("invalid_response", "Google Calendar's answer does not match the API contract")
     return data
