@@ -2,6 +2,15 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Fixed
+
+- **Calls an agent sends to `gcal mcp serve` at the same time each get their own answer.** Two calendar reads sent
+  together could answer one of them empty (`{"item":{"value":null}}`) or fail it with `command.crashed`, because the
+  calls shared which command was running and the store it had opened. Each call now keeps its own
+  ([WC-ARCH-22](https://github.com/WireCatLabs/cli-base/blob/main/docs/standards/architecture.md)).
+
 ## 0.4.0 — 31.10.2026
 
 ### Fixed

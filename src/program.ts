@@ -39,18 +39,36 @@ const update = appUpdate({
   offVariables: [`${IDENTITY.envPrefix}_NO_UPDATE_CHECK`],
 })
 
+const mcpCommand = () => {
+  // cli-core asks `signedIn` with no keyring; the run's own one, a test's `memoryKeyring()`, is taken here. Each
+  // program builds its own `mcp`, so a tool call run beside it never swaps the server's keyring (WC-ARCH-22).
+  let keyring: KeyringStore | undefined
+  const mcp = appMcpCommand(IDENTITY, configuration, {
+    name: "Google Calendar",
+    untrusted: ["event titles", "descriptions", "locations", "attendee and organizer names", "shared calendar names"],
+    permissionExample: "api.calendar.events.insert=deny",
+    skill: SKILL,
+    signedIn: (profile, env) => {
+      try {
+        return holdsSignIn(env, profile, keyring)
+      } catch {
+        // A keyring that cannot be read fails the server's tools as well.
+        return false
+      }
+    },
+  })
+  return mcp.hook("preAction", (_mcp, action) => {
+    keyring = environmentOf(action).keyring
+  })
+}
+
 export const definition = (): ProgramDefinition => {
   const calendar = calendarMount()
-  // cli-core asks `signedIn` with no keyring; the run's own one, a test's `memoryKeyring()`, is taken here.
-  let keyring: KeyringStore | undefined
   return {
     app: IDENTITY,
     configuration,
     configure: (program) => {
-      program.hook("preAction", (_root, action) => {
-        keyring = environmentOf(action).keyring
-      })
-      calendar.configure?.(program)
+      calendar.configure(program)
       placeInSections(program)
     },
     firstScreen: FIRST_SCREEN,
@@ -64,26 +82,7 @@ export const definition = (): ProgramDefinition => {
       modelsCommand(),
       guide(),
       skillCommand(IDENTITY, SKILL),
-      appMcpCommand(IDENTITY, configuration, {
-        name: "Google Calendar",
-        untrusted: [
-          "event titles",
-          "descriptions",
-          "locations",
-          "attendee and organizer names",
-          "shared calendar names",
-        ],
-        permissionExample: "api.calendar.events.insert=deny",
-        skill: SKILL,
-        signedIn: (profile, env) => {
-          try {
-            return holdsSignIn(env, profile, keyring)
-          } catch {
-            // A keyring that cannot be read fails the server's tools as well.
-            return false
-          }
-        },
-      }),
+      mcpCommand(),
       upgradeCommand(IDENTITY, PACKAGE, (command) => ({
         ...outputFor(command),
         installer: () => update.installer({}),
