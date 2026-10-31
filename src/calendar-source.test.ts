@@ -180,7 +180,7 @@ describe("Google words to neutral ones", () => {
 })
 
 describe("an event's zone", () => {
-  it("falls back to the calendar's zone, then UTC, for a zone it does not know, every time it is asked", () => {
+  it("falls back to the calendar's zone, then the zone in use, for a zone it does not know, every time it is asked", () => {
     const event = {
       id: "zoned1",
       start: { dateTime: "2026-11-02T10:00:00+01:00", timeZone: "Not/AZone" },
@@ -188,9 +188,13 @@ describe("an event's zone", () => {
     }
     for (let round = 0; round < 2; round++) {
       expect(entryOf(event, { timezone: "Europe/Madrid" }).timezone).toBeNull()
-      expect(
-        entryOf({ ...event, start: { date: "2026-11-02" }, end: { date: "2026-11-03" } }, { timezone: "Not/AZone" }),
-      ).toMatchObject({ startsAt: Date.parse("2026-11-02T00:00:00Z") })
+      const allDay = { ...event, start: { date: "2026-11-02" }, end: { date: "2026-11-03" } }
+      expect(entryOf(allDay, { timezone: "Not/AZone" }, "Europe/Madrid")).toMatchObject({
+        startsAt: Date.parse("2026-11-01T23:00:00Z"),
+      })
+      expect(entryOf(allDay, { timezone: null }, "Asia/Tokyo")).toMatchObject({
+        startsAt: Date.parse("2026-11-01T15:00:00Z"),
+      })
       expect(entryOf({ ...event, start: { ...event.start, timeZone: "Asia/Tokyo" } }, MADRID).timezone).toBe(
         "Asia/Tokyo",
       )
