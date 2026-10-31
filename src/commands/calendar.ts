@@ -176,8 +176,7 @@ const mountOnce = () => {
       app: IDENTITY,
       // Read on every write, with the command's own --permission and the read-only lock, as the shared check sees them.
       settings: () => ({ ...resolved(), permissionDefaults: permissions.defaults }),
-      // The api keys guard the shared writes only once the owner sets them: their built-in `ask` is for the raw
-      // `gcal api` calls, which check no delete or series key of their own, and would undo cli-core's `allow`.
+      // An api key joins a shared write only when it stops or asks: at `allow` it would add a key to every question.
       extraKeys: (write) => writeKeys(write).filter((key) => levelFor(resolved().permissions, key).level !== "allow"),
       get env() {
         return need().env

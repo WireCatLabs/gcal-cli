@@ -311,20 +311,18 @@ describe("checking a request before it leaves", () => {
 })
 
 describe("writes", () => {
-  it("asks before a write: --yes or a yes goes ahead, a no or nobody to answer does not", async () => {
+  it("asks before a delete: --yes or a yes goes ahead, a no or nobody to answer does not", async () => {
     const { gcal } = harness()
     const fake = google()
-    const insert = ["personal", "api", "call", "calendar.events.insert", "--params", '{"calendarId":"primary"}']
-    const unasked = failure((await gcal([...insert, "--body", "{}", "--json"], fake)).err)
+    const remove = ["personal", "api", "call", "calendar.calendarList.delete", "--params", '{"calendarId":"team"}']
+    const unasked = failure((await gcal([...remove, "--json"], fake)).err)
     expect(unasked).toMatchObject({
       code: "confirmation_required",
-      details: { permission: "api.calendar.events.insert" },
+      details: { permission: "api.calendar.calendarList.delete" },
     })
-    expect((await gcal([...insert, "--body", "{}"], fake, "n")).err).toContain("the answer was no")
-    expect(failure((await gcal([...insert, "--body", "{}", "--yes", "--json"], fake)).err).reason).toBe(
-      "api.scope-missing",
-    )
-    expect((await gcal([...insert, "--body", "{}"], fake, "y")).err).toContain("session start --grant write")
+    expect((await gcal(remove, fake, "n")).err).toContain("the answer was no")
+    expect(failure((await gcal([...remove, "--yes", "--json"], fake)).err).reason).toBe("api.scope-missing")
+    expect((await gcal(remove, fake, "y")).err).toContain("Google permission gcal does not ask for")
     expect(toCalendar(fake.requests)).toEqual([])
   })
 
@@ -370,12 +368,15 @@ describe("writes", () => {
     expect(failure((await gcal([...clear, "--yes", "--json"])).err).reason).toBe("api.scope-missing")
   })
 
-  it("defaults sharing to ask, and emptying, deleting or giving a calendar away to deny", () => {
+  it("allows an ordinary change, asks for a delete or a share, and denies emptying, deleting or giving a calendar away", () => {
     for (const method of ["insert", "patch", "update", "delete"])
       expect(permissions.defaults[`api.calendar.acl.${method}`]).toBe("ask")
     for (const method of ["clear", "delete", "transferOwnership"])
       expect(permissions.defaults[`api.calendar.calendars.${method}`]).toBe("deny")
-    expect(permissions.defaults["api.calendar.calendars.patch"]).toBe("ask")
+    expect(permissions.defaults["api.calendar.events.delete"]).toBe("ask")
+    expect(permissions.defaults["api.calendar.calendarList.delete"]).toBe("ask")
+    for (const key of ["calendars.patch", "events.insert", "events.patch", "events.move", "events.quickAdd"])
+      expect(permissions.defaults[`api.calendar.${key}`]).toBeUndefined()
   })
 
   it("shares a calendar after session start --grant sharing", async () => {
@@ -782,7 +783,8 @@ describe("the calendar keys hold on api writes", () => {
     expect((await gcal(["personal", "config", "set", "permissions.events.notify", "ask"])).code).toBe(0)
     expect((await gcal([...insert, "--send-updates", "all"], fake, "y")).code).toBe(0)
     expect(asked).toHaveLength(1)
-    expect(asked[0]).toContain("api.calendar.events.insert and events.notify")
+    expect(asked[0]).toContain("events.notify")
+    expect(asked[0]).not.toContain("api.calendar.events.insert")
     expect((await gcal(["personal", "config", "set", "permissions.events.notify", "allow"])).code).toBe(0)
     expect((await gcal([...insert, "--send-updates", "all", "--yes", "--json"], fake)).code).toBe(0)
     expect(toCalendar(fake.requests).map(({ url }) => url.searchParams.get("sendUpdates"))).toEqual(["all", "all"])
@@ -852,7 +854,7 @@ describe("the calendar keys hold on api writes", () => {
     expect((await gcal(["personal", "config", "set", "permissions.events.notify", "ask"])).code).toBe(0)
     const mailing = await gcal([...insert, "--send-updates", "all", "--dry-run", "--json"], fake)
     expect(answerOf(mailing.out).item.permissions).toEqual([
-      { key: "api.calendar.events.insert", level: "ask" },
+      { key: "api.calendar.events.insert", level: "allow" },
       { key: "events.notify", level: "ask" },
     ])
     expect(fake.fetch).not.toHaveBeenCalled()

@@ -13,6 +13,7 @@ export const OWNER_ONLY = /^calendar\.calendars\.clear$/
  * Sharing stays `ask` (NEED-1857).
  */
 const DENIED = /^calendar\.calendars\.(clear|delete|transferOwnership)$/
+const SHARING = /^calendar\.acl\.(insert|patch|update)$/
 
 export const apiKey = (method: string): string => `api.${method}`
 
@@ -28,7 +29,11 @@ const WRITE_METHODS: Record<CalendarWrite, string[]> = {
 
 export const writeKeys = (write: CalendarWrite): string[] => WRITE_METHODS[write].map(apiKey)
 
-const apiDefault = (id: string): Level => (DENIED.test(id) ? "deny" : "ask")
+/** As the shared writes (WC-PERM-22): an ordinary change is allowed, a delete and a share ask, a lost calendar is denied. */
+const apiDefault = ({ id, effect }: (typeof operations)[number]): Level => {
+  if (DENIED.test(id)) return "deny"
+  return effect === "destructive" || SHARING.test(id) ? "ask" : "allow"
+}
 
 const keyOf = (path: readonly string[]) => {
   if (path[0] !== "api" || path[1] === undefined) return commandPathKey(path)
@@ -46,8 +51,8 @@ export const configuration: Configuration = settingsFor(IDENTITY, {
     defaults: {
       ...Object.fromEntries(
         operations
-          .filter((operation) => operation.effect !== "read")
-          .map((operation) => [apiKey(operation.id), apiDefault(operation.id)]),
+          .filter((operation) => operation.effect !== "read" && apiDefault(operation) !== "allow")
+          .map((operation) => [apiKey(operation.id), apiDefault(operation)]),
       ),
       ...CALENDAR_WRITE_DEFAULTS,
       [SHARING_NOTIFY_KEY]: "deny",
