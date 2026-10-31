@@ -14,7 +14,7 @@ How the tests run, and what they never touch. The rules are the handbook's
   list. `pnpm exec cli-contract contracts/plan.json --update` rewrites the snapshots; review the diff.
 - `pnpm contracts:upgrade` checks that this build reads what the previous release wrote
   ([WC-TEST-14](../../node_modules/@wirecat/cli-base/docs/standards/testing.md)). `contracts/previous/` installs that
-  release from npm (`@wirecat/previous-cli`, now `@wirecat/gcal-cli@0.2.0`). `contracts/seed.mjs` loads its own
+  release from npm (`@wirecat/previous-cli`, now `@wirecat/gcal-cli@0.3.0`). `contracts/seed.mjs` loads its own
   modules and its own cli-core, signs nobody in, and syncs one calendar from a fake Google into the synthetic store, as
   `gcal sync` would. `contracts/upgrade.json` then reads the events, an event's attendees, the sync cursor and search
   with that release and with this build. After a release, move the baseline: the version in
