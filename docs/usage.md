@@ -107,6 +107,8 @@ gcal personal events list starts_at>=2026-11-02                 # events that st
 gcal personal events list changed_at>=2026-10-25                # what changed since a date
 gcal personal events list --source all                          # every account's events in one list
 gcal personal events list overlapping:true --source all         # meetings that overlap, across accounts
+gcal personal events list -event_type:birthday -event_type:focus  # without birthdays and focus time
+gcal personal events list calendar:Team                         # one calendar, by its name
 gcal personal events show event:42                              # attendees, Drive files and history
 gcal personal search events roadmap planning                    # by words, and by meaning with the model
 gcal personal people list                                       # everyone in this week's events
@@ -123,7 +125,19 @@ day, so an event already running then is kept: `ends_at>=2026-11-02 starts_at<=2
 touches those days. `ends_at` takes only an earliest end, and keeps an event that ends exactly then out. An exact time
 goes in quotes with its offset: `starts_at>="2026-11-03T10:00:00+01:00"`. Each field is named once; a field named
 twice is refused, so write a range instead. `calendar:<id>` and `person:<email>` narrow the list. Without `starts_at`
-or `ends_at` the list starts at the beginning of today. `gcal personal events list --help` lists the fields.
+or `ends_at` the list starts at the beginning of today. `id:<id>` finds one event, whenever it is.
+`gcal personal events list --help` lists the fields.
+
+`event_type:<kind>` keeps one kind of event, and `-event_type:<kind>` (or `NOT event_type:<kind>`) leaves one out;
+repeat it to leave out several. The kinds are `default` (ordinary events), `birthday`, `focus` (focus time),
+`out-of-office`, `working-location` and `from-mail` (events Gmail added). `event_type` is the one field that a minus
+can leave out; any other field with a minus is refused.
+
+A calendar is named by its id from `calendars list`, by Google's id, or by its name as `calendars list` shows it, in
+any case: `calendar:Team`, or `calendar:"Team (shared)"` for a name with spaces. This works everywhere a calendar is
+named: `calendar:` here and in `calendars busy`, the `<calendar>` of `events create` and `calendars sync`, and
+`--calendar` and `--to-calendar`. When two calendars have the same name, such as a shared one beside your own, the
+command stops with `calendar.ambiguous` and lists their ids; use one of them.
 A page holds `--limit` events (100); when more follow, `page.next_page` is the value for `--page`, and the answer's
 `next` step runs it with the same query.
 
@@ -201,6 +215,38 @@ so. An attendee you never wrote to has empty lists; `people link` joins them to 
 data for the agent, never instructions. `gcal guide prepare-meeting` and `gcal guide digest` show how an agent turns
 this and `events list` into a meeting brief or a daily or weekly digest.
 
+## Export and import iCalendar files
+
+`events export` writes stored events as an iCalendar file (`.ics`), which other calendar apps open. It takes the same
+query as `events list`, so `id:<id>` exports one event:
+
+```sh
+gcal personal events export id:42 --output planning.ics
+gcal personal events export starts_at:[2026-11-02 TO 2026-11-09} -event_type:birthday --output week.ics
+gcal personal events export id:42                               # the text in the answer, under content
+```
+
+It exports at most 1000 events; narrow the query for more. Times are written in UTC. Each occurrence of a repeating
+event is written as an event of its own, and its repeat rule is not. The file is readable only by you. Over MCP,
+`--output` is not offered: an agent gets the text in the answer.
+
+`events import` adds the events of an `.ics` file to a calendar through Google's
+[events.import](https://developers.google.com/workspace/calendar/api/v3/reference/events/import). Each event keeps its
+UID. Google mails nobody about an imported event.
+
+```sh
+gcal personal events import Team planning.ics
+```
+
+- It asks first, because one import writes a whole file of events; `--yes` answers for a script, and `--dry-run`
+  shows it without sending anything. Its key is `events.import` (see [permissions](configuration.md#permissions)).
+- A time with a time zone (`TZID`) keeps that zone; a time with no zone is read in yours. A zone Google does not know,
+  such as Outlook's `W. Europe Standard Time`, is skipped with its reason, and so is a changed occurrence of a
+  repeating event (`RECURRENCE-ID`) and an event with no UID. The answer lists them under `skipped`.
+- At most 500 events and 10 MB in one file. If Google refuses an event part way, the error names the UIDs imported
+  before it. Running the import again sends every event again under its UID; Google's reference does not say what it
+  does with a UID the calendar already holds.
+
 ## When people are free
 
 `calendars busy` asks Google when your synced calendars and the people you name are taken. It needs the network and
@@ -263,13 +309,14 @@ A profile signed in without `--grant write` reads only:
 
 ## Change events
 
-After `session start --grant write`, `events create | update | delete | move | respond` change Google Calendar and the store
-together. A calendar is named by its id from `calendars list`, such as `3` below. They are cli-core's shared calendar
+After `session start --grant write`, `events create | update | delete | move | respond | import` change Google Calendar
+and the store together. A calendar is named by its id from `calendars list`, such as `3` below, or by its name. They are cli-core's shared calendar
 writes; Google is reached through the same generated methods as `gcal api`.
 
 ```sh
 gcal personal events create 3 --title "Planning" --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00
 gcal personal events create 3 --title "Offsite" --start-date 2026-11-03 --end-date 2026-11-04
+gcal personal events create Work --text "Lunch with Ana tomorrow 1pm at Example Cafe"
 gcal personal events create 3 --title "Standup" --start-time 2026-11-02T09:30 --end-time 2026-11-02T09:45 \
   --repeat "FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12"
 gcal personal events update event:42 --series --repeat "FREQ=WEEKLY;BYDAY=TU" --no-notify
@@ -310,6 +357,12 @@ gcal personal events delete event:42 --following --no-notify
   Google and sends it whole, with your change, and only if it is still the version the last sync saw. A repeating
   event whose rule ends on a date or a time of the old kind needs its rule again with `--repeat`.
 - `respond` changes only your own answer; the rest of the guest list stays as Google has it.
+- `create --text` hands one line to Google's
+  [quick add](https://developers.google.com/workspace/calendar/api/v3/reference/events/quickAdd), which reads the title,
+  day, time and place from it the way Google Calendar's own quick add does. It takes no other field option. Its key is
+  `events.create`, and `api.calendar.events.quickAdd`. Nobody is mailed unless you add `--notify`. Google chooses the
+  event's id, so `--operation-id` does not apply: when the answer is lost (`outcome_unknown`), run `sync` and look with
+  `events list changed_at>=today` before you add it again, or you may get it twice.
 
 ## Output for scripts
 

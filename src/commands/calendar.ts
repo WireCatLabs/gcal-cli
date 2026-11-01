@@ -1,3 +1,4 @@
+import { readFile, writeFile } from "node:fs/promises"
 import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { metaSchema, nextStepSchema } from "@wirecat/cli-base/standards"
@@ -140,6 +141,8 @@ const mountOnce = () => {
     remove: (...args) => google().remove(...args),
     respond: (...args) => google().respond(...args),
     move: (...args) => google().move(...args),
+    quickAdd: (...args) => google().quickAdd(...args),
+    importEvent: (...args) => google().importEvent(...args),
   }
   // cli-core decides at mount whether `person:` references are shown, from whether `messages` is there. The cast
   // stands for a store that throws on any use, which no honest MessageStore value can be.
@@ -177,6 +180,9 @@ const mountOnce = () => {
       const { embedEvents } = await import("@wirecat/cli-core/services")
       return embedEvents(store, { maxChunks: max, env, command: IDENTITY.command })
     },
+    readFile: (path) => readFile(path, "utf8"),
+    // 0600: an export holds the owner's meetings, attendees and descriptions.
+    writeFile: (path, content) => writeFile(path, content, { mode: 0o600 }),
     write: (value) => {
       const at = action
       if (!at) throw notOpen()
