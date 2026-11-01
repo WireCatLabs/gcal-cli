@@ -93,7 +93,10 @@ const startCommand = () =>
     }),
   )
     .description("sign in to Google in the browser; read-only unless you pass --grant write")
-    .option("--client-file <file>", "your own Desktop app OAuth client JSON from Google Cloud Console")
+    .option(
+      "--client-file <file>",
+      "your own Desktop app OAuth client JSON; without it, WireCat's app when this package has one",
+    )
     .option("--no-browser", "print the sign-in URL instead of opening a browser")
     .option(
       "--credential-storage <storage>",

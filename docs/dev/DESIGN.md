@@ -50,8 +50,10 @@ for events and meetings in the store.
   `appDoctorCommand` can add. `session list` is gcal's own: cli-core has no helper for a CLI that is not a messenger
   (WC-ACCT-12, NEED-1884). A profile is signed in when its sign-in is in the file or the keyring, not when its account
   file exists: `session end` keeps that file.
-- **Google app:** during development the owner's own client (`GCAL_GOOGLE_CLIENT_ID`, `GCAL_GOOGLE_CLIENT_SECRET`);
-  the shared WireCat app gets Calendar after Drive's Google review is approved.
+- **Google app:** `--client-file`, then `GCAL_GOOGLE_CLIENT_ID`, then WireCat's Desktop client in
+  `google-client.json` at the package root, which the release workflow writes from the `GCAL_GOOGLE_CLIENT_JSON`
+  secret (`bin/set-google-client`). A release without the secret carries none. The owner's console steps:
+  [google-app-verification.md](google-app-verification.md).
 
 ## Open questions for the owner
 

@@ -68,7 +68,7 @@ gcal session start [options]
 
 | Option | What it does |
 |---|---|
-| `--client-file <file>` | your own Desktop app OAuth client JSON from Google Cloud Console. |
+| `--client-file <file>` | your own Desktop app OAuth client JSON; without it, WireCat's app when this package has one. |
 | `--no-browser` | print the sign-in URL instead of opening a browser. |
 | `--credential-storage <storage>` | where the sign-in is kept: keyring, which falls back to a private file, or file. Default: `keyring`. |
 | `--grant <scopes>` | also ask for these, comma-separated: write, sharing. |

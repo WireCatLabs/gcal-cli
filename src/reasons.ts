@@ -12,6 +12,7 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
     "the OAuth client file can be read by other users of this computer",
   ],
   ["sign-in.client-file-invalid", "configuration_error", "the OAuth client file is not a Desktop app client JSON"],
+  ["sign-in.bundled-client-invalid", "configuration_error", "the WireCat Google client in this package is damaged"],
   ["sign-in.scope-missing", "permission_error", "Google did not grant a permission the sign-in asked for"],
   ["sign-in.lookup-unavailable", "provider_unavailable", "Google did not answer the account lookup"],
   ["sign-in.lookup-refused", "authentication_error", "Google refused the account lookup"],
