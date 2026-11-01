@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Stores WireCat's Google Desktop client as the repository secret GCAL_GOOGLE_CLIENT_JSON, which the release workflow
+# writes into the package. Prints no value from the file.
+#
+#   bin/set-google-client ~/Downloads/client_secret_1234.apps.googleusercontent.com.json
+set -euo pipefail
+
+file=${1:-}
+[ -n "$file" ] || { echo "usage: bin/set-google-client <the client JSON downloaded from Google Cloud Console>" >&2; exit 2; }
+[ -f "$file" ] || { echo "no such file: $file" >&2; exit 2; }
+
+node -e '
+  const fail = (message) => { console.error(message); process.exit(1) }
+  let client
+  try { client = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")) } catch { fail("the file is not JSON") }
+  if (client?.web) fail("this is a Web application client; make a Desktop app client instead")
+  const { client_id: id, client_secret: secret } = client?.installed ?? {}
+  if (typeof id !== "string" || !id.endsWith(".apps.googleusercontent.com"))
+    fail("the file has no installed.client_id ending in .apps.googleusercontent.com; is it a Desktop app client?")
+  if (typeof secret !== "string" || !secret) fail("the file has no installed.client_secret")
+' "$file"
+
+gh secret set GCAL_GOOGLE_CLIENT_JSON --repo WireCatLabs/gcal-cli < "$file"
+echo "GCAL_GOOGLE_CLIENT_JSON is set; the next gcal release carries this client"

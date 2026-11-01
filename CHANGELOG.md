@@ -6,6 +6,11 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Added
 
+- **Sign in without a Google Cloud project of your own.** `session start` uses WireCat's Google app when the package
+  carries one; `gcal doctor` then shows `oauth_client.client: wirecat`. Your own app still wins: `--client-file`, or
+  `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`. A package without WireCat's app asks for yours, as before.
+  Until Google finishes its review of the app, Google shows an "unverified app" page first;
+  [connect your Google account](docs/installation.md#connect-your-google-account) says how to go on.
 - **gcal's MCP server is listed in the official MCP Registry** as `dev.wirecat/gcal-cli`, from the next release on:
   `server.json`, `mcpName`, and the registry jobs from cli-template 0.12.0.
 

@@ -41,14 +41,11 @@ const credentialFile = (state: string) => {
   }
 }
 
-/**
- * gcal bundles no client, so one in the environment is the owner's own. Without one, a profile signed in with
- * `--client-file` still works: its sign-in keeps the client it was made with.
- */
+/** Without a client here, a profile signed in with `--client-file` still works: its sign-in keeps its client. */
 const oauthClient = (env: NodeJS.ProcessEnv) => {
   try {
     googleClient(env)
-    return { client: "own" as const }
+    return { client: env.GCAL_GOOGLE_CLIENT_ID ? ("own" as const) : ("wirecat" as const) }
   } catch (error) {
     if (!(error instanceof CliError)) throw error
     throw new CliError(

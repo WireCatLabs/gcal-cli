@@ -30,8 +30,8 @@ gcal personal session start --grant write
 gcal personal session start --grant write,sharing
 ```
 
-For now, `gcal` has no Google app of its own, so it needs yours: see
-[your own Google client](configuration.md#your-own-google-client). Add `--no-browser` to get the sign-in address on
+Without `--client-file`, `gcal` signs in through WireCat's Google app when the package carries one, and through
+yours otherwise: see [connect your Google account](installation.md#connect-your-google-account). Add `--no-browser` to get the sign-in address on
 stderr instead, and open it in any browser on this computer.
 
 One Google account belongs to one profile. Signing in to a profile with another account is refused, and so is a second

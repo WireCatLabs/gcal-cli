@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { CliError, Credentials, isMovedRun, type KeyringStore, resolvePaths, systemKeyring } from "@wirecat/cli-base"
 import { type EventSink, privateFiles, providerRequest } from "@wirecat/cli-core/cli"
@@ -151,19 +151,58 @@ const ClientFile = v.object({
   installed: v.object({ client_id: v.pipe(v.string(), v.minLength(1)), client_secret: v.optional(v.string()) }),
 })
 
-/** The owner's own Google app, from a client file or the environment; gcal bundles none yet. */
-export const googleClient = (env: NodeJS.ProcessEnv, file?: string, platform = process.platform): OAuthClient => {
+const readClient = (location: URL | string, refusal: CliError): OAuthClient => {
+  try {
+    const { installed } = v.parse(ClientFile, JSON.parse(readFileSync(location, "utf8")))
+    return {
+      clientId: installed.client_id,
+      ...(installed.client_secret ? { clientSecret: installed.client_secret } : {}),
+    }
+  } catch {
+    throw refusal
+  }
+}
+
+/**
+ * WireCat's Desktop client, which the release workflow writes into the package from a repository secret. A source
+ * checkout and a release made without that secret have none.
+ */
+export const BUNDLED_CLIENT = new URL("../google-client.json", import.meta.url)
+
+// npm installs package files readable by everyone, so this file skips the owner's-file privacy check: Google treats a
+// Desktop client as public (https://developers.google.com/identity/protocols/oauth2/native-app).
+export const bundledClient = (location: URL | string = BUNDLED_CLIENT): OAuthClient | undefined => {
+  if (!existsSync(location)) return undefined
+  return readClient(
+    location,
+    new CliError(
+      "configuration_error",
+      "the WireCat Google client in this gcal package cannot be read; reinstall gcal",
+      {
+        reason: "sign-in.bundled-client-invalid",
+      },
+    ),
+  )
+}
+
+/** The owner's client file wins, then GCAL_GOOGLE_CLIENT_ID, then WireCat's client when the package has one. */
+export const googleClient = (
+  env: NodeJS.ProcessEnv,
+  file?: string,
+  platform = process.platform,
+  bundled: URL | string = BUNDLED_CLIENT,
+): OAuthClient => {
   if (!file) {
     const clientId = env.GCAL_GOOGLE_CLIENT_ID
     const clientSecret = env.GCAL_GOOGLE_CLIENT_SECRET
-    if (!clientId) {
-      if (clientSecret)
-        throw new CliError("configuration_error", "GCAL_GOOGLE_CLIENT_SECRET requires GCAL_GOOGLE_CLIENT_ID", {
-          reason: "sign-in.no-client",
-        })
-      throw new CliError("configuration_error", NO_CLIENT, { reason: "sign-in.no-client" })
-    }
-    return { clientId, ...(clientSecret ? { clientSecret } : {}) }
+    if (clientId) return { clientId, ...(clientSecret ? { clientSecret } : {}) }
+    if (clientSecret)
+      throw new CliError("configuration_error", "GCAL_GOOGLE_CLIENT_SECRET requires GCAL_GOOGLE_CLIENT_ID", {
+        reason: "sign-in.no-client",
+      })
+    const wirecat = bundledClient(bundled)
+    if (wirecat) return wirecat
+    throw new CliError("configuration_error", NO_CLIENT, { reason: "sign-in.no-client" })
   }
   const mode = privateFiles({ files: [file], dirs: [] }, platform)
   if (mode.checked && !mode.ok)
@@ -172,19 +211,14 @@ export const googleClient = (env: NodeJS.ProcessEnv, file?: string, platform = p
       `the client file can be read by other users of this computer; run chmod 600 ${file} and try again`,
       { reason: "sign-in.client-file-open" },
     )
-  try {
-    const { installed } = v.parse(ClientFile, JSON.parse(readFileSync(file, "utf8")))
-    return {
-      clientId: installed.client_id,
-      ...(installed.client_secret ? { clientSecret: installed.client_secret } : {}),
-    }
-  } catch {
-    throw new CliError(
+  return readClient(
+    file,
+    new CliError(
       "configuration_error",
       "could not read a Desktop app OAuth client JSON from the client file; its contents were not logged",
       { reason: "sign-in.client-file-invalid" },
-    )
-  }
+    ),
+  )
 }
 
 const UserInfo = v.object({ email: v.optional(v.string()), email_verified: v.optional(v.boolean()) })

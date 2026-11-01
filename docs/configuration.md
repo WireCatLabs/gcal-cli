@@ -13,7 +13,8 @@ gcal personal config unset limit
 
 ## Your own Google client
 
-`gcal` does not have its own Google app yet, so `session start` signs in through yours. Make it once in
+`session start` signs in through WireCat's Google app when the package carries one: `gcal doctor` then shows
+`oauth_client.client` as `wirecat`. Without it, or when you want your own, make a Google app once in
 [Google Cloud Console](https://console.cloud.google.com/):
 
 1. Make a project, and turn on the Google Calendar API in it.
@@ -28,7 +29,7 @@ gcal personal session start --client-file ~/client_secret.json
 ```
 
 `gcal` refuses a client file other users of the computer can read. Instead of the file, you can set
-`GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`. The client is needed only at sign-in: `gcal` keeps it with
+`GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`. Either one wins over WireCat's app. The client is needed only at sign-in: `gcal` keeps it with
 the sign-in in the system keyring, so later commands work without the file.
 
 ## Permissions

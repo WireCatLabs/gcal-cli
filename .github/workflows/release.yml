@@ -88,6 +88,36 @@ jobs:
           [ -n "$EXPECTED_SHA256" ] || { echo "Missing validation digest"; exit 1; }
           printf '%s  %s\n' "$EXPECTED_SHA256" "$1" | sha256sum --check -
 
+      # Here, not at pack time: cli-base's node-ci.yml packs and takes no secret. Google treats a Desktop client as
+      # public (developers.google.com/identity/protocols/oauth2/native-app); it still stays out of git and the log.
+      # A JSON secret defeats GitHub's redaction, so each value is masked on its own before anything can print it.
+      - name: Bundle WireCat's Google client
+        env:
+          GOOGLE_CLIENT_JSON: ${{ secrets.GCAL_GOOGLE_CLIENT_JSON }}
+        run: |
+          if [ -z "$GOOGLE_CLIENT_JSON" ]; then
+            echo "::notice::GCAL_GOOGLE_CLIENT_JSON is not set — this package carries no WireCat Google client"
+            exit 0
+          fi
+          set -- ./validated/*.tgz
+          work=$(mktemp -d)
+          tar -xzf "$1" -C "$work"
+          node -e '
+            const fail = (message) => { console.log(`::error::GCAL_GOOGLE_CLIENT_JSON ${message}`); process.exit(1) }
+            let client
+            try { client = JSON.parse(process.env.GOOGLE_CLIENT_JSON).installed } catch { fail("is not JSON") }
+            const { client_id: id, client_secret: secret } = client ?? {}
+            if (typeof id !== "string" || typeof secret !== "string" || !secret || !id.endsWith(".apps.googleusercontent.com"))
+              fail("is not a Desktop app client: it needs installed.client_id and installed.client_secret")
+            console.log(`::add-mask::${secret}`)
+            console.log(`::add-mask::${id}`)
+            const body = JSON.stringify({ installed: { client_id: id, client_secret: secret } })
+            require("node:fs").writeFileSync(process.argv[1], body, { mode: 0o644 })
+          ' "$work/package/google-client.json"
+          tar -czf "$1" -C "$work" package
+          tar -tzf "$1" | grep -qx package/google-client.json
+          echo "WireCat's Google client is in the package"
+
       # A 404 for a package npm has never seen means "not published yet", the same as a missing version.
       - name: version not yet on npm
         id: version
