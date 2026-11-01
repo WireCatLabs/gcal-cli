@@ -5,6 +5,7 @@ import {
   type EventDraft,
   type EventPatch,
   type EventResponse,
+  type IcsEvent,
   type StoredCalendar,
 } from "@wirecat/cli-core/calendar"
 import { entryOf } from "./calendar-source.js"
@@ -66,7 +67,7 @@ const bodyOf = (patch: EventPatch, recurring = patch.recurrence !== undefined): 
  * `start`, and clearing its `dateTime` would need a `null` the generated request check refuses. Google documents get
  * then update with etags for a partial change (https://developers.google.com/workspace/calendar/api/v3/reference/events/update).
  */
-export type GoogleCalendarWriter = CalendarWriter & Required<Pick<CalendarWriter, "move">>
+export type GoogleCalendarWriter = CalendarWriter & Required<Pick<CalendarWriter, "move" | "quickAdd" | "importEvent">>
 
 export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
   const where = (calendar: StoredCalendar, eventId: string, notify: boolean) => ({
@@ -134,6 +135,59 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
         if (statusOf(error) !== 409) throw error
         return entryOf(await get(calendar, id), calendar)
       }
+    },
+
+    async quickAdd(calendar, text, { notify }) {
+      const made = await api.call("calendar.events.quickAdd", {
+        calendarId: calendar.externalId,
+        text,
+        sendUpdates: notify ? "all" : "none",
+      })
+      return entryOf(answerOf(schema.CalendarEvent, made), calendar)
+    },
+
+    /** events.import takes no sendUpdates: Google mails nobody about an imported copy. */
+    async importEvent(calendar, event: IcsEvent) {
+      const imported = await api.call(
+        "calendar.events.import",
+        { calendarId: calendar.externalId },
+        {
+          iCalUID: event.uid,
+          ...bodyOf(
+            {
+              ...(event.title ? { title: event.title } : {}),
+              ...(event.startsAt === undefined ? {} : { startsAt: event.startsAt, endsAt: event.endsAt }),
+              ...(event.startDate === undefined ? {} : { startDate: event.startDate, endDate: event.endDate }),
+              // Google requires start.timeZone on every repeating event, an all-day one too, which iCalendar
+              // leaves without a zone: the calendar's own zone stands in.
+              ...(event.timezone || event.recurrence ? { timezone: event.timezone || calendar.timezone || "UTC" } : {}),
+              ...(event.location ? { location: event.location } : {}),
+              ...(event.description ? { description: event.description } : {}),
+              ...(event.attendees?.length
+                ? {
+                    attendees: event.attendees.map(({ email, optional }) => ({
+                      email,
+                      ...(optional ? { optional } : {}),
+                    })),
+                  }
+                : {}),
+              ...(event.recurrence ? { recurrence: event.recurrence } : {}),
+            },
+            event.recurrence !== undefined,
+          ),
+          ...(event.status ? { status: event.status } : {}),
+          ...(event.transparency ? { transparency: event.transparency } : {}),
+          ...(event.organizer
+            ? {
+                organizer: {
+                  email: event.organizer.email,
+                  ...(event.organizer.name ? { displayName: event.organizer.name } : {}),
+                },
+              }
+            : {}),
+        },
+      )
+      return entryOf(answerOf(schema.CalendarEvent, imported), calendar)
     },
 
     async update(calendar, externalId, changes, { etag, notify }) {

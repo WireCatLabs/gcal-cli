@@ -1,4 +1,5 @@
-// Shapes and refusals from the Calendar API reference (Events: insert, get, patch, update, delete, move; "Handle API errors" for
+// Shapes and refusals from the Calendar API reference (Events: insert, get, patch, update, delete, move, quickAdd,
+// import; "Handle API errors" for
 // 409 and 412; "Resource versions" for If-Match); every value is made up.
 
 const PREFIX = "/calendar/v3/"
@@ -120,12 +121,57 @@ export const fakeGoogleWrites = (
     return changed(event)
   }
 
+  /** Reads no date: the event is the whole text as its title, on 3 November 2026 at 13:00 UTC, for an hour. */
+  const quickAdd = (query: URLSearchParams) => {
+    const id = `quick${events.size}`
+    const event: Event = {
+      kind: "calendar#event",
+      id,
+      etag: etag(),
+      status: "confirmed",
+      iCalUID: `${id}@google.com`,
+      summary: query.get("text") ?? "",
+      start: { dateTime: "2026-11-03T13:00:00Z" },
+      end: { dateTime: "2026-11-03T14:00:00Z" },
+      organizer: { email: "owner@example.com", self: true },
+      eventType: "default",
+      updated: "2026-10-27T12:00:00.000Z",
+    }
+    events.set(id, event)
+    return event
+  }
+  /**
+   * One event per iCalUID: a UID imported again replaces the event under its id. Inferred, not seen live: the import
+   * reference does not say what Google does with a UID it holds.
+   */
+  const imported = (body: Record<string, unknown>) => {
+    const held = [...events.values()].find((event) => event.iCalUID === body.iCalUID)
+    const id = held?.id ?? `imported${events.size}`
+    const event: Event = {
+      kind: "calendar#event",
+      status: "confirmed",
+      eventType: "default",
+      ...body,
+      id,
+      etag: etag(),
+      updated: "2026-10-27T12:00:00.000Z",
+    }
+    events.set(id, event)
+    return event
+  }
+
   const fetch = async (input: string | URL | Request, init: RequestInit = {}): Promise<Response> => {
     const url = new URL(String(input))
     const path = decodeURIComponent(url.pathname.slice(PREFIX.length))
     const method = init.method ?? "GET"
     const ifMatch = new Headers(init.headers).get("if-match") ?? undefined
     const body: Record<string, unknown> | undefined = typeof init.body === "string" ? JSON.parse(init.body) : undefined
+    const special = method === "POST" ? path.match(/^calendars\/([^/]+)\/events\/(quickAdd|import)$/u) : null
+    if (special) {
+      requests.push({ method, path, query: url.searchParams, ifMatch, body })
+      notified.push(url.searchParams.get("sendUpdates") === "all")
+      return answered(json(special[2] === "quickAdd" ? quickAdd(url.searchParams) : imported(body ?? {})))
+    }
     const one = path.match(/^calendars\/([^/]+)\/events\/([^/]+)$/u)
     const all = path.match(/^calendars\/([^/]+)\/events$/u)
     const move = method === "POST" ? path.match(/^calendars\/([^/]+)\/events\/([^/]+)\/move$/u) : null

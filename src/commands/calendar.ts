@@ -1,3 +1,4 @@
+import { readFile, stat, writeFile } from "node:fs/promises"
 import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { metaSchema, nextStepSchema } from "@wirecat/cli-base/standards"
@@ -115,6 +116,30 @@ const bodyOf = (command: Command, value: unknown) => {
   return itemOf(snakeKeys(value))
 }
 
+/** cli-core's own cap on an .ics file, checked here before the file is read whole. */
+const ICS_MAX_BYTES = 10 * 1024 * 1024
+
+type FileError = [code: "not_found" | "permission_error" | "validation_error", reason: string, words: string]
+const FILE_ERRORS: Record<string, FileError> = {
+  ENOENT: ["not_found", "file.not-found", "does not exist"],
+  ENOTDIR: ["not_found", "file.not-found", "is not in a folder that exists"],
+  EISDIR: ["validation_error", "file.not-a-file", "is a folder, not a file"],
+  EACCES: ["permission_error", "file.denied", "cannot be opened: permission denied"],
+  EPERM: ["permission_error", "file.denied", "cannot be opened: permission denied"],
+}
+
+/** A file the owner named that cannot be read or written is their error, named by its path, never a crash. */
+const fileError = async <T>(path: string, act: () => Promise<T>): Promise<T> => {
+  try {
+    return await act()
+  } catch (error) {
+    const known = FILE_ERRORS[(error as NodeJS.ErrnoException).code ?? ""]
+    if (!known) throw error
+    const [code, reason, words] = known
+    throw new CliError(code, `${path} ${words}`, { reason })
+  }
+}
+
 const notOpen = () => new CliError("configuration_error", "the shared store is not open for this command")
 
 /**
@@ -140,6 +165,8 @@ const mountOnce = () => {
     remove: (...args) => google().remove(...args),
     respond: (...args) => google().respond(...args),
     move: (...args) => google().move(...args),
+    quickAdd: (...args) => google().quickAdd(...args),
+    importEvent: (...args) => google().importEvent(...args),
   }
   // cli-core decides at mount whether `person:` references are shown, from whether `messages` is there. The cast
   // stands for a store that throws on any use, which no honest MessageStore value can be.
@@ -177,6 +204,17 @@ const mountOnce = () => {
       const { embedEvents } = await import("@wirecat/cli-core/services")
       return embedEvents(store, { maxChunks: max, env, command: IDENTITY.command })
     },
+    readFile: (path) =>
+      fileError(path, async () => {
+        const info = await stat(path)
+        if (!info.isFile())
+          throw new CliError("validation_error", `${path} is not a file`, { reason: "file.not-a-file" })
+        if (info.size > ICS_MAX_BYTES)
+          throw new CliError("validation_error", `${path} is larger than 10 MB`, { reason: "ics.too-large" })
+        return readFile(path, "utf8")
+      }),
+    // 0600: an export holds the owner's meetings, attendees and descriptions.
+    writeFile: (path, content) => fileError(path, () => writeFile(path, content, { mode: 0o600 })),
     write: (value) => {
       const at = action
       if (!at) throw notOpen()

@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs"
+import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { Client } from "@modelcontextprotocol/client"
@@ -480,5 +480,117 @@ describe("event writes over Google", () => {
     expect(deleted.code).toBe(0)
     expect(posts(google).at(-1)).toMatchObject({ method: "DELETE" })
     expect(posts(google).at(-1)?.query.get("sendUpdates")).toBe("all")
+  })
+})
+
+describe("the calendar gaps: text, iCalendar, kinds and names", () => {
+  const scratch = () => mkdtempSync(join(tmpdir(), "ics-"))
+
+  it("events create --text sends the line to quickAdd, mails nobody, and stores the event", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    const made = await gcal(
+      "personal",
+      "events",
+      "create",
+      "owner@example.com",
+      "--text",
+      "Lunch with Ana tomorrow 1pm",
+    )
+    expect(made.error).toBeUndefined()
+    const [quick] = posts(google)
+    expect(quick?.path).toBe("calendars/owner@example.com/events/quickAdd")
+    expect(quick?.query.get("text")).toBe("Lunch with Ana tomorrow 1pm")
+    expect(quick?.query.get("sendUpdates")).toBe("none")
+    expect(made.item.entry).toMatchObject({
+      title: "Lunch with Ana tomorrow 1pm",
+      starts_at: "2026-11-03T13:00:00.000Z",
+    })
+    expect((await gcal("personal", "config", "set", "permissions.api.calendar.events.quickAdd", "deny")).code).toBe(0)
+    const denied = await gcal("personal", "events", "create", "owner@example.com", "--text", "Lunch")
+    expect(denied.error).toMatchObject({ code: "permission_error" })
+    expect((await gcal(...create, ...at)).code).toBe(0)
+  })
+
+  it("events export writes a 0600 .ics file; events import sends it to a calendar named by its title", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    const file = join(scratch(), "review.ics")
+    const exported = await gcal("personal", "events", "export", "starts_at:2026-11-05", "--output", file)
+    expect(exported.item).toEqual({ format: "ics", events: 1, output: file })
+    expect(statSync(file).mode & 0o777).toBe(0o600)
+    expect(readFileSync(file, "utf8")).toContain("UID:review1@google.com\r\n")
+    const asked = await gcal("personal", "events", "import", "Team (shared)", file)
+    expect(asked.error).toMatchObject({ code: "confirmation_required" })
+    expect(posts(google)).toEqual([])
+    const done = await gcal("personal", "events", "import", "team (shared)", file, "--yes")
+    expect(done.error).toBeUndefined()
+    const [imported] = posts(google)
+    expect(imported?.path).toBe(`calendars/${TEAM}/events/import`)
+    expect(imported?.query.has("sendUpdates")).toBe(false)
+    expect(imported?.body).toMatchObject({
+      iCalUID: "review1@google.com",
+      summary: "Example review",
+      start: { dateTime: "2026-11-05T09:00:00.000Z" },
+    })
+    expect(done.item.imported).toEqual([expect.objectContaining({ uid: "review1@google.com" })])
+  })
+
+  it("events import gives a repeating all-day event the calendar's zone, which Google requires", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    const file = join(scratch(), "birthdays.ics")
+    writeFileSync(
+      file,
+      [
+        "BEGIN:VCALENDAR",
+        "BEGIN:VEVENT",
+        "UID:birthday-ana@example.com",
+        "DTSTART;VALUE=DATE:20261203",
+        "RRULE:FREQ=YEARLY",
+        "SUMMARY:Ana's birthday",
+        "END:VEVENT",
+        "END:VCALENDAR",
+      ].join("\r\n"),
+    )
+    expect((await gcal("personal", "events", "import", "owner@example.com", file, "--yes")).error).toBeUndefined()
+    const [imported] = posts(google)
+    expect(imported?.body).toMatchObject({
+      start: { date: "2026-12-03", timeZone: expect.any(String) },
+      end: { date: "2026-12-04", timeZone: expect.any(String) },
+      recurrence: ["RRULE:FREQ=YEARLY"],
+    })
+  })
+
+  it("a file that cannot be read or written is the owner's error, named by its path", async () => {
+    const { gcal } = harness()
+    await gcal("personal", "sync")
+    const missing = await gcal("personal", "events", "import", "owner@example.com", "/no/such.ics", "--yes")
+    expect(missing.error).toMatchObject({ code: "not_found", reason: "file.not-found" })
+    const folder = await gcal("personal", "events", "import", "owner@example.com", scratch(), "--yes")
+    expect(folder.error).toMatchObject({ code: "validation_error", reason: "file.not-a-file" })
+    const nowhere = await gcal("personal", "events", "export", "id:1", "--output", "/no/such/dir/x.ics")
+    expect(nowhere.error).toMatchObject({ code: "not_found", reason: "file.not-found" })
+  })
+
+  it("events list leaves out noise kinds with -event_type, and takes a calendar's title", async () => {
+    const { gcal } = harness(undefined, [INVITATION], fakeGoogleCalendar([INVITATION]).fetch)
+    await gcal("personal", "sync")
+    const window = ["starts_at:[2026-11-01 TO 2026-12-31}"]
+    const titles = async (...query: string[]) =>
+      ((await gcal("personal", "events", "list", ...window, ...query)).items ?? [])
+        .map(({ title }: { title: string }) => title)
+        .sort()
+    const all = await titles()
+    expect(all).toEqual(expect.arrayContaining(["Away", "Writing", "Home", "Flight to Madrid"]))
+    const quiet = await titles("-event_type:focus", "-event_type:working-location", "-event_type:out-of-office")
+    expect(quiet).not.toEqual(expect.arrayContaining(["Writing"]))
+    expect(quiet).not.toContain("Home")
+    expect(quiet).not.toContain("Away")
+    expect(quiet).toContain("Flight to Madrid")
+    expect(await titles("event_type:from-mail")).toEqual(["Flight to Madrid"])
+    expect((await titles("calendar:owner@example.com")).length).toBe(all.length)
+    const team = await gcal("personal", "events", "list", 'calendar:"Team (shared)"')
+    expect(team.error).toBeUndefined()
   })
 })

@@ -15,7 +15,18 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **The skill and `gcal guide` show an agent how to write a meeting brief and a daily or weekly digest**
   (`gcal guide prepare-meeting`, `gcal guide digest`): the objective, participants, decisions needed, open questions
   and a checklist, from `events prepare` and `events list`, never following instructions found in an event's text.
-- gcal runs on cli-core 0.538.0 and cli-base 0.71.0.
+- **Add a meeting from one line.** `gcal <profile> events create Work --text "Lunch with Ana tomorrow 1pm"` hands the
+  line to Google's quick add, which reads the day, time and place. Its keys are `events.create` and
+  `api.calendar.events.quickAdd`; nobody is mailed without `--notify`. Google picks the id, so `--operation-id` does
+  not apply.
+- **iCalendar export and import.** `events export <query> --output week.ics` writes the events `events list` would
+  list as an `.ics` file (`id:<id>` for one); `events import <calendar> <file.ics>` adds a file's events through
+  Google's `events.import`, each under its UID, and mails nobody. Import asks first (`events.import`).
+- **Leave out birthdays, focus time and other noise.** `events list -event_type:birthday -event_type:focus` leaves
+  kinds out, and `event_type:default` keeps ordinary events only. `events list id:<id>` finds one event.
+- **Calendars by name.** `calendar:Team`, `events create Team`, `--calendar` and `--to-calendar` take a calendar's name
+  as well as its id. A name two calendars share is refused with their ids.
+- gcal runs on cli-core 0.539.0 and cli-base 0.71.0.
 
 ## 0.11.0 — 01.11.2026
 

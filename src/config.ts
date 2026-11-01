@@ -20,6 +20,8 @@ export const apiKey = (method: string): string => `api.${method}`
 /** The generated method each shared write calls, so denying `api` cannot be bypassed through `events create`. */
 const WRITE_METHODS: Record<CalendarWrite, string[]> = {
   create: ["calendar.events.insert"],
+  "quick-add": ["calendar.events.quickAdd"],
+  import: ["calendar.events.import"],
   // A switch between timed and all-day replaces the event with events.update.
   update: ["calendar.events.patch", "calendar.events.update"],
   delete: ["calendar.events.delete"],
