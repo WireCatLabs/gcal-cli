@@ -6,11 +6,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Added
 
-- **Sign in without a Google Cloud project of your own.** `session start` uses WireCat's Google app when the package
-  carries one; `gcal doctor` then shows `oauth_client.client: wirecat`. Your own app still wins: `--client-file`, or
-  `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`. A package without WireCat's app asks for yours, as before.
-  Until Google finishes its review of the app, Google shows an "unverified app" page first;
-  [connect your Google account](docs/installation.md#connect-your-google-account) says how to go on.
+- **`session start` can use a WireCat Google app built into the package**, when a release carries one; `gcal doctor`
+  then shows `oauth_client.client: wirecat`. This release carries none, so you still make your own app and pass it
+  with `--client-file`, or `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`, which also win over a built-in app.
 - **All your accounts in one list.** `gcal <profile> events list --source all` lists the events of every Google
   account gcal has stored as one list; `--source gcal:personal,gcal:work` names profiles. The answer names the
   accounts in `meta.accounts`, and says `meta.complete: false` with an issue per account whose sync is missing or
