@@ -37,7 +37,7 @@ You:    Yes.
 
 ## Quick start
 
-You need a Google sign-in client of your own for now. [Make one](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/configuration.md#your-own-google-client)
+You need a Google sign-in client of your own for now. [Make one](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/installation.md#make-your-own-google-app)
 in Google Cloud Console, as a Desktop app, and save its JSON file as `~/client_secret.json` with `chmod 600`.
 
 ```sh

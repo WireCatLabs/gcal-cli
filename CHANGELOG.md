@@ -19,6 +19,12 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **Meetings that overlap.** `events list overlapping:true` lists the meetings whose time overlaps another's, each with
   `overlaps`; with `--source` it compares across accounts. It counts timed meetings that are not cancelled, declined,
   marked free or a working-location block; all-day events and back-to-back meetings never overlap.
+- **A step-by-step guide to making your own Google app.**
+  [Make your own Google app](docs/installation.md#make-your-own-google-app) walks through Google Cloud Console: the
+  project, the Google Calendar API, Branding, Audience, Data Access with the scopes `gcal` asks for, and a Desktop app
+  client. It says when to keep the app in Testing, where a sign-in ends after 7 days, and when to publish it.
+  [Sign-in problems](docs/troubleshooting.md#sign-in-problems) lists what Google and `gcal` show when a step was
+  missed. The current releases carry no WireCat Google app, so every user makes one.
 - gcal runs on cli-core 0.527.0.
 - **gcal's MCP server is listed in the official MCP Registry** as `dev.wirecat/gcal-cli`, from the next release on:
   `server.json`, `mcpName`, and the registry jobs from cli-template 0.12.0.
