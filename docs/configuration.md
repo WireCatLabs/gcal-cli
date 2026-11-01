@@ -13,24 +13,12 @@ gcal personal config unset limit
 
 ## Your own Google client
 
-`session start` signs in through WireCat's Google app when the package carries one: `gcal doctor` then shows
-`oauth_client.client` as `wirecat`. Without it, or when you want your own, make a Google app once in
-[Google Cloud Console](https://console.cloud.google.com/):
+`session start` signs in through a Google app of your own: pass its Desktop app client file with `--client-file`, or
+set `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`. Either one wins over WireCat's app, which the current
+releases do not carry yet. `gcal` refuses a client file other users of the computer can read. The client is needed
+only at sign-in: `gcal` keeps it with the sign-in, so later commands work without the file.
 
-1. Make a project, and turn on the Google Calendar API in it.
-2. Set up the OAuth consent screen. While the app is in Testing, add your Google account as a test user.
-3. Make an OAuth client ID of type **Desktop app**, and download its JSON file.
-
-Then give `gcal` the file, readable by you only:
-
-```sh
-chmod 600 ~/client_secret.json
-gcal personal session start --client-file ~/client_secret.json
-```
-
-`gcal` refuses a client file other users of the computer can read. Instead of the file, you can set
-`GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`. Either one wins over WireCat's app. The client is needed only at sign-in: `gcal` keeps it with
-the sign-in in the system keyring, so later commands work without the file.
+[Make your own Google app](installation.md#make-your-own-google-app) walks through Google Cloud Console step by step.
 
 ## Permissions
 
