@@ -518,7 +518,7 @@ describe("the calendar gaps: text, iCalendar, kinds and names", () => {
     const file = join(scratch(), "review.ics")
     const exported = await gcal("personal", "events", "export", "starts_at:2026-11-05", "--output", file)
     expect(exported.item).toEqual({ format: "ics", events: 1, output: file })
-    expect(statSync(file).mode & 0o777).toBe(0o600)
+    if (process.platform !== "win32") expect(statSync(file).mode & 0o777).toBe(0o600)
     expect(readFileSync(file, "utf8")).toContain("UID:review1@google.com\r\n")
     const asked = await gcal("personal", "events", "import", "Team (shared)", file)
     expect(asked.error).toMatchObject({ code: "confirmation_required" })
