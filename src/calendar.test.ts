@@ -138,6 +138,60 @@ describe("calendar commands over Google", () => {
     expect(await from('starts_at:["2026-11-03T08:00:00Z" TO 2026-11-04}')).toContain("Writing")
   })
 
+  it("events list --source reads every signed-in account as one list and finds meetings that overlap across them", async () => {
+    const dentist = {
+      id: "dentist",
+      iCalUID: "dentist@example.com",
+      status: "confirmed",
+      summary: "Dentist",
+      start: { dateTime: "2026-11-03T08:30:00Z" },
+      end: { dateTime: "2026-11-03T09:30:00Z" },
+      updated: "2026-10-20T08:00:00.000Z",
+    }
+    const { gcal, json, env, keyring } = harness({ extra: [dentist] })
+    sessionStorage(env, "work", keyring).write({
+      tokens: {
+        accessToken: ACCESS,
+        refreshToken: "fixture-refresh",
+        expiresAt: Date.now() + 3_600_000,
+        scopes: [CALENDAR_READ_SCOPE],
+      },
+      client: { clientId: "fixture-client.apps" },
+    })
+    rememberAccount(IDENTITY, "work", "work@example.com", env)
+    await json("personal", "sync")
+    await json("work", "calendars", "list")
+
+    const window = ["ends_at>=2026-11-03", "starts_at<2026-11-04"]
+    const partial = await gcal("personal", "events", "list", ...window, "--source", "all", "--json")
+    expect(partial.code).toBe(0)
+    expect(JSON.parse(partial.out).meta).toMatchObject({
+      accounts: ["google-calendar:owner@example.com", "google-calendar:work@example.com"],
+      complete: false,
+      issues: [{ code: "not_found", reason: "calendar.sync-incomplete", source: "google-calendar:work@example.com" }],
+    })
+
+    await json("work", "sync")
+    const both = await json("personal", "events", "list", ...window, "--source", "gcal:personal,gcal:work")
+    expect(both.meta).toMatchObject({ complete: true })
+    expect(both.meta.accounts).toHaveLength(2)
+    const own = await json("personal", "events", "list", ...window)
+    expect(own.meta.accounts).toEqual(["google-calendar:owner@example.com"])
+    const titles = both.items.map(({ title }: { title: string }) => title)
+    expect(titles.filter((title: string) => title === "Dentist")).toHaveLength(1)
+    expect(titles).toEqual(expect.arrayContaining(own.items.map(({ title }: { title: string }) => title)))
+
+    const clashes = (await json("personal", "events", "list", ...window, "overlapping:true", "--source", "all")).items
+    expect(clashes.map(({ title }: { title: string }) => title)).toEqual(expect.arrayContaining(["Writing", "Dentist"]))
+    expect(clashes.every(({ overlapping }: { overlapping: boolean }) => overlapping)).toBe(true)
+
+    const locked = await gcal("personal", "events", "list", "--source", "all", "--json")
+    expect(locked.code).toBe(0)
+    env.GCAL_PROFILE_LOCK = "personal"
+    const refused = await gcal("personal", "events", "list", "--source", "all", "--json")
+    expect(JSON.parse(refused.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("profile.locked")
+  })
+
   it("a second sync sends the token alone", async () => {
     const { json, google } = harness()
     await json("personal", "sync")

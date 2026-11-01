@@ -240,7 +240,7 @@ the account's stored events
 
 ### `gcal events list`
 
-list stored events, earliest first
+list stored events, earliest first; --source reads several accounts as one list
 
 ```sh
 gcal events list [query] [options]
@@ -254,10 +254,11 @@ gcal events list [query] [options]
 |---|---|
 | `--limit <n>` | events per page, 1–1000. Default: `100`. |
 | `--page <n>` | which page, starting at 1. Default: `1`. |
+| `--source <accounts>` | calendar accounts held in the store to read as one list: all, a provider, or a list such as gcal:work,gcal:personal or group:<name>; the profile's account when absent. |
 
-**Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 12 more; every field: gcal commands info events list
+**Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 13 more; every field: gcal commands info events list
 
-**Example:** `gcal personal events list starts_at>=2026-11-02 starts_at<2026-11-07 --json`, `gcal personal events list ends_at>=today person:ana@example.com`, `gcal personal events list starts_at>=2026-11-02 --limit 50 --page 2`
+**Example:** `gcal personal events list starts_at>=2026-11-02 starts_at<2026-11-07 --json`, `gcal personal events list ends_at>=today person:ana@example.com`, `gcal personal events list overlapping:true --source all`
 
 ### `gcal events show`
 
@@ -271,7 +272,7 @@ gcal events show <event>
 |---|---|---|
 | `event` | required | the event's id, or event:<id>. |
 
-**Returns:** calendar event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 17 more; every field: gcal commands info events show
+**Returns:** calendar event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 18 more; every field: gcal commands info events show
 
 **Example:** `gcal personal events show event:42 --json`
 

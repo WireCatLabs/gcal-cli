@@ -11,6 +11,15 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`. A package without WireCat's app asks for yours, as before.
   Until Google finishes its review of the app, Google shows an "unverified app" page first;
   [connect your Google account](docs/installation.md#connect-your-google-account) says how to go on.
+- **All your accounts in one list.** `gcal <profile> events list --source all` lists the events of every Google
+  account gcal has stored as one list; `--source gcal:personal,gcal:work` names profiles. The answer names the
+  accounts in `meta.accounts`, and says `meta.complete: false` with an issue per account whose sync is missing or
+  unfinished. A meeting two accounts hold is listed once. Under `GCAL_PROFILE_LOCK`, `--source` reads only the locked
+  profile's account. Each command now records its profile in the shared store, so `--source gcal:<profile>` finds it.
+- **Meetings that overlap.** `events list overlapping:true` lists the meetings whose time overlaps another's, each with
+  `overlaps`; with `--source` it compares across accounts. It counts timed meetings that are not cancelled, declined,
+  marked free or a working-location block; all-day events and back-to-back meetings never overlap.
+- gcal runs on cli-core 0.527.0.
 - **gcal's MCP server is listed in the official MCP Registry** as `dev.wirecat/gcal-cli`, from the next release on:
   `server.json`, `mcpName`, and the registry jobs from cli-template 0.12.0.
 

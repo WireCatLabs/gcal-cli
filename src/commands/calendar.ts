@@ -162,6 +162,9 @@ const mountOnce = () => {
     get source() {
       return need().source()
     },
+    get locked() {
+      return Boolean(need().env[`${IDENTITY.envPrefix}_PROFILE_LOCK`])
+    },
     freeBusy: true,
     serverSearch: true,
     embed: async (max) => {
@@ -250,6 +253,8 @@ const mountOnce = () => {
       gcalEnvironment.trackCloseable?.({ close })
       const key = { provider: PROVIDER.name, account }
       const accountId = await store.accounts.saveAccount(key, { name: null })
+      // So `events list --source gcal:<profile>` finds this account by its profile, as tg's and max's lists do.
+      await store.accounts.saveProfile(IDENTITY.command, profile, key)
       let source: CalendarSource | undefined
       let writer: GoogleCalendarWriter | undefined
       let api: GoogleApi | undefined

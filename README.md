@@ -134,6 +134,10 @@ More: [agents](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md#a
   shows how far each calendar is.
 - **Repeating events.** Each occurrence is stored one by one, cancelled ones included.
 - **What changed.** `events list changed_at>=2026-10-25` lists the events that are new, moved or cancelled since a date.
+- **All accounts in one list.** `events list --source all` lists the events of every Google account you signed in to,
+  and says which accounts it read.
+- **Meetings that overlap.** `events list overlapping:true --source all` finds the meetings that clash, also across
+  accounts.
 - **Search by meaning.** `gcal models download e5-small` fetches a small model once. `sync --embed` then indexes new
   events with it.
 - **Search in Google.** `search events --backend server` asks Google's own search. It also finds events outside the

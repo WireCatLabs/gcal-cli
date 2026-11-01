@@ -105,6 +105,8 @@ gcal personal events list                                       # from today on,
 gcal personal events list ends_at>=2026-11-02 starts_at<=2026-11-06 person:ana@example.com
 gcal personal events list starts_at>=2026-11-02                 # events that start on or after a day
 gcal personal events list changed_at>=2026-10-25                # what changed since a date
+gcal personal events list --source all                          # every account's events in one list
+gcal personal events list overlapping:true --source all         # meetings that overlap, across accounts
 gcal personal events show event:42                              # attendees, Drive files and history
 gcal personal search events roadmap planning                    # by words, and by meaning with the model
 gcal personal people list                                       # everyone in this week's events
@@ -124,6 +126,20 @@ twice is refused, so write a range instead. `calendar:<id>` and `person:<email>`
 or `ends_at` the list starts at the beginning of today. `gcal personal events list --help` lists the fields.
 A page holds `--limit` events (100); when more follow, `page.next_page` is the value for `--page`, and the answer's
 `next` step runs it with the same query.
+
+`--source` reads more than the profile's own account, as one list: `--source all` reads every Google account that
+`gcal` has stored, `--source gcal:personal,gcal:work` names profiles, and `--source group:<name>` reads an account group
+saved with `config set account_groups.<name>`. A meeting that two accounts hold is listed once. The answer names the
+accounts it read in `meta.accounts`. When one of them has no synced calendar, or its sync has not finished, the answer
+says `meta.complete: false` with an issue for that account (`calendar.unsynced`, `calendar.sync-incomplete`): run
+`gcal <that profile> sync`. An account is in the store once `gcal` has run a command for its profile. When
+`GCAL_PROFILE_LOCK` is set, `--source` may name only the locked profile's account.
+
+`overlapping:true` keeps the meetings whose time overlaps another meeting, each with `overlaps`, the other meetings as
+`event:<id>`. With `--source` it compares meetings across the accounts, so a work meeting that clashes with a personal
+one is found. A meeting counts only when it takes your time: it has a start and an end time, it is not cancelled, you
+did not decline it, it is not marked free, and it is not a working-location block. All-day events never overlap, and a
+meeting that ends when the next one starts does not overlap it. `overlapping:false` keeps every other event.
 
 `changed_at>=<date>` keeps the events first stored, moved, or cancelled or removed since that date, each with `change`
 (`new`, `moved` or `cancelled`) and `changed_at`; a moved one also says where it `was` (`starts_at`, `ends_at`). It

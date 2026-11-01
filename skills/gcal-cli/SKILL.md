@@ -37,6 +37,11 @@ Find your way with the tool itself, not this file:
   answer's `page.next_page` goes to `--page`.
   `events list changed_at>=<date>` lists what changed since a date (`change`: `new`, `moved` or `cancelled`; a moved
   one's old time under `was`).
+- `events list --source all` (or `--source gcal:personal,gcal:work`) lists every stored account's events as one list.
+  `meta.accounts` names what was read; `meta.complete: false` with an issue names an account whose sync is missing or
+  unfinished, so say the answer may be incomplete. `events list overlapping:true --source all` lists the meetings that
+  overlap, each with `overlaps`: timed, not cancelled, not declined, not free, no working-location block; all-day
+  events and back-to-back meetings never overlap.
 - `gcal <profile> search events <query> --json` finds stored events; `search events --backend server <query>` asks Google over the synced
   calendars, for events outside the synced span, and `--backend both` gives the store's hits then Google's other ones
   in one page. Each answers `items`; each item's `untrusted` names the fields others
