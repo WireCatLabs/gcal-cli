@@ -11,6 +11,7 @@
   "store status": "read",
   "events list": "read",
   "events show": "read",
+  "events prepare": "read",
   "events create": "write",
   "events update": "write",
   "events delete": "write",

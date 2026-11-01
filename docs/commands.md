@@ -276,6 +276,27 @@ gcal events show <event>
 
 **Example:** `gcal personal events show event:42 --json`
 
+### `gcal events prepare`
+
+before a meeting: the event, its attendees with their answer, and each one's latest messages, mail and meetings the store holds; the next meeting when no event is named
+
+```sh
+gcal events prepare [event] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `event` | optional | the event's id, or event:<id>; the next meeting with other attendees when absent. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | messages per person in each list, 1–50; 5 if not given. |
+| `--since-time <time>` | no message or meeting older than this ISO 8601 time, or 30d ago. |
+
+**Returns:** calendar event preparation — event, people, limits, untrusted; every field: gcal commands info events prepare
+
+**Example:** `gcal personal events prepare --json`, `gcal personal events prepare event:42 --limit 3`, `gcal personal events prepare event:42 --since-time 2026-10-01`
+
 ### `gcal events create`
 
 add an event to a calendar; with --repeat, one that repeats
