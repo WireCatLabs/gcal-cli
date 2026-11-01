@@ -9,6 +9,11 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **gcal's MCP server is listed in the official MCP Registry** as `dev.wirecat/gcal-cli`, from the next release on:
   `server.json`, `mcpName`, and the registry jobs from cli-template 0.12.0.
 
+### Fixed
+
+- **The usage guide's raw `api` section now matches 0.7.0**: a write that is easy to undo runs without a question;
+  deletes and sharing ask; emptying, deleting or giving away a calendar is refused until you allow it.
+
 ## 0.10.0 — 01.11.2026
 
 - gcal now runs on cli-core 0.512.0. Nothing changes for gcal's commands or its MCP server: cli-core 0.512.0 renamed
