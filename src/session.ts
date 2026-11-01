@@ -195,6 +195,13 @@ export const signOut = async (options: Common) => {
   return { profile: options.profile, ended: true, cached_data: "retained" }
 }
 
+/** Each profile on this computer that a sign-in tied to a Google account, with that account's address. */
+export const signedInAccounts = (env: NodeJS.ProcessEnv, configured: readonly string[]): [string, string][] =>
+  profilesHere(IDENTITY, configured, env).flatMap((profile) => {
+    const account = savedAccount(env, profile)
+    return account === undefined ? [] : [[profile, account] as [string, string]]
+  })
+
 /** Every profile this computer knows, named in the config or signed in once, with where its sign-in is now. */
 export const profileSignIns = (env: NodeJS.ProcessEnv, configured: readonly string[], keyring?: KeyringStore) =>
   profilesHere(IDENTITY, configured, env).map((profile) => {

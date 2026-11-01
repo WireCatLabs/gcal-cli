@@ -162,6 +162,9 @@ const mountOnce = () => {
     get source() {
       return need().source()
     },
+    get locked() {
+      return Boolean(need().env[`${IDENTITY.envPrefix}_PROFILE_LOCK`])
+    },
     freeBusy: true,
     serverSearch: true,
     embed: async (max) => {
@@ -222,9 +225,11 @@ const mountOnce = () => {
       // cli-core types the environment as a loose record; gcal's own run() passes a GcalEnvironment.
       const gcalEnvironment = environment as GcalEnvironment
       const env = gcalEnvironment.env ?? process.env
-      const { profile } = configuration.resolveSettings(action.optsWithGlobals<GlobalFlags>(), { env })
+      const { profile, configuredProfiles } = configuration.resolveSettings(action.optsWithGlobals<GlobalFlags>(), {
+        env,
+      })
       const [
-        { apiAccess, savedAccount },
+        { apiAccess, savedAccount, signedInAccounts },
         { openGcalStore, PROVIDER },
         { googleApi },
         { googleCalendarSource },
@@ -250,6 +255,16 @@ const mountOnce = () => {
       gcalEnvironment.trackCloseable?.({ close })
       const key = { provider: PROVIDER.name, account }
       const accountId = await store.accounts.saveAccount(key, { name: null })
+      // So `events list --source gcal:<profile>` finds this account by its profile, as tg's and max's lists do.
+      await store.accounts.saveProfile(IDENTITY.command, profile, key)
+      // A profile signed in but never opened has no store row, and `--source` would leave it out without a word; with
+      // one, the answer names it and says it has no synced calendar. A lock keeps the other profiles out of reach.
+      if (action.opts<{ source?: string }>().source !== undefined && !env[`${IDENTITY.envPrefix}_PROFILE_LOCK`])
+        for (const [other, address] of signedInAccounts(env, configuredProfiles)) {
+          const otherKey = { provider: PROVIDER.name, account: address }
+          await store.accounts.saveAccount(otherKey, { name: null })
+          await store.accounts.saveProfile(IDENTITY.command, other, otherKey)
+        }
       let source: CalendarSource | undefined
       let writer: GoogleCalendarWriter | undefined
       let api: GoogleApi | undefined
