@@ -2,7 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describeProgram } from "@wirecat/cli-base/commands"
-import { changesAuthorityAt, checkGuide, fetchesOnlyAt } from "@wirecat/cli-core/cli"
+import { changesAuthorityAt, checkGuide, readsOverMcpAt } from "@wirecat/cli-core/cli"
 import { toolsFromCommands } from "@wirecat/cli-core/mcp"
 import { expect, it } from "vitest"
 import { permissions } from "./config.js"
@@ -40,7 +40,7 @@ it("pins the commands an agent can find, and offers neither api call nor clearin
     includeUnavailable: true,
     exclude: [["mcp"]],
     authority: changesAuthorityAt(program),
-    fetchOnly: fetchesOnlyAt(program),
+    fetchOnly: readsOverMcpAt(program),
     permissions,
   })
   const catalogue = Object.fromEntries(tools.map((tool) => [tool.command, tool.writes ? "write" : "read"]))

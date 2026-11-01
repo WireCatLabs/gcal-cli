@@ -356,6 +356,21 @@ describe("session status and end", () => {
     expect(item((await gcal(["personal", "session", "end", "--json"])).out)).toMatchObject({ ended: false })
   })
 
+  it("session status and doctor give the time and the zone in use, for an agent that plans from now", async () => {
+    const { gcal } = harness()
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const before = Date.now()
+    for (const argv of [
+      ["personal", "session", "status", "--json"],
+      ["doctor", "--json"],
+    ]) {
+      const { meta } = JSON.parse((await gcal(argv)).out)
+      expect(meta).toMatchObject({ timezone: zone, now_local: expect.stringMatching(/[+-]\d{2}:\d{2}$/) })
+      expect(Date.parse(meta.now)).toBeGreaterThanOrEqual(before)
+      expect(Date.parse(meta.now)).toBe(Date.parse(meta.now_local))
+    }
+  })
+
   it("ends the sign-in but keeps the account the profile is", async () => {
     const { gcal } = harness()
     expect((await gcal(["personal", "session", "start", "--client-file", clientFile()])).code).toBe(0)

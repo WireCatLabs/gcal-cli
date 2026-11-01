@@ -10,7 +10,7 @@
   "sync": "read",
   "store status": "read",
   "events list": "read",
-  "events export": "write",
+  "events export": "read",
   "events show": "read",
   "events prepare": "read",
   "events create": "write",

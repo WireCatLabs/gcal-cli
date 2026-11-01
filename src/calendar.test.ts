@@ -689,6 +689,52 @@ describe("calendar commands over MCP", () => {
     })
   })
 
+  it("a read-only profile exports events through gcal_read, and the list says it takes -event_type", async () => {
+    const { json, env, keyring, google } = harness()
+    await json("personal", "sync")
+    const client = await connect({ ...env, GCAL_READ_ONLY: "1" }, keyring, google.fetch as typeof fetch)
+    const found = (await client.callTool({
+      name: "gcal_tools_search",
+      arguments: { query: "events export" },
+    })) as { structuredContent: { items: { command: string; writes: boolean; arguments: unknown }[] } }
+    const exporter = found.structuredContent.items.find(({ command }) => command === "events export")
+    expect(exporter?.writes).toBe(false)
+    expect(JSON.stringify(exporter?.arguments)).toContain("-field:value or NOT field:value leaves out what matches")
+    const exported = (await client.callTool({
+      name: "gcal_read",
+      arguments: { command: "events export", arguments: { query: "starts_at>=2026-11-02 -event_type:birthday" } },
+    })) as { isError?: boolean; structuredContent: { item: { format: string; events: number; content: string } } }
+    expect(exported.isError).toBeFalsy()
+    expect(exported.structuredContent.item).toMatchObject({ format: "ics", events: expect.any(Number) })
+    expect(exported.structuredContent.item.content).toContain("BEGIN:VCALENDAR")
+    const file = join(mkdtempSync(join(tmpdir(), "export-")), "week.ics")
+    const locked = await run(["personal", "events", "export", "id:1", "--output", file, "--json"], {
+      streams: { data: () => {}, diagnostic: () => {} },
+      tty: false,
+      env: { ...env, GCAL_READ_ONLY: "1" },
+      keyring,
+    })
+    expect(locked).toBe(5)
+  })
+
+  it("events list tells an agent the time it answered and the zone its dates were read in", async () => {
+    const { json, env, keyring, google } = harness()
+    await json("personal", "sync")
+    const client = await connect(env, keyring, google.fetch as typeof fetch)
+    const before = Date.now()
+    const listed = (await client.callTool({
+      name: "gcal_read",
+      arguments: { command: "events list", arguments: { query: "starts_at>=2026-11-02" } },
+    })) as { structuredContent: { meta: { now: string; now_local: string; timezone: string; accounts: string[] } } }
+    const { meta } = listed.structuredContent
+    expect(meta).toMatchObject({
+      accounts: ["google-calendar:owner@example.com"],
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    })
+    expect(Date.parse(meta.now)).toBeGreaterThanOrEqual(before)
+    expect(Date.parse(meta.now_local)).toBe(Date.parse(meta.now))
+  })
+
   it("answers concurrent calls each with its own result (WC-ARCH-22)", async () => {
     const { json, env, keyring, google } = harness()
     await json("personal", "sync")
