@@ -204,8 +204,10 @@ A profile signed in without `--grant write` reads only:
   included, need a permission `gcal` does not ask for.
 - `calendars.transferOwnership` also needs a Google Workspace administrator with the Manage Calendars privilege and
   `--use-admin-access true`. It moves a secondary calendar between users of one organization only.
-- A method that changes data asks first, and `--yes` answers for a script. `calendars.clear` (all events of the main
-  calendar) is refused until you allow it in the profile's [permissions](configuration.md#permissions).
+- A method that changes data and is easy to undo, such as `events.insert` or `events.patch`, runs without a question.
+  A method that deletes, and sharing a calendar, ask first; `--yes` answers for a script. `calendars.clear` (all
+  events of the main calendar), `calendars.delete` and `calendars.transferOwnership` are refused until you allow them
+  in the profile's [permissions](configuration.md#permissions).
 - Google's change notifications (`watch` and `channels.stop`) are not offered. They need a public web address, and
   a program on your computer does not have one.
 
