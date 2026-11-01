@@ -160,9 +160,15 @@ describe("calendar commands over Google", () => {
     })
     rememberAccount(IDENTITY, "work", "work@example.com", env)
     await json("personal", "sync")
+    const window = ["ends_at>=2026-11-03", "starts_at<2026-11-04"]
+    const unopened = await json("personal", "events", "list", ...window, "--source", "all")
+    expect(unopened.meta).toMatchObject({
+      accounts: ["google-calendar:owner@example.com", "google-calendar:work@example.com"],
+      complete: false,
+      issues: [{ code: "not_found", reason: "calendar.unsynced", source: "google-calendar:work@example.com" }],
+    })
     await json("work", "calendars", "list")
 
-    const window = ["ends_at>=2026-11-03", "starts_at<2026-11-04"]
     const partial = await gcal("personal", "events", "list", ...window, "--source", "all", "--json")
     expect(partial.code).toBe(0)
     expect(JSON.parse(partial.out).meta).toMatchObject({
@@ -595,6 +601,36 @@ describe("calendar commands over MCP", () => {
     })) as { isError?: boolean; structuredContent: { items: unknown[] } }
     expect(reviews.isError).toBeFalsy()
     expect(reviews.structuredContent.items).toEqual([])
+  })
+
+  it("events list takes overlapping:true in its query and --source as source over MCP", async () => {
+    const standup = {
+      id: "standup",
+      status: "confirmed",
+      summary: "Standup",
+      start: { dateTime: "2026-11-03T09:00:00Z" },
+      end: { dateTime: "2026-11-03T09:15:00Z" },
+    }
+    const { json, env, keyring, google } = harness({ extra: [standup] })
+    await json("personal", "sync")
+    const client = await connect(env, keyring, google.fetch as typeof fetch)
+    const listed = (await client.callTool({
+      name: "gcal_read",
+      arguments: {
+        command: "events list",
+        arguments: { query: "ends_at>=2026-11-02 starts_at<=2026-11-04 overlapping:true", source: "all" },
+      },
+    })) as {
+      isError?: boolean
+      structuredContent: { items: { overlapping: boolean }[]; meta: { accounts: string[]; complete: boolean } }
+    }
+    expect(listed.isError).toBeFalsy()
+    expect(listed.structuredContent.items.length).toBeGreaterThan(0)
+    expect(listed.structuredContent.items.every(({ overlapping }) => overlapping)).toBe(true)
+    expect(listed.structuredContent.meta).toMatchObject({
+      accounts: ["google-calendar:owner@example.com"],
+      complete: true,
+    })
   })
 
   it("answers concurrent calls each with its own result (WC-ARCH-22)", async () => {

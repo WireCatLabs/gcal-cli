@@ -132,7 +132,7 @@ A page holds `--limit` events (100); when more follow, `page.next_page` is the v
 saved with `config set account_groups.<name>`. A meeting that two accounts hold is listed once. The answer names the
 accounts it read in `meta.accounts`. When one of them has no synced calendar, or its sync has not finished, the answer
 says `meta.complete: false` with an issue for that account (`calendar.unsynced`, `calendar.sync-incomplete`): run
-`gcal <that profile> sync`. An account is in the store once `gcal` has run a command for its profile. When
+`gcal <that profile> sync`. Every profile signed in on this computer is read, also one that has never synced. When
 `GCAL_PROFILE_LOCK` is set, `--source` may name only the locked profile's account.
 
 `overlapping:true` keeps the meetings whose time overlaps another meeting, each with `overlaps`, the other meetings as

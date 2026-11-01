@@ -15,7 +15,7 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   account gcal has stored as one list; `--source gcal:personal,gcal:work` names profiles. The answer names the
   accounts in `meta.accounts`, and says `meta.complete: false` with an issue per account whose sync is missing or
   unfinished. A meeting two accounts hold is listed once. Under `GCAL_PROFILE_LOCK`, `--source` reads only the locked
-  profile's account. Each command now records its profile in the shared store, so `--source gcal:<profile>` finds it.
+  profile's account. A profile signed in but never synced is listed too, as an account with no synced calendar.
 - **Meetings that overlap.** `events list overlapping:true` lists the meetings whose time overlaps another's, each with
   `overlaps`; with `--source` it compares across accounts. It counts timed meetings that are not cancelled, declined,
   marked free or a working-location block; all-day events and back-to-back meetings never overlap.
