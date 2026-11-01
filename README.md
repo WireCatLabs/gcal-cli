@@ -259,6 +259,9 @@ gcal is part of [WireCat](https://wirecat.dev), an open-source, local-first cont
 [tg-cli](https://github.com/WireCatLabs/tg-cli) and [max-cli](https://github.com/WireCatLabs/max-cli) bring Telegram and
 MAX into the same local store. Start with one tool. Add more context when you need it. Your context. Any agent.
 
+Questions and setup help: join the [WireCat Discord](https://discord.gg/DebENqbRrJ). Bugs go to this
+repository's issues.
+
 ## Contributing and license
 
 Pull requests, bug reports and ideas go to [issues](https://github.com/WireCatLabs/gcal-cli/issues).
