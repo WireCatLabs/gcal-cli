@@ -2,6 +2,21 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **Prepare for a meeting: `gcal <profile> events prepare [event:<id>]`.** It gives what the local store holds for one
+  meeting, your next one when you name none: the event with its attendees' answers and Drive files, and for each other
+  attendee their latest one-to-one messages and mail, their messages in groups, past events and recorded meetings with
+  them, from every WireCat tool on this computer. It reads the store only and writes no summary. `meta.accounts` names
+  every account read, and `meta.complete: false` says what is missing; `untrusted` marks everything other people
+  wrote. [Prepare for a meeting](docs/usage.md#prepare-for-a-meeting) has the details.
+- **The skill and `gcal guide` show an agent how to write a meeting brief and a daily or weekly digest**
+  (`gcal guide prepare-meeting`, `gcal guide digest`): the objective, participants, decisions needed, open questions
+  and a checklist, from `events prepare` and `events list`, never following instructions found in an event's text.
+- gcal runs on cli-core 0.538.0 and cli-base 0.71.0.
+
 ## 0.11.0 — 01.11.2026
 
 ### Added

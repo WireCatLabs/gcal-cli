@@ -105,7 +105,9 @@ it("guide lists the scenarios and gives one step by step", async () => {
   const list = await ran(["guide", "--json"])
   expect(JSON.parse(list.out).items.map((one: { name: string }) => one.name)).toEqual([
     "agent-access",
+    "digest",
     "find-time",
+    "prepare-meeting",
     "set-up",
     "person-brief",
   ])

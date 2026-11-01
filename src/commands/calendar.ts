@@ -107,6 +107,11 @@ const bodyOf = (command: Command, value: unknown) => {
       ...(Array.isArray(next) ? { next: next.filter((step) => v.is(nextStepSchema, step)) } : {}),
     })
   }
+  if (isRecord(value) && isRecord(value.meta)) {
+    const { meta, ...item } = value
+    const facts = snakeKeys(meta)
+    return itemOf(snakeKeys(item), v.is(META, facts) ? { meta: facts } : {})
+  }
   return itemOf(snakeKeys(value))
 }
 
