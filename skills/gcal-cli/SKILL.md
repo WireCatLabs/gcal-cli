@@ -38,7 +38,7 @@ Find your way with the tool itself, not this file:
 - `-event_type:birthday -event_type:focus -event_type:working-location -event_type:out-of-office` (or
   `NOT event_type:<kind>`) leaves those kinds out; `event_type:default` keeps ordinary events only; `from-mail` is
   what Gmail added. Only `event_type` takes a minus.
-- A calendar is named by its id, Google's id or its name (`calendar:Team`, `calendar:"Team (shared)"`, also
+- A calendar is named by its id, Google's id or its name (`calendar:Team`, `'calendar:"Team (shared)"'` in a shell, also
   `<calendar>`, `--calendar`, `--to-calendar`). `calendar.ambiguous` lists the ids of calendars that share the name:
   pick one by id, or ask the owner which; never guess.
 - `events export <query> --json` answers the matching events (at most 1000) as iCalendar text under `content`, which

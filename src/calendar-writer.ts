@@ -158,7 +158,9 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
               ...(event.title ? { title: event.title } : {}),
               ...(event.startsAt === undefined ? {} : { startsAt: event.startsAt, endsAt: event.endsAt }),
               ...(event.startDate === undefined ? {} : { startDate: event.startDate, endDate: event.endDate }),
-              ...(event.timezone ? { timezone: event.timezone } : {}),
+              // Google requires start.timeZone on every repeating event, an all-day one too, which iCalendar
+              // leaves without a zone: the calendar's own zone stands in.
+              ...(event.timezone || event.recurrence ? { timezone: event.timezone || calendar.timezone || "UTC" } : {}),
               ...(event.location ? { location: event.location } : {}),
               ...(event.description ? { description: event.description } : {}),
               ...(event.attendees?.length

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, statSync } from "node:fs"
+import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { Client } from "@modelcontextprotocol/client"
@@ -534,6 +534,43 @@ describe("the calendar gaps: text, iCalendar, kinds and names", () => {
       start: { dateTime: "2026-11-05T09:00:00.000Z" },
     })
     expect(done.item.imported).toEqual([expect.objectContaining({ uid: "review1@google.com" })])
+  })
+
+  it("events import gives a repeating all-day event the calendar's zone, which Google requires", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    const file = join(scratch(), "birthdays.ics")
+    writeFileSync(
+      file,
+      [
+        "BEGIN:VCALENDAR",
+        "BEGIN:VEVENT",
+        "UID:birthday-ana@example.com",
+        "DTSTART;VALUE=DATE:20261203",
+        "RRULE:FREQ=YEARLY",
+        "SUMMARY:Ana's birthday",
+        "END:VEVENT",
+        "END:VCALENDAR",
+      ].join("\r\n"),
+    )
+    expect((await gcal("personal", "events", "import", "owner@example.com", file, "--yes")).error).toBeUndefined()
+    const [imported] = posts(google)
+    expect(imported?.body).toMatchObject({
+      start: { date: "2026-12-03", timeZone: expect.any(String) },
+      end: { date: "2026-12-04", timeZone: expect.any(String) },
+      recurrence: ["RRULE:FREQ=YEARLY"],
+    })
+  })
+
+  it("a file that cannot be read or written is the owner's error, named by its path", async () => {
+    const { gcal } = harness()
+    await gcal("personal", "sync")
+    const missing = await gcal("personal", "events", "import", "owner@example.com", "/no/such.ics", "--yes")
+    expect(missing.error).toMatchObject({ code: "not_found", reason: "file.not-found" })
+    const folder = await gcal("personal", "events", "import", "owner@example.com", scratch(), "--yes")
+    expect(folder.error).toMatchObject({ code: "validation_error", reason: "file.not-a-file" })
+    const nowhere = await gcal("personal", "events", "export", "id:1", "--output", "/no/such/dir/x.ics")
+    expect(nowhere.error).toMatchObject({ code: "not_found", reason: "file.not-found" })
   })
 
   it("events list leaves out noise kinds with -event_type, and takes a calendar's title", async () => {

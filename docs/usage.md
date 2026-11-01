@@ -134,9 +134,9 @@ repeat it to leave out several. The kinds are `default` (ordinary events), `birt
 can leave out; any other field with a minus is refused.
 
 A calendar is named by its id from `calendars list`, by Google's id, or by its name as `calendars list` shows it, in
-any case: `calendar:Team`, or `calendar:"Team (shared)"` for a name with spaces. This works everywhere a calendar is
-named: `calendar:` here and in `calendars busy`, the `<calendar>` of `events create` and `calendars sync`, and
-`--calendar` and `--to-calendar`. When two calendars have the same name, such as a shared one beside your own, the
+any case: `calendar:Team`, or `'calendar:"Team (shared)"'` for a name with spaces (the single quotes keep the shell
+from eating the double ones). This works everywhere a calendar is named: `calendar:` here and in `calendars busy`,
+the `<calendar>` of `events create` and `calendars sync`, and `--calendar` and `--to-calendar`. When two calendars have the same name, such as a shared one beside your own, the
 command stops with `calendar.ambiguous` and lists their ids; use one of them.
 A page holds `--limit` events (100); when more follow, `page.next_page` is the value for `--page`, and the answer's
 `next` step runs it with the same query.
@@ -227,7 +227,7 @@ gcal personal events export id:42                               # the text in th
 ```
 
 It exports at most 1000 events; narrow the query for more. Times are written in UTC. Each occurrence of a repeating
-event is written as an event of its own, and its repeat rule is not. The file is readable only by you. Over MCP,
+event is written as an event of its own, and its repeat rule is not. A new file is readable only by you. Over MCP,
 `--output` is not offered: an agent gets the text in the answer.
 
 `events import` adds the events of an `.ics` file to a calendar through Google's
