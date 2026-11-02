@@ -16,6 +16,13 @@ lets these run. An agent cannot have Google mail the person it shares with: that
 `gcal personal config set permissions.api.calendar.acl deny`, or sign in without `--grant sharing`. Emptying a
 calendar is never offered to an agent.
 
+`events remind -- <program>` runs a program of yours on this computer, once per meeting that starts soon. It is
+`deny` until you run `gcal personal config set permissions.events.remind.hook allow`; `--yes` does not lift it, and
+`GCAL_READ_ONLY` refuses it at any level. No MCP tool offers `events remind`. The program starts without a shell, and
+the event comes as JSON on its standard input: the title, place and description are written by whoever sent the
+invitation, so they never reach a command line where a shell could run them. Your program must treat them as data
+too. Its environment is that of the `gcal` run, plus `GCAL_EVENT` and `GCAL_PROFILE`.
+
 The Google sign-in is kept in the system keyring, under the service `gcal-cli`, one entry per profile. That entry also
 holds your OAuth client's ID and secret, so refreshing the sign-in does not need the client file again. Google says a
 Desktop app's client secret is not confidential, but `gcal` still never prints it. No command, error, log or run record

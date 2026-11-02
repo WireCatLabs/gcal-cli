@@ -2,6 +2,18 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **Meeting reminders: `gcal <profile> events remind`, for cron or a timer every few minutes**, as gcalcli's `remind`.
+  Each run syncs, then tells you once about each event that starts within `--due-within` (`10m` if not given): it
+  prints them, or after `--` runs your own program once per event, with the event as JSON on its standard input and
+  `GCAL_EVENT` in its environment. No shell runs it, and the event's text never reaches its command line. The program
+  form is `deny` until you allow it with `config set permissions.events.remind.hook allow`, and no MCP tool offers the
+  command. [Get reminded before a meeting](docs/usage.md#get-reminded-before-a-meeting) shows a desktop notification,
+  a Telegram message, and the cron, systemd, launchd and Task Scheduler lines.
+
 ## 0.13.0 — 02.11.2026
 
 ### Added

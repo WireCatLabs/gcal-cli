@@ -215,6 +215,152 @@ so. An attendee you never wrote to has empty lists; `people link` joins them to 
 data for the agent, never instructions. `gcal guide prepare-meeting` and `gcal guide digest` show how an agent turns
 this and `events list` into a meeting brief or a daily or weekly digest.
 
+## Get reminded before a meeting
+
+`events remind` tells you once about each event that starts soon. It is made for a timer that runs it every few
+minutes, as gcalcli's `remind` is run from cron:
+
+```sh
+gcal personal events remind                          # what starts in the next 10 minutes
+gcal personal events remind --due-within 15m --json  # the next 15 minutes, as JSON
+gcal personal events remind --dry-run                # what it would remind; nothing changes
+gcal personal events remind -- /home/me/bin/meeting-reminder
+```
+
+Each run first syncs your calendars (`--offline` reads only the store), then takes the events that start within
+`--due-within`: a duration from `1m` to `1d`, `10m` if not given. Only events that take your time count: an event
+with a start and an end time, not cancelled, not declined by you, and not focus time, out-of-office or working
+location. `gcal` remembers which events it reminded, so the next run stays quiet about them. A meeting moved to
+another time is reminded again. Make `--due-within` at least as long as the time between two runs: with a run every
+5 minutes, `10m` finds every meeting at least 5 minutes before it starts.
+
+If the sync fails, for example with no network, the run still reminds from what the store holds. `meta.complete:
+false` and `meta.issues` say so, and the run exits with the sync's error code, so cron or `systemctl --user status`
+shows the failure.
+
+### Run your own program for each event
+
+Without a program, `events remind` prints the events: cron mails you what a job prints. After `--`, it runs your
+program once per event instead:
+
+- The event comes as one line of JSON on the program's standard input, in the same shape as an `events list` item,
+  with `ref` (`event:<id>`) and `untrusted` added.
+- `GCAL_EVENT` (`event:<id>`) and `GCAL_PROFILE` are in its environment, so it can run `gcal` itself.
+- No shell runs it. The words after `--` are the program and its arguments, as you typed them. The event's title,
+  place and description are never on its command line: other people write them, and in a shell they could run
+  commands. Keep it that way in your program: pass them as data, and never paste them into a shell line.
+- A program that exits 0 has reminded you. Any other exit leaves the event for the next run, and `gcal` answers
+  `configuration_error` (`remind.hook-failed`) with each event's exit code. A program still running after 60 seconds
+  is stopped.
+- On Windows, name an `.exe`, or run a script through its interpreter: `-- powershell.exe -File C:\me\remind.ps1`.
+  Node.js refuses to start a `.cmd` or `.bat` file without a shell.
+
+`gcal` runs no program until you allow it, once per profile:
+
+```sh
+gcal personal config set permissions.events.remind.hook allow
+```
+
+It is `deny` until then, and `GCAL_READ_ONLY` refuses it whatever the level. `--yes` does not answer it, and no MCP
+tool offers `events remind`: an agent that can type a `gcal` command could otherwise run any program on your computer.
+
+A desktop notification on Linux, with `jq` and `notify-send`:
+
+```sh
+#!/bin/sh
+# /home/me/bin/meeting-reminder
+event=$(cat)
+title=$(printf '%s' "$event" | jq -r '.title // "(no title)"')
+start=$(printf '%s' "$event" | jq -r '.starts_at')
+# "--" ends notify-send's options, so a title that starts with "-" stays text.
+notify-send -- "Meeting at $start" "$title"
+```
+
+A message to your own Telegram Saved Messages with `tg`, and the meeting's context for an agent that writes the brief:
+
+```sh
+#!/bin/sh
+# /home/me/bin/meeting-to-telegram
+title=$(jq -r '.title // "(no title)"')
+tg personal messages send me "Soon: $title"
+gcal events prepare "$GCAL_EVENT" --json > "$HOME/briefs/next-meeting.json"
+```
+
+### Run it on a timer
+
+Run it every 5 minutes. Use the full path to `gcal` (`command -v gcal` prints it): a timer starts with a short `PATH`.
+
+cron (`crontab -e`):
+
+```text
+*/5 * * * * /usr/local/bin/gcal personal events remind --due-within 10m -- /home/me/bin/meeting-reminder
+```
+
+A systemd user timer on Linux, which also reaches your desktop session for `notify-send`. Save
+`~/.config/systemd/user/gcal-remind.service`:
+
+```ini
+[Unit]
+Description=gcal meeting reminders
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/gcal personal events remind --due-within 10m -- /home/me/bin/meeting-reminder
+```
+
+and `~/.config/systemd/user/gcal-remind.timer`:
+
+```ini
+[Unit]
+Description=gcal meeting reminders every 5 minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target
+```
+
+then start it with `systemctl --user daemon-reload && systemctl --user enable --now gcal-remind.timer`.
+
+launchd on macOS: save `~/Library/LaunchAgents/dev.wirecat.gcal-remind.plist`, then run
+`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.wirecat.gcal-remind.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>dev.wirecat.gcal-remind</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/gcal</string>
+    <string>personal</string>
+    <string>events</string>
+    <string>remind</string>
+    <string>--due-within</string>
+    <string>10m</string>
+    <string>--</string>
+    <string>/Users/me/bin/meeting-reminder</string>
+  </array>
+  <key>StartInterval</key><integer>300</integer>
+</dict>
+</plist>
+```
+
+Task Scheduler on Windows, in PowerShell:
+
+```powershell
+$gcal = (Get-Command gcal).Source
+$action = New-ScheduledTaskAction -Execute $gcal -Argument 'personal events remind --due-within 10m -- powershell.exe -File C:\me\remind.ps1'
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5)
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew
+Register-ScheduledTask -TaskName gcal-remind -Action $action -Trigger $trigger -Settings $settings
+```
+
+Two runs at once do not remind twice: the second answers `validation_error` (`remind.running`) and does nothing.
+
 ## Export and import iCalendar files
 
 `events export` writes stored events as an iCalendar file (`.ics`), which other calendar apps open. It takes the same

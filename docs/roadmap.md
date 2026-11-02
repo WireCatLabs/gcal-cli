@@ -12,7 +12,8 @@ events by words and by meaning, see the people in them and their Drive files, al
 Google Calendar itself with `search events --backend server`. `calendars busy` shows when people are taken and the stretches
 free for all of them, and `events list changed_at>=<date>` what changed since a date. After `session start --grant write` it creates, changes, moves and deletes events, repeating ones
 included, one occurrence, the whole series or "this and all following", moves an event to another calendar, switches
-an event between timed and all-day, and answers invitations; a delete asks first. `gcal api` reaches every Google
+an event between timed and all-day, and answers invitations; a delete asks first. `events remind`, run by cron or a timer, tells you once
+about each meeting that starts soon, or runs your own program for it. `gcal api` reaches every Google
 Calendar API method by name. Every command is in the [command reference](commands.md).
 
 ## Next

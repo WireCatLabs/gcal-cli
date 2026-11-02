@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**201 ✅ · 335 ⛔ · 0 ❌** — 86 commands, 450 options.
+**204 ✅ · 335 ⛔ · 0 ❌** — 87 commands, 452 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -43,6 +43,9 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events prepare` |  | ✅ |  |
 | `events prepare` | `--limit` | ✅ |  |
 | `events prepare` | `--since-time` | ✅ |  |
+| `events remind` |  | ✅ |  |
+| `events remind` | `--due-within` | ✅ |  |
+| `events remind` | `--dry-run` | ✅ |  |
 | `events create` |  | ✅ |  |
 | `events create` | `--title` | ✅ |  |
 | `events create` | `--start-time` | ✅ |  |

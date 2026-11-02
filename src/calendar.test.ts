@@ -1,10 +1,10 @@
-import { mkdtempSync } from "node:fs"
+import { existsSync, mkdtempSync, readFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { Client } from "@modelcontextprotocol/client"
 import { memoryKeyring } from "@wirecat/cli-base"
 import { rememberAccount } from "@wirecat/cli-core/cli"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
 import { IDENTITY } from "./identity.js"
 import { run } from "./program.js"
@@ -429,6 +429,47 @@ describe("calendar commands over Google", () => {
     expect(found.items.length).toBeGreaterThan(0)
     expect(found.items.map((hit: { found_by: string[] }) => hit.found_by)).toContainEqual(["words", "server"])
     expect(google.requests.length).toBeGreaterThan(0)
+  })
+
+  it("events remind syncs, tells once about the meeting that starts soon, and runs a program only when allowed", async () => {
+    // Only Date is faked: the store, the fake Google and the program still run on real timers.
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(new Date("2026-11-02T09:52:00+01:00"))
+    try {
+      const { json } = harness()
+      const reminded = await json("personal", "events", "remind", "--due-within", "10m", "--dry-run")
+      expect(reminded.items).toEqual([])
+      const first = await json("personal", "events", "remind", "--due-within", "10m")
+      expect(first.items.map(({ title }: { title: string }) => title)).toEqual(["Weekly planning"])
+      expect(first.items[0].untrusted).toEqual(["title", "description", "location"])
+      expect((await json("personal", "events", "remind", "--due-within", "10m")).items).toEqual([])
+
+      vi.setSystemTime(new Date("2026-11-30T09:52:00+01:00"))
+      const next = harness()
+      const out = join(mkdtempSync(join(tmpdir(), "hook-")), "got.jsonl")
+      const hook = [
+        "--",
+        process.execPath,
+        "-e",
+        "require('fs').appendFileSync(process.argv[1], process.env.GCAL_EVENT + ' ' + require('fs').readFileSync(0, 'utf8'))",
+        out,
+      ]
+      const denied = await next.gcal("personal", "events", "remind", "--json", ...hook)
+      expect(denied.code).not.toBe(0)
+      expect(denied.err).toContain("events.remind.hook")
+      expect(existsSync(out)).toBe(false)
+      await next.json("personal", "config", "set", "permissions.events.remind.hook", "allow")
+      const allowed = await next.gcal("personal", "events", "remind", "--json", ...hook)
+      expect(allowed.code).toBe(0)
+      const ran = JSON.parse(allowed.out)
+      const [line] = readFileSync(out, "utf8").trim().split("\n")
+      const [ref, payload] = [line?.slice(0, line.indexOf(" ")), JSON.parse(line?.slice(line.indexOf(" ") + 1) ?? "")]
+      expect(ref).toBe(ran.items[0].ref)
+      expect(payload).toMatchObject({ ref, starts_at: "2026-11-30T09:00:00.000Z" })
+      expect(next.env.GCAL_EVENT).toBeUndefined()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("events prepare gives a meeting's attendees with the mail the shared store holds from them", async () => {
