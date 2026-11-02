@@ -634,8 +634,9 @@ gcal personal mcp check                             # start it once, as the agen
 ```
 
 `mcp serve` never picks a profile: name one, or several with `--profiles work,personal`, or every profile with
-`--profiles all`. `--http` serves it over HTTP for a browser app, and `mcp config` prints the entry for any other
-client. `gcal guide agent-access` walks through it.
+`--profiles all`. `--http` serves it over HTTP for ChatGPT or Claude in the browser or on your phone, behind your own
+HTTPS tunnel: [step by step](remote.md). `mcp config` prints the entry for any other client. `gcal guide agent-access`
+walks through it.
 
 The server offers every command, the ones that write included. The profile's permissions decide what runs; see
 [settings](configuration.md#permissions). That includes sharing a calendar (`acl`): an agent can do it without a question. Deleting a whole calendar

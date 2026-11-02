@@ -9,4 +9,6 @@ store (`sync`, `store status`, `calendars`), and reads them there: `events`, `se
 respond` change Google Calendar. It also has the commands every WireCat CLI shares: `doctor`, `commands`, `guide`, `config`,
 `skill`, `mcp`, `runs` and `upgrade`. Start with [installation](installation.md), then [usage](usage.md).
 
+To use it from ChatGPT or Claude in the browser or on your phone: [remote connection](remote.md).
+
 How `gcal` differs from other Google Calendar tools: [comparison](compare.md).

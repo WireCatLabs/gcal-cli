@@ -2,6 +2,16 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **A guide to using `gcal` from ChatGPT or Claude in the browser or on your phone**, `docs/remote.md`: a Tailscale
+  Funnel or Cloudflare tunnel, `mcp serve --http --public-url`, the one-time login code, the permissions that hold
+  over MCP (`ask` runs, so `--permission api=readonly` or `api.calendar.acl=deny` for this server), running it in the
+  background with `mcp server start`, and how to stop it and log every app out with `mcp revoke`. The README, the
+  overview, the usage page and the skill link to it.
+
 ## 0.17.0 — 02.11.2026
 
 ### Added
