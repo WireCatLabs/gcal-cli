@@ -1,8 +1,9 @@
 import { readFile, stat, writeFile } from "node:fs/promises"
 import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
+import { timezoneOf } from "@wirecat/cli-base/query"
 import { metaSchema, nextStepSchema } from "@wirecat/cli-base/standards"
-import type { CalendarSource, CalendarWriter } from "@wirecat/cli-core/calendar"
+import type { CalendarFeeds, CalendarSource, CalendarWriter } from "@wirecat/cli-core/calendar"
 import { addCalendarCommands, type CalendarCommandDeps } from "@wirecat/cli-core/calendar/cli"
 import {
   type GlobalFlags,
@@ -34,6 +35,7 @@ interface Opened {
   /** Built on first use: a local read never reads the sign-in. */
   source: () => CalendarSource
   writer: () => GoogleCalendarWriter
+  feeds: () => CalendarFeeds
   close: () => Promise<void>
 }
 
@@ -175,6 +177,25 @@ const mountOnce = () => {
       throw notOpen()
     },
   })
+  // cli-core mounts `calendars add|remove` when `feeds` is there, before any profile is open.
+  const feeds: CalendarFeeds = {
+    get source() {
+      return need().feeds().source
+    },
+    expand: (...args) =>
+      need()
+        .feeds()
+        .expand(...args),
+    add: (...args) =>
+      need()
+        .feeds()
+        .add(...args),
+    remove: (...args) =>
+      need()
+        .feeds()
+        .remove(...args),
+    stats: () => need().feeds().stats(),
+  }
   const deps: CalendarCommandDeps = {
     get store() {
       return need().store.calendar
@@ -199,6 +220,7 @@ const mountOnce = () => {
     },
     freeBusy: true,
     serverSearch: true,
+    feeds,
     embed: async (max) => {
       const { store, env } = need()
       const { embedEvents } = await import("@wirecat/cli-core/services")
@@ -277,12 +299,16 @@ const mountOnce = () => {
         { googleApi },
         { googleCalendarSource },
         { googleCalendarWriter },
+        { icsFeeds },
+        { feedRegistry },
       ] = await Promise.all([
         import("../session.js"),
         import("../store.js"),
         import("../google-api.js"),
         import("../calendar-source.js"),
         import("../calendar-writer.js"),
+        import("@wirecat/cli-core/calendar"),
+        import("../feeds.js"),
       ])
       const account = savedAccount(env, profile)
       if (!account)
@@ -311,6 +337,7 @@ const mountOnce = () => {
       let source: CalendarSource | undefined
       let writer: GoogleCalendarWriter | undefined
       let api: GoogleApi | undefined
+      let followed: CalendarFeeds | undefined
       const { keyring, fetch, signal } = gcalEnvironment
       const googleOf = () =>
         (api ??= wordedApi(
@@ -325,6 +352,13 @@ const mountOnce = () => {
         env,
         source: () => (source ??= googleCalendarSource(googleOf())),
         writer: () => (writer ??= googleCalendarWriter(googleOf())),
+        feeds: () =>
+          (followed ??= icsFeeds({
+            registry: feedRegistry(env, profile, keyring),
+            zone: timezoneOf(),
+            ...(fetch ? { fetch } : {}),
+            ...(signal ? { signal } : {}),
+          })),
         close,
       }
     },

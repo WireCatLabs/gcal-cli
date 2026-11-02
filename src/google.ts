@@ -72,7 +72,11 @@ const paths = (env: NodeJS.ProcessEnv) => resolvePaths({ appName: IDENTITY.appNa
 
 export type CredentialStorage = "keyring" | "file"
 
-const credentialsOptions = (env: NodeJS.ProcessEnv, storage: CredentialStorage | "auto", keyring?: KeyringStore) => ({
+export const credentialsOptions = (
+  env: NodeJS.ProcessEnv,
+  storage: CredentialStorage | "auto",
+  keyring?: KeyringStore,
+) => ({
   // A sign-in kept in a file is state this computer holds, not configuration to copy elsewhere; cli-base writes it 600.
   // The keyring falls back to that same file (WC-SECR-4), so `storageOf` finds it either way.
   configDir: paths(env).state,

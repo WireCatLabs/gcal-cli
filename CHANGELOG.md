@@ -2,12 +2,24 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
-## 0.15.1 — 02.11.2026
+## Unreleased
+
+### Added
+
+- **Follow an iCalendar feed: `gcal <profile> calendars add <url>`**, such as a public holiday calendar, a sports
+  schedule or a colleague's published `.ics` address, as a read-only calendar beside your Google calendars. `sync`
+  reads it again each time, and its events show in `events list`, `search events`, `overlapping:true` and
+  `events remind`. Repeating events are expanded in their own time zone. A write to a feed's event refuses before
+  anything is sent, and `calendars busy` leaves feeds out. The address is kept in the keyring like the sign-in and is
+  never printed. `calendars remove` stops following it. Google's API documents no way to add a calendar from a URL, so
+  `gcal` reads the feed itself. See [Follow a calendar feed](docs/usage.md#follow-a-calendar-feed).
 
 ### Fixed
 
-- **The reader of your own `--client-file` comes from `@wirecat/cli-core` 0.546.0, not a copy in gcal.** The file
-  shapes, the `chmod 600` check and the errors are unchanged.
+- A write to a calendar you may only read, such as one shared with you as `reader`, now refuses with
+  `calendar.read-only` before it asks or sends anything; Google refused it before.
+- The reader of your own `--client-file` comes from `@wirecat/cli-core`, not a copy in gcal. The file shapes, the
+  `chmod 600` check and the errors are unchanged.
 
 ## 0.15.0 — 02.11.2026
 

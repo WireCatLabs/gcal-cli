@@ -63,7 +63,7 @@ describe("Google words to neutral ones", () => {
         externalId: "team@group.calendar.example.com",
         title: "Team (shared)",
         timezone: "Europe/Madrid",
-        accessRole: "reader",
+        accessRole: "writer",
         primary: false,
         syncByDefault: false,
       },

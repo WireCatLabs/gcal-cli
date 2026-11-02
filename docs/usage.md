@@ -96,6 +96,31 @@ shows which models are there.
 `gcal` never stores a meeting's passcode or PIN. A join link is kept without its query string, and a line of the
 description that names a passcode, a password or a PIN is dropped.
 
+## Follow a calendar feed
+
+A holiday calendar, a sports schedule or a colleague's published calendar is often an iCalendar address, an `.ics`
+link. `calendars add` follows one as a read-only calendar of the profile, beside your Google calendars:
+
+```sh
+gcal personal calendars add webcal://example.com/holidays.ics --title Holidays
+gcal personal sync                          # reads Google, then every feed again
+gcal personal events list calendar:Holidays
+gcal personal calendars remove Holidays     # forget the address and the feed's events
+```
+
+`gcal` reads the feed itself: Google's API documents no way to add a calendar from a URL, as its web page's "From URL"
+does. `calendars add` reads the feed once to check it, and the answer shows how many events it holds. Each `sync`
+reads the whole feed again, keeps the events inside the sync window and marks those the feed no longer has. The
+feed's events show in `events list`, `search events`, `overlapping:true` and `events remind` like any calendar's. `events remind` reads what the last `sync` stored and does not read the feeds itself, since a timer runs it every few
+minutes; schedule `sync` too, every hour or so, to keep a feed fresh.
+Repeating events are expanded in their own time zone, so a weekly 10:00 stays at 10:00 when the clocks change; a rule
+`gcal` cannot read, such as one that repeats by the hour, is left out and counted in the sync answer's `skipped`.
+
+A feed's events cannot be changed: `events update`, `delete`, `respond` and `create` on its calendar refuse with
+`calendar.read-only` before anything is sent. `calendars busy` leaves feeds out. The address may hold a private
+token, so `gcal` keeps it as it keeps your sign-in and never prints it; see [Security](security.md). An address is
+`https://`, `http://` or `webcal://`. No MCP tool offers `calendars add` or `remove`.
+
 ## Read your events
 
 These commands read the local store, so they work without the network:

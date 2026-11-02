@@ -46,7 +46,14 @@ const mcpCommand = () => {
   let keyring: KeyringStore | undefined
   const mcp = appMcpCommand(IDENTITY, configuration, {
     name: "Google Calendar",
-    untrusted: ["event titles", "descriptions", "locations", "attendee and organizer names", "shared calendar names"],
+    untrusted: [
+      "event titles",
+      "descriptions",
+      "locations",
+      "attendee and organizer names",
+      "shared calendar names",
+      "feed events and feed names",
+    ],
     permissionExample: "api.calendar.events.insert=deny",
     skill: SKILL,
     signedIn: (profile, env) => {

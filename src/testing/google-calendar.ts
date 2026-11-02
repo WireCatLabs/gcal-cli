@@ -24,7 +24,7 @@ const CALENDARS = {
       summary: "Team",
       summaryOverride: "Team (shared)",
       timeZone: "Europe/Madrid",
-      accessRole: "reader",
+      accessRole: "writer",
     },
   ],
   nextPageToken: "calendars-page-2",

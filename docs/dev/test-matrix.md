@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**210 ✅ · 342 ⛔ · 0 ❌** — 93 commands, 459 options.
+**213 ✅ · 342 ⛔ · 0 ❌** — 95 commands, 460 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -25,6 +25,9 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `calendars list` |  | ✅ |  |
 | `calendars sync` |  | ✅ |  |
 | `calendars unsync` |  | ✅ |  |
+| `calendars add` |  | ✅ |  |
+| `calendars add` | `--title` | ✅ |  |
+| `calendars remove` |  | ✅ |  |
 | `calendars busy` |  | ✅ |  |
 | `calendars busy` | `--duration-minutes` | ✅ |  |
 | `calendars busy` | `--hours` | ✅ |  |
