@@ -79,21 +79,20 @@ On Windows, in PowerShell run as Administrator:
 & "$env:ProgramFiles\Tailscale\tailscale.exe" funnel 8765
 ```
 
-Second window, as your normal user, without `sudo`. First put the HTTPS address the tunnel printed into
-`PUBLIC_URL`; the one below is an example and works for no one:
+Second window, as your normal user, without `sudo`. Every command below uses `https://laptop.example-tailnet.ts.net`
+as an example address that works for no one: put the HTTPS address your tunnel printed in its place.
 
 ```sh
-PUBLIC_URL=https://laptop.example-tailnet.ts.net
-gcal personal mcp serve --http --port 8765 --public-url "$PUBLIC_URL"
+gcal personal mcp serve --http --port 8765 --public-url https://laptop.example-tailnet.ts.net
 ```
 
 It answers with the local address it serves on, the connector address for the app, and the login code.
 
 To run `gcal` beside `tg`, `drive` or another WireCat tool, give each server its own local port. Then either give
 each its own public HTTPS port, for example a second Funnel with `--https=8443 8766` and
-`gcal personal mcp serve --http --port 8766 --public-url "$PUBLIC_URL:8443"` (Funnel supports
+`gcal personal mcp serve --http --port 8766 --public-url https://laptop.example-tailnet.ts.net:8443` (Funnel supports
 public ports `443`, `8443` and `10000`), or share one address under a path per tool:
-`--public-url "$PUBLIC_URL/gcal"`, with Funnel's `--set-path /gcal` pointing at that port. The
+`--public-url https://laptop.example-tailnet.ts.net/gcal`, with Funnel's `--set-path /gcal` pointing at that port. The
 connector address is then `…/gcal/mcp`. See the
 [Funnel command reference](https://tailscale.com/docs/reference/tailscale-cli/funnel).
 
@@ -116,7 +115,7 @@ To keep the server running after its window closes, start it in the background i
 with the connector address and the login code:
 
 ```sh
-gcal personal mcp server start --port 8765 --public-url "$PUBLIC_URL"
+gcal personal mcp server start --port 8765 --public-url https://laptop.example-tailnet.ts.net
 gcal personal mcp server status   # running, port, connector address, the current login code, apps logged in
 gcal personal mcp server stop     # stops only a server that `mcp server start` started
 ```
@@ -132,7 +131,7 @@ profile's; `mcp server start | stop | status` and `mcp revoke` take the same `--
 ## Connect the app
 
 The address for the app is your public URL with `/mcp` at the end, for example
-`https://<device>.<network>.ts.net/mcp`. Add it as a remote MCP connector:
+`https://laptop.example-tailnet.ts.net/mcp`. Add it as a remote MCP connector:
 
 - **ChatGPT:** open **Plugins**, choose **+ Add custom MCP server**, and create a plugin with the `/mcp` address and
   OAuth, as the [OpenAI connection guide](https://developers.openai.com/api/docs/guides/custom-mcp-server) describes.
@@ -155,8 +154,8 @@ The server cannot see whether the app asked you before a call. Repeat `--permiss
 only for this server process:
 
 ```sh
-gcal personal mcp serve --http --public-url "$PUBLIC_URL" --permission api=readonly
-gcal personal mcp serve --http --public-url "$PUBLIC_URL" --permission api.calendar.acl=deny
+gcal personal mcp serve --http --public-url https://laptop.example-tailnet.ts.net --permission api=readonly
+gcal personal mcp serve --http --public-url https://laptop.example-tailnet.ts.net --permission api.calendar.acl=deny
 ```
 
 `api=readonly` refuses every change, events included; `api.calendar.acl=deny` keeps the app from sharing a calendar.
@@ -181,7 +180,7 @@ Those apps must log in again with a new code. This does not sign `gcal` out of G
 
 ## If it does not work
 
-- **The app says it cannot connect:** open `https://<device>.<network>.ts.net/.well-known/oauth-protected-resource/mcp`
+- **The app says it cannot connect:** open `https://laptop.example-tailnet.ts.net/.well-known/oauth-protected-resource/mcp`
   in a browser (under a path: `…/.well-known/oauth-protected-resource/gcal/mcp`). It must show a short JSON. If it
   does not, Funnel is not running, is not enabled in your Tailscale network, or points at another port.
 - **The login page says "Too many wrong codes":** wait thirty seconds and type the newest code. If you did not type
