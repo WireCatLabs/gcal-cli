@@ -214,7 +214,7 @@ gcal sync [options]
 | `--max-pages <pages>` | at most this many requests to the provider in this run; as many as fit the deadline if not given. |
 | `--embed` | also index new events for meaning search, with a model already downloaded. |
 
-**Returns:** calendar sync — provider, account_id, window, calendars, synced, not_synced, complete, state, and 4 more; every field: gcal commands info sync
+**Returns:** calendar sync — provider, account_id, window, calendars, synced, not_synced, complete, state, and 5 more; every field: gcal commands info sync
 
 **Example:** `gcal personal sync`, `gcal personal sync --rescan --embed`, `gcal personal sync --timeout 2m`
 
