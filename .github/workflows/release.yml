@@ -67,6 +67,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       name: ${{ steps.version.outputs.name }}
+      package-sha256: ${{ steps.digest.outputs.sha256 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -100,6 +101,8 @@ jobs:
             exit 0
           fi
           set -- ./validated/*.tgz
+          verified=$(mktemp -d)
+          tar -xzf "$1" -C "$verified"
           work=$(mktemp -d)
           tar -xzf "$1" -C "$work"
           node -e '
@@ -115,7 +118,12 @@ jobs:
             require("node:fs").writeFileSync(process.argv[1], body, { mode: 0o644 })
           ' "$work/package/google-client.json"
           tar -czf "$1" -C "$work" package
-          tar -tzf "$1" | grep -qx package/google-client.json
+          # The repacked file must be the verified one plus the client, and nothing else.
+          check=$(mktemp -d)
+          tar -xzf "$1" -C "$check"
+          [ -f "$check/package/google-client.json" ] || { echo "::error::the client is not in the package"; exit 1; }
+          rm "$check/package/google-client.json"
+          diff -r "$verified" "$check" || { echo "::error::the repacked package differs from the verified one"; exit 1; }
           echo "WireCat's Google client is in the package"
 
       # A 404 for a package npm has never seen means "not published yet", the same as a missing version.
@@ -132,6 +140,12 @@ jobs:
             echo "::error::$version is already on npm — raise the version first"
             exit 1
           fi
+
+      - name: digest of the package to publish
+        id: digest
+        run: |
+          set -- ./validated/*.tgz
+          echo "sha256=$(sha256sum "$1" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -167,6 +181,7 @@ jobs:
     env:
       VERSION: ${{ needs.build.outputs.version }}
       NAME: ${{ needs.build.outputs.name }}
+      EXPECTED_SHA256: ${{ needs.build.outputs.package-sha256 }}
     steps:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -181,6 +196,8 @@ jobs:
       # lifecycle scripts, and nothing is installed here. A tarball path needs its ./.
       - run: |
           set -- ./*.tgz
+          [ "$#" -eq 1 ] && [ -f "$1" ] && [ -n "$EXPECTED_SHA256" ] || { echo "::error::no single package to verify"; exit 1; }
+          printf '%s  %s\n' "$EXPECTED_SHA256" "$1" | sha256sum --check -
           npm publish "$1" --access public
 
       - name: wait for npm to show the version
@@ -221,24 +238,46 @@ jobs:
             gh release create "v$VERSION" --title "$VERSION" --notes-file -
 
   # The template's own release publishes @wirecat/cli-template, which has no skill on ClawHub.
-  # ClawHub's own workflow, pinned: it runs the ClawHub CLI from this commit and needs id-token only to read which
-  # commit that is. It publishes the skill only when it changed, as the next patch of ClawHub's own version line.
+  # The same ClawHub CLI commit as `clawhub`, run here rather than through ClawHub's reusable workflow: that workflow
+  # asks for id-token: write, and an OIDC token has no place in a job that runs third-party code outside the npm
+  # environment. A dry run needs no ClawHub token either. Bump CLAWHUB_SHA together with `clawhub`'s.
   clawhub-dry-run:
     needs: build
     if: inputs.dry_run && github.repository != 'WireCatLabs/cli-template'
+    runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
-    uses: openclaw/clawhub/.github/workflows/skill-publish.yml@52358852d3510f1150756d48e8a72cb8c8e698e0 # main, 2026-10-25
-    with:
-      skill_path: skills/gcal-cli
-      owner: wirecat
-      dry_run: true
+    env:
+      SKILL_PATH: skills/gcal-cli
+      CLAWHUB_SLUG: wirecat-gcal
+      CLAWHUB_SHA: 52358852d3510f1150756d48e8a72cb8c8e698e0
+      CLAWHUB_URL: https://clawhub.ai
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: openclaw/clawhub
+          ref: ${{ env.CLAWHUB_SHA }}
+          path: clawhub-source
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+        working-directory: clawhub-source
+      - name: check the skill would publish
+        run: |
+          bun clawhub-source/packages/clawhub/src/cli.ts --workdir "$GITHUB_WORKSPACE" \
+            --site "$CLAWHUB_URL" --registry "$CLAWHUB_URL" skill publish "$SKILL_PATH" --slug "$CLAWHUB_SLUG" --json \
+            --owner wirecat --tags latest --source-repo "$GITHUB_REPOSITORY" --source-commit "$GITHUB_SHA" \
+            --source-path "$SKILL_PATH" --source-ref "$GITHUB_REF" --dry-run
 
   # After the tag, so a ClawHub failure never holds back the npm release. The same CLI commit as the dry run, but run
   # here instead of through ClawHub's workflow, which GitHub cannot let fail: a version stuck pending ClawHub's scan
   # is not counted as the latest, so the next publish picks it again and gets "already exists" (openclaw/clawhub#4046).
-  # That one error warns; any other fails. Bump CLAWHUB_SHA together with the dry run's pin.
+  # That one error warns; any other fails. Bump CLAWHUB_SHA together with clawhub-dry-run's.
   clawhub:
     needs: tag
     if: ${{ !inputs.dry_run && github.repository != 'WireCatLabs/cli-template' }}

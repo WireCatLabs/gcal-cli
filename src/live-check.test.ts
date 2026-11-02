@@ -1,7 +1,11 @@
 import { spawnSync } from "node:child_process"
 import { describe, expect, it } from "vitest"
 
-const check = (...args: string[]) => spawnSync("bin/gcal-live-check", args, { encoding: "utf8", env: process.env })
+const check = (...args: string[]) =>
+  spawnSync("bin/gcal-live-check", args, {
+    encoding: "utf8",
+    env: { ...process.env, DBUS_SESSION_BUS_ADDRESS: "disabled:" },
+  })
 
 describe.skipIf(process.platform === "win32")("bin/gcal-live-check", () => {
   it("lists its steps in order on --dry-run, without building or calling Google", () => {
