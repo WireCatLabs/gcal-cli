@@ -45,6 +45,11 @@ for events and meetings in the store.
   answering an invitation, behind `session start --grant write` and a permission per write (`events.*`). Create,
   update, move and respond are allowed by default and delete asks; mailing attendees, deleting a whole series and a
   rule that ends a series sooner are denied by default.
+- **Feeds:** `calendars add <url>` follows an iCalendar feed as a read-only calendar of the profile's own account
+  (cli-core `icsFeeds`, `ics:<random id>`, `accessRole: "reader"`); `sync` reads it after Google. Google's
+  [calendarList.insert](https://developers.google.com/workspace/calendar/api/v3/reference/calendarList/insert) takes
+  only an existing calendar's `id`, so a URL cannot be subscribed through the API. The addresses are one keyring entry
+  per profile, `feeds:<profile>`, kept where the sign-in is. Verbs `add` and `remove` from the vocabulary (WC-CMD-2).
 - **Shared commands:** `mcp` is cli-core's `appMcpCommand` and the first screen and `guide` are cli-core's
   (`scenarios/`). `doctor` is cli-core's `appDoctorReport` plus `credential_file`, which no hook of
   `appDoctorCommand` can add. `session list` is gcal's own: cli-core has no helper for a CLI that is not a messenger

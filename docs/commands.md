@@ -177,6 +177,46 @@ gcal calendars unsync <calendar>
 
 **Example:** `gcal personal calendars unsync 3`
 
+### `gcal calendars add`
+
+follow an iCalendar feed, such as a holiday calendar or a published .ics address, as a read-only calendar of this profile; sync reads it again each time. The address is kept as a secret and never printed
+
+**Changes something on this computer only.**
+
+```sh
+gcal calendars add <url> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `url` | required | the feed's https://, http:// or webcal:// address. |
+
+| Option | What it does |
+|---|---|
+| `--title <title>` | the calendar's title; the feed's own name if not given. |
+
+**Returns:** follow an iCalendar feed as a read-only calendar
+
+**Example:** `gcal personal calendars add webcal://example.com/holidays.ics --title Holidays`
+
+### `gcal calendars remove`
+
+stop following a feed calendars add added: its address is forgotten and its stored events go
+
+**Changes something on this computer only.**
+
+```sh
+gcal calendars remove <calendar>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `calendar` | required | the feed calendar's id, its ics: id, or its title. |
+
+**Returns:** stop following a feed calendars add added: its address is forgotten and its…
+
+**Example:** `gcal personal calendars remove 7`
+
 ### `gcal calendars busy`
 
 when calendars and people are taken, asked of the provider and not stored; with --duration-minutes, the free stretches they share
