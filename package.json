@@ -15,7 +15,8 @@
   },
   "packageManager": "pnpm@11.28.8",
   "bin": {
-    "gcal": "dist/bin/gcal.js"
+    "gcal": "dist/bin/gcal.js",
+    "wcat-gcal": "dist/bin/gcal.js"
   },
   "files": [
     "dist",
