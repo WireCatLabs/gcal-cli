@@ -592,6 +592,16 @@ describe("calendar commands over Google", () => {
     expect(google.requests).toEqual([])
   })
 
+  it("a misspelled profile lists the profiles here before the sign-in hint", async () => {
+    const { gcal, google } = harness()
+    const answer = await gcal("persnal", "events", "list", "--json")
+    const error = JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
+    expect(error).toMatchObject({ reason: "profile.not-signed-in", details: { profiles: ["personal"] } })
+    expect(error.message).toContain('no profile named "persnal" — profiles here: personal')
+    expect(error.message).toContain("gcal persnal session start")
+    expect(google.requests).toEqual([])
+  })
+
   it("never puts the token into output", async () => {
     const { gcal } = harness()
     const answer = await gcal("personal", "sync", "--json")

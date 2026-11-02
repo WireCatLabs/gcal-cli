@@ -244,6 +244,18 @@ describe("reading through the API", () => {
       { code: "configuration_error", reason: "api.disabled" },
     ],
     [429, { error: { errors: [{ reason: "rateLimitExceeded" }] } }, { "retry-after": "7" }, { code: "rate_limited" }],
+    [
+      403,
+      { error: { errors: [{ reason: "quotaExceeded" }] } },
+      {},
+      { code: "rate_limited", reason: "google.usage-limit", retry: { safe: false } },
+    ],
+    [
+      403,
+      { error: { errors: [{ reason: "forbiddenForNonOrganizer" }] } },
+      {},
+      { code: "permission_error", reason: "event.organizer-only" },
+    ],
     [404, { error: { errors: [{ reason: "notFound" }] } }, {}, { code: "not_found" }],
     [503, {}, {}, { code: "provider_unavailable" }],
   ])("maps Google's HTTP %i to a WireCat error", async (status, body, headers, expected) => {
