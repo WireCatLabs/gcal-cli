@@ -23,6 +23,11 @@ the event comes as JSON on its standard input: the title, place and description 
 invitation, so they never reach a command line where a shell could run them. Your program must treat them as data
 too. Its environment is that of the `gcal` run, plus `GCAL_EVENT` and `GCAL_PROFILE`.
 
+`schedule command` installs a timer (systemd, launchd or Task Scheduler) that runs `gcal` on its own, with no
+terminal. The timer runs `gcal schedule exec <file>`, and the schedule file in the state folder holds the words, the
+profile and your `PATH`, never a credential. Installing a timer does not lift `events.remind.hook`: each run checks it
+again. `GCAL_READ_ONLY` refuses `schedule command`, `remove`, `run` and `exec`, and no MCP tool offers `schedule`.
+
 The Google sign-in is kept in the system keyring, under the service `gcal-cli`, one entry per profile. That entry also
 holds your OAuth client's ID and secret, so refreshing the sign-in does not need the client file again. Google says a
 Desktop app's client secret is not confidential, but `gcal` still never prints it. No command, error, log or run record

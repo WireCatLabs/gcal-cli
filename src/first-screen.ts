@@ -12,6 +12,7 @@ const SECTIONS: Record<string, HelpSection> = {
   links: "organise",
   api: "read",
   sync: "automate",
+  schedule: "automate",
   session: "setup",
   models: "setup",
 }

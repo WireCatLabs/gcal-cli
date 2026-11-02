@@ -65,6 +65,9 @@ Find your way with the tool itself, not this file:
 - `events remind` is for the owner's timer. Each event it prints is not printed again, so do not run it to see what
   is coming: use `events list`, or `events remind --dry-run --json`, which changes nothing. Its program form
   (`-- <program>`) needs `events.remind.hook`, which only the owner allows; never set it yourself.
+- `schedule command <name> --every 5m -- events remind … -- <program>` installs the owner's reminder timer (systemd,
+  launchd or Task Scheduler). Only the owner installs or removes one; MCP does not offer `schedule`, and
+  `GCAL_READ_ONLY` refuses it. Show the owner the command instead of running it.
 
 ## Prepare a meeting brief
 

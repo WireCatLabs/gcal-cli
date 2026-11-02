@@ -2,6 +2,19 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **One command installs the meeting reminder timer: `gcal <profile> schedule`**, as `tg` and `mail` have it.
+  `gcal personal schedule command reminders --every 5m -- events remind --due-within 10m -- /home/me/bin/remind`
+  installs a systemd user timer on Linux, a launchd agent on macOS or a Task Scheduler task on Windows; `schedule
+  list`, `run` and `remove` look after it. Installing it does not allow your program: while `events.remind.hook` is
+  not `allow`, the command says so and gives the `config set` line. It also says when `--every` is longer than
+  `--due-within`, or the program's path is relative. `GCAL_READ_ONLY` refuses `schedule command` and `remove`, and no
+  MCP tool offers `schedule`. The cron and hand-written timers stay in
+  [Get reminded before a meeting](docs/usage.md#run-it-on-a-timer) for a machine without a systemd user session.
+
 ## 0.14.0 — 02.11.2026
 
 ### Added
