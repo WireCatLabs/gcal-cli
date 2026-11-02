@@ -1,12 +1,13 @@
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync } from "node:fs"
 import { join } from "node:path"
 import { CliError, Credentials, isMovedRun, type KeyringStore, resolvePaths, systemKeyring } from "@wirecat/cli-base"
-import { type EventSink, privateFiles, providerRequest } from "@wirecat/cli-core/cli"
+import { type EventSink, providerRequest } from "@wirecat/cli-core/cli"
 import {
   credentialStorage,
   type OAuthClient,
   type OAuthProvider,
   oauthAccount,
+  readClientFile,
   standardCodec,
   type TokenCodec,
   type TokenKeeper,
@@ -147,22 +148,6 @@ export const sessionKeeper = (options: KeeperOptions): TokenKeeper =>
 const NO_CLIENT =
   "no Google OAuth client is set up: set GCAL_GOOGLE_CLIENT_ID and GCAL_GOOGLE_CLIENT_SECRET to your own Desktop app client"
 
-const ClientFile = v.object({
-  installed: v.object({ client_id: v.pipe(v.string(), v.minLength(1)), client_secret: v.optional(v.string()) }),
-})
-
-const readClient = (location: URL | string, refusal: CliError): OAuthClient => {
-  try {
-    const { installed } = v.parse(ClientFile, JSON.parse(readFileSync(location, "utf8")))
-    return {
-      clientId: installed.client_id,
-      ...(installed.client_secret ? { clientSecret: installed.client_secret } : {}),
-    }
-  } catch {
-    throw refusal
-  }
-}
-
 /**
  * WireCat's Desktop client, which the release workflow writes into the package from a repository secret. A source
  * checkout and a release made without that secret have none.
@@ -173,16 +158,14 @@ export const BUNDLED_CLIENT = new URL("../google-client.json", import.meta.url)
 // Desktop client as public (https://developers.google.com/identity/protocols/oauth2/native-app).
 export const bundledClient = (location: URL | string = BUNDLED_CLIENT): OAuthClient | undefined => {
   if (!existsSync(location)) return undefined
-  return readClient(
-    location,
-    new CliError(
+  return readClientFile(location, {
+    shipped: true,
+    invalid: new CliError(
       "configuration_error",
       "the WireCat Google client in this gcal package cannot be read; reinstall gcal",
-      {
-        reason: "sign-in.bundled-client-invalid",
-      },
+      { reason: "sign-in.bundled-client-invalid" },
     ),
-  )
+  })
 }
 
 /** The owner's client file wins, then GCAL_GOOGLE_CLIENT_ID, then WireCat's client when the package has one. */
@@ -204,21 +187,7 @@ export const googleClient = (
     if (wirecat) return wirecat
     throw new CliError("configuration_error", NO_CLIENT, { reason: "sign-in.no-client" })
   }
-  const mode = privateFiles({ files: [file], dirs: [] }, platform)
-  if (mode.checked && !mode.ok)
-    throw new CliError(
-      "configuration_error",
-      `the client file can be read by other users of this computer; run chmod 600 ${file} and try again`,
-      { reason: "sign-in.client-file-open" },
-    )
-  return readClient(
-    file,
-    new CliError(
-      "configuration_error",
-      "could not read a Desktop app OAuth client JSON from the client file; its contents were not logged",
-      { reason: "sign-in.client-file-invalid" },
-    ),
-  )
+  return readClientFile(file, { platform })
 }
 
 const UserInfo = v.object({ email: v.optional(v.string()), email_verified: v.optional(v.boolean()) })

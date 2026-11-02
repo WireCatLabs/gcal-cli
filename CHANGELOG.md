@@ -2,6 +2,13 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## 0.15.1 — 02.11.2026
+
+### Fixed
+
+- **The reader of your own `--client-file` comes from `@wirecat/cli-core` 0.546.0, not a copy in gcal.** The file
+  shapes, the `chmod 600` check and the errors are unchanged.
+
 ## 0.15.0 — 02.11.2026
 
 ### Added
