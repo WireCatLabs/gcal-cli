@@ -2,7 +2,7 @@
   {
     "rule": "option-role",
     "target": "session start --client-file",
-    "reason": "Names the owner's own Google OAuth client file, used instead of the WireCat Google client the release bundles; drive-cli has the same option in its baseline. Review when the vocabulary names an app-credential file: https://github.com/WireCatLabs/cli-base/issues/424",
+    "reason": "Names the owner's own Google OAuth client file. The release can bundle a WireCat client, but none ships (the owner chose no WireCat Google app), so the owner's file is the way in; drive-cli has the same option in its baseline. Review when the vocabulary names an app-credential file: https://github.com/WireCatLabs/cli-base/issues/424",
     "owner": "@WireCatLabs",
     "review_after": "2027-01-27"
   },

@@ -138,7 +138,8 @@ const fileError = async <T>(path: string, act: () => Promise<T>): Promise<T> => 
   try {
     return await act()
   } catch (error) {
-    const known = FILE_ERRORS[(error as NodeJS.ErrnoException).code ?? ""]
+    const errno = error instanceof Error && "code" in error && typeof error.code === "string" ? error.code : ""
+    const known = FILE_ERRORS[errno]
     if (!known) throw error
     const [code, reason, words] = known
     throw new CliError(code, `${path} ${words}`, { reason })

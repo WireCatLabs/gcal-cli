@@ -15,8 +15,9 @@ does, and write each new decision here.
 
 ## Reference CLI
 
-No calendar CLI exists yet. Chosen with the owner: [drive-cli](https://github.com/WireCatLabs/drive-cli) for the Google
-sign-in, the Google client, the store import and the command shape; [zoom-cli](https://github.com/WireCatLabs/zoom-cli)
+gcal is the reference for calendar CLIs. It learned from these, chosen with the owner:
+[drive-cli](https://github.com/WireCatLabs/drive-cli) for the Google sign-in, the Google client, the store import and the
+command shape; [zoom-cli](https://github.com/WireCatLabs/zoom-cli)
 for events and meetings in the store.
 
 ## Further answers
@@ -24,11 +25,16 @@ for events and meetings in the store.
 - **Records kept:** calendars and calendar entries as source records; events and event series as entities; attendees
   as `email` contacts (WC-DATA-1, WC-DATA-2). All through cli-core's `EventStore`; gcal keeps no tables of its own.
 - **Provider:** `registerProvider(store, { name: "google-calendar", kind: "events", aliases: ["gcal", "calendar"],
-  command: "gcal" })` on every run that opens the store to write; a read opens it read-only and writes nothing.
+  command: "gcal" })` on every run that opens the store to write; a read opens it read-only and writes nothing
+  (`src/store.ts:15-28`; read in code).
 - **Sync:** by change token (`syncToken`), on demand (`gcal <profile> sync`). Occurrences of a series from
   `events.instances` over a window, 1 year back and 3 months ahead, configurable. `410 Gone` lists everything again
-  and marks what is missing; nothing is wiped.
-- **Which calendars:** the ones the owner owns sync; the others are listed with the command that adds them.
+  and marks what is missing; nothing is wiped. Token, window and reset: `src/calendar-source.ts:253-270`; series
+  slots: `src/calendar-source.ts:284-287`. Tested in `src/calendar-source.test.ts` ("asks for a full list with a
+  window…", "a sync token Google refuses with 410 is a reset…", "asks for a series' slots…").
+- **Which calendars:** the ones the owner owns sync (`src/calendar-source.ts:204`, tested in
+  `src/calendar-source.test.ts` "only the owner's own calendars sync by default"); the others are listed with the
+  command that adds them.
 - **Deletes at Google:** the entry is marked deleted; a past event stays as history, a future one becomes cancelled
   (WC-DATA-7). The person deletes local data only through cli-core's store commands.
 - **Search:** title, description (cleaned), location and attendee names, by words and by meaning. Events appear in
@@ -45,7 +51,9 @@ for events and meetings in the store.
 - **Writes:** creating, changing, moving and deleting events (one occurrence, the series or `--following`), and
   answering an invitation, behind `session start --grant write` and a permission per write (`events.*`). Create,
   update, move and respond are allowed by default and delete asks; mailing attendees, deleting a whole series and a
-  rule that ends a series sooner are denied by default.
+  rule that ends a series sooner are denied by default. The keys and defaults: `src/config.ts:21-63`; the shared
+  defaults come from cli-core's `CALENDAR_WRITE_DEFAULTS`. Read in code; the previews were seen in the 2026-11-02
+  review.
 - **Feeds:** `calendars add <url>` follows an iCalendar feed as a read-only calendar of the profile's own account
   (cli-core `icsFeeds`, `ics:<random id>`, `accessRole: "reader"`); `sync` reads it after Google. Google's
   [calendarList.insert](https://developers.google.com/workspace/calendar/api/v3/reference/calendarList/insert) takes
