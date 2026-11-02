@@ -13,12 +13,17 @@ Google Calendar itself with `search events --backend server`. `calendars busy` s
 free for all of them, and `events list changed_at>=<date>` what changed since a date. After `session start --grant write` it creates, changes, moves and deletes events, repeating ones
 included, one occurrence, the whole series or "this and all following", moves an event to another calendar, switches
 an event between timed and all-day, and answers invitations; a delete asks first. `events remind`, run by cron or a timer, tells you once
-about each meeting that starts soon, or runs your own program for it. `gcal api` reaches every Google
+about each meeting that starts soon, or runs your own program for it, and `schedule` installs that timer for you.
+`events list --source all` lists the events of every signed-in account as one list, and `overlapping:true` finds
+meetings that clash. `events prepare` gathers what you need for the next meeting, `events create --text` adds one from
+a line of text, and `events export` and `events import` read and write `.ics` files. `calendars add <url>` follows a
+calendar published as an `.ics` address, read-only. `search all` searches stored meetings, chats and notes together.
+`gcal api` reaches every Google
 Calendar API method by name. Every command is in the [command reference](commands.md).
 
 ## Next
 
 - **Sign-in without your own Google client.** `gcal` uses WireCat's shared Google app once Google has reviewed it for
-  Calendar. Until then, [make your own client](configuration.md#your-own-google-client).
+  Calendar. Until then, [make your own Google app](installation.md#make-your-own-google-app).
 
 What each released version changed is in the [changelog](../CHANGELOG.md).
