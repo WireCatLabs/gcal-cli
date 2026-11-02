@@ -108,8 +108,8 @@ gcal personal events list calendar:Holidays
 gcal personal calendars remove Holidays     # forget the address and the feed's events
 ```
 
-`gcal` reads the feed itself: Google's API cannot add a calendar from a URL, and its web page "From URL" is not open to
-programs. `calendars add` reads the feed once to check it, and the answer shows how many events it holds. Each `sync`
+`gcal` reads the feed itself: Google's API documents no way to add a calendar from a URL, as its web page's "From URL"
+does. `calendars add` reads the feed once to check it, and the answer shows how many events it holds. Each `sync`
 reads the whole feed again, keeps the events inside the sync window and marks those the feed no longer has. The
 feed's events show in `events list`, `search events`, `overlapping:true` and `events remind` like any calendar's. `events remind` reads what the last `sync` stored and does not read the feeds itself, since a timer runs it every few
 minutes; schedule `sync` too, every hour or so, to keep a feed fresh.

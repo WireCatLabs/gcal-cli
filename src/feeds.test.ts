@@ -97,7 +97,7 @@ const harness = () => {
     expect(`${answer.out}${answer.err}`).not.toContain(TOKEN)
     return JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
   }
-  return { gcal, json, errorOf, google, feed, keyring, folders: Object.values(folders) }
+  return { gcal, json, errorOf, google, feed, keyring, env, folders: Object.values(folders) }
 }
 
 describe("feeds", () => {
@@ -144,6 +144,14 @@ describe("feeds", () => {
     expect(failed).toMatchObject({ code: "provider_error", reason: "sync.partial" })
     expect(failed.message).toContain(`feed ${calendar.id} answered HTTP 404`)
     expect(await errorOf("personal", "calendars", "add", `${FEED}?other=1`)).toMatchObject({ reason: "feed.gone" })
+  })
+
+  it("GCAL_READ_ONLY refuses calendars add before the feed is read or kept", async () => {
+    const { errorOf, env, feed, keyring } = harness()
+    env.GCAL_READ_ONLY = "1"
+    expect((await errorOf("personal", "calendars", "add", FEED)).code).toBe("permission_error")
+    expect(feed.asked).toBe(0)
+    expect(keyring.get(IDENTITY.appName, "feeds:personal")).toBeNull()
   })
 
   it("remove forgets the address in the keyring and the feed's events", async () => {

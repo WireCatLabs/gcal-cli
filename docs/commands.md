@@ -195,7 +195,7 @@ gcal calendars add <url> [options]
 |---|---|
 | `--title <title>` | the calendar's title; the feed's own name if not given. |
 
-**Returns:** follow an iCalendar feed as a read-only calendar
+**Returns:** calendar feed — id, external_id, title, timezone, access_role, primary, synced, seen_at, and 2 more; every field: gcal commands info calendars add
 
 **Example:** `gcal personal calendars add webcal://example.com/holidays.ics --title Holidays`
 
@@ -213,7 +213,7 @@ gcal calendars remove <calendar>
 |---|---|---|
 | `calendar` | required | the feed calendar's id, its ics: id, or its title. |
 
-**Returns:** stop following a feed calendars add added: its address is forgotten and its…
+**Returns:** calendar feed removal — id, external_id, title, timezone, access_role, primary, synced, seen_at, and 1 more; every field: gcal commands info calendars remove
 
 **Example:** `gcal personal calendars remove 7`
 
@@ -254,7 +254,7 @@ gcal sync [options]
 | `--max-pages <pages>` | at most this many requests to the provider in this run; as many as fit the deadline if not given. |
 | `--embed` | also index new events for meaning search, with a model already downloaded. |
 
-**Returns:** calendar sync — provider, account_id, window, calendars, synced, not_synced, complete, state, and 4 more; every field: gcal commands info sync
+**Returns:** calendar sync — provider, account_id, window, calendars, synced, not_synced, complete, state, and 5 more; every field: gcal commands info sync
 
 **Example:** `gcal personal sync`, `gcal personal sync --rescan --embed`, `gcal personal sync --timeout 2m`
 

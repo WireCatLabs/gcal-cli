@@ -34,7 +34,8 @@ for events and meetings in the store.
 - **Search:** title, description (cleaned), location and attendee names, by words and by meaning. Events appear in
   `search all` and in a person's context. `search events --backend server` asks Google live and saves nothing. Working location,
   focus time, out of office, birthdays and busy-only private events are listed, never searched.
-- **Offline:** everything except `session`, `calendars list`, `calendars busy`, `sync` and `search events --backend server`.
+- **Offline:** everything except `session`, `calendars list`, `calendars add`, `calendars busy`, `sync` and
+  `search events --backend server`.
 - **Links:** attendees join people by address; Telegram, WhatsApp and MAX people only by the owner's
   `people link`; an event joins a Zoom meeting by join key and its other copies by iCalUID; an attached Drive file
   links the event to the stored document. Ambiguous links go to `links review`. Never by name or time alone.
@@ -48,7 +49,8 @@ for events and meetings in the store.
 - **Feeds:** `calendars add <url>` follows an iCalendar feed as a read-only calendar of the profile's own account
   (cli-core `icsFeeds`, `ics:<random id>`, `accessRole: "reader"`); `sync` reads it after Google. Google's
   [calendarList.insert](https://developers.google.com/workspace/calendar/api/v3/reference/calendarList/insert) takes
-  only an existing calendar's `id`, so a URL cannot be subscribed through the API. The addresses are one keyring entry
+  only an existing calendar's `id`, and the Discovery schema's `CalendarListEntry` has no URL or source field, so the
+  API documents no way to subscribe a URL (not tried against a live account). The addresses are one keyring entry
   per profile, `feeds:<profile>`, kept where the sign-in is. Verbs `add` and `remove` from the vocabulary (WC-CMD-2).
 - **Shared commands:** `mcp` is cli-core's `appMcpCommand` and the first screen and `guide` are cli-core's
   (`scenarios/`). `doctor` is cli-core's `appDoctorReport` plus `credential_file`, which no hook of
