@@ -50,7 +50,7 @@ export const googleError = ({ status, body, mutates, retryAfterMs }: GoogleFailu
       reason: "api.scope-missing",
       status,
     })
-  // Calendar's usage limits are counted over hours, so a retry now fails the same way.
+  // Google's guide answers it with the Workspace usage limits, not with a retry (link in the message).
   if (reasons.includes("quotaExceeded"))
     return new CliError(
       "rate_limited",
