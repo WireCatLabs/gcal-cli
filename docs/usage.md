@@ -228,7 +228,8 @@ gcal personal events export id:42                               # the text in th
 
 It exports at most 1000 events; narrow the query for more. Times are written in UTC. Each occurrence of a repeating
 event is written as an event of its own, and its repeat rule is not. A new file is readable only by you. Over MCP,
-`--output` is not offered: an agent gets the text in the answer.
+`--output` is not offered: an agent gets the text in the answer, through `gcal_read`, so a read-only profile
+(`GCAL_READ_ONLY`) can export too. Writing a file is still a change: with `GCAL_READ_ONLY` set, `--output` is refused.
 
 `events import` adds the events of an `.ics` file to a calendar through Google's
 [events.import](https://developers.google.com/workspace/calendar/api/v3/reference/events/import). Each event keeps its
@@ -368,6 +369,11 @@ gcal personal events delete event:42 --following --no-notify
 
 Every command except `mcp serve` takes `--json`, and prints one JSON value on stdout. Errors are JSON on stderr, with a code to branch
 on. The [command reference](commands.md) lists the codes.
+
+`events list`, `events prepare`, `doctor` and `session status` also say when they answered and in which time zone:
+`meta.now` (UTC), `meta.now_local` (the same moment with your zone's offset) and `meta.timezone`. An agent reads
+"today" and "next Monday" from them, not from its own guess. The zone is your computer's (`TZ`), the one `today` and a
+bare date are read in. Each calendar's own zone is in `calendars list` (`timezone`).
 
 ## Agents
 

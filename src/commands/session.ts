@@ -1,5 +1,7 @@
 import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
+import { timezoneOf } from "@wirecat/cli-base/query"
+import { clockMeta } from "@wirecat/cli-base/standards"
 import {
   type BaseEnvironment,
   baseContext,
@@ -168,7 +170,7 @@ const statusCommand = () =>
       const status = await baseContext(this, configuration.resolveSettings).run((events) =>
         worded(common.profile, () => sessionStatus({ ...common, events, check: args.check === true })),
       )
-      answer(this, status)
+      renderAnswer(this, outputFor(this), itemOf(status, { meta: clockMeta(Date.now(), timezoneOf()) }))
     })
 
 const endCommand = () =>

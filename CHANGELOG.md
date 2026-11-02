@@ -2,6 +2,22 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **Answers give the time and the time zone.** `events list`, `events prepare`, `doctor` and `session status` carry
+  `meta.now`, `meta.now_local` and `meta.timezone`, so an agent plans "tomorrow" from the real date and your zone, not
+  from a guess (WC-TIME-7).
+- **Over MCP, a list's `query` names its fields.** It said "the fields are below", and nothing was below. It now lists
+  each field with its values, and says that `-event_type:<kind>` (or `NOT event_type:<kind>`) leaves a kind out.
+
+### Fixed
+
+- **`events export` no longer needs the write tool.** Without `--output` it only answers the `.ics` text, so it runs
+  through `gcal_read`, and a read-only profile (`GCAL_READ_ONLY`) can export. `--output` is still not offered over MCP,
+  and the read-only lock still refuses it on the command line.
+
 ## 0.12.0 — 01.11.2026
 
 ### Added

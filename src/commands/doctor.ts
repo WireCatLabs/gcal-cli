@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { CliError, resolvePaths } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
+import { timezoneOf } from "@wirecat/cli-base/query"
+import { clockMeta } from "@wirecat/cli-base/standards"
 import {
   appDoctorReport,
   environmentOf,
@@ -82,6 +84,6 @@ export const doctorCommand = (): Command =>
       const env = environmentOf(this).env ?? process.env
       const { report, fixes } = doctorReport(env, this)
       const output = outputFor(this)
-      renderAnswer(this, output, itemOf(report))
+      renderAnswer(this, output, itemOf(report, { meta: clockMeta(Date.now(), timezoneOf()) }))
       for (const fix of fixes) output.renderer.note(`to make it private: ${fix}`)
     })
