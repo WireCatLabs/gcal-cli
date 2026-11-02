@@ -604,8 +604,12 @@ describe("calendars busy over Google", () => {
   const zone = process.env.TZ
   beforeEach(() => {
     process.env.TZ = "Europe/Madrid"
+    // Free slots already past are dropped: on the day asked about itself, the afternoon found none.
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(new Date("2026-11-01T12:00:00+01:00"))
   })
   afterEach(() => {
+    vi.useRealTimers()
     if (zone === undefined) delete process.env.TZ
     else process.env.TZ = zone
   })
