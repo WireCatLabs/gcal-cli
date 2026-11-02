@@ -1,6 +1,6 @@
 {
   "template": "@wirecat/cli-template",
-  "version": "0.12.0",
+  "version": "0.13.1",
   "names": {
     "name": "gcal-cli",
     "command": "gcal",
@@ -11,7 +11,7 @@
     ".gitattributes": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
     ".github/dependabot.yml": "3163a69a781d248b6d18134a875b1320c845db8b4188536d84f1f1bff454ba85",
     ".github/workflows/changelog-guard.yml": "23af9de075929437a4902fd662fab203de89c6afc173ef842a58982d4b34756e",
-    ".github/workflows/ci.yml": "8b7a748999164a370f1ccba5fb139f02fde87fb459306de3fb9a1441f953ffe5",
+    ".github/workflows/ci.yml": "c25d8d74466bdd3fba067c19cf1e5fef6917de9b9bd76eaca0e0990cc8e9d862",
     ".github/workflows/main.yml": "f89f9ae8e25a935ed12131c74817afd494afb7fd6dd70929392ad1a0a58e2063",
     ".github/workflows/monthly.yml": "5b2e4ac5edf4c43c2987144a606149fbf8a81ac1ef881695ace33a8b86512adc",
     ".github/workflows/pr.yml": "38a69a349babc24c0ab5e0a5ddf041973e4827d61b8f72ca55d38c1fe74fd336",
@@ -29,7 +29,7 @@
     "docs/dev/skills/release/SKILL.md": "d5803407c97a1ed237d01f84fdef1c82ecc7316d3ce44d256f395ec56787fb41",
     "docs/dev/skills/release/fresh-audit.md": "f74c41958ae343791085d3cfc3a55d8f4f7b3baeb5f833a88f97aae7dce9e320",
     "lefthook.yml": "c41b0b3b90a5c1e3f5b8c78a524139bdbafb836a0e0e4ebd90ccb2c7939b57ed",
-    "scripts/audit.sh": "a3b23b86d451e7ab8f5820e5d7bf95c6f63165ae42615c45fcba9fba22ed542a",
+    "scripts/audit.sh": "9c4b6dca3029243f5c236dbc0f317ed0f025c50173d55828e91aeff536a88613",
     "tsconfig.json": "1d6455eff0cd509e4d24217757d7b2c5ff8fe70dad8fac2d9d4eb4e9b5d7ee50",
     "tsconfig.scripts.json": "5987bd02d21f42c55ad06cedbb49ede9fa39debccb44286cda23f0c605ee6107",
     "tsconfig.test.json": "e46769f0660e23692c6dcb33ede02e02415038dfd27c0a5bb10c23c576237da7"
