@@ -100,7 +100,8 @@ Your agent. Your calendar. Your rules.
   skill is the agent's instruction sheet: it explains the commands and the limits. `gcal skill install` writes it.
 - **An app with no terminal** — Claude Desktop, Cursor and other MCP clients. Connect the profile's MCP server,
   `gcal personal mcp serve`. `gcal personal mcp config` prints the entry to paste.
-- **ChatGPT or Claude in a browser** — through your own HTTPS tunnel: `gcal personal mcp serve --http`.
+- **ChatGPT or Claude in a browser or on your phone** — through your own HTTPS tunnel: `gcal personal mcp serve --http`.
+  [Step by step](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/remote.md) ([wirecat.dev](https://wirecat.dev/en/docs/gcal/remote)).
 
 ```sh
 gcal skill install                               # for Claude Code, Codex, Gemini CLI and OpenClaw
@@ -235,7 +236,7 @@ repository.
 
 | Section | Pages |
 |---|---|
-| Start | [overview](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/index.md) · [installation](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/installation.md) · [use it](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md) |
+| Start | [overview](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/index.md) · [installation](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/installation.md) · [use it](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md) · [ChatGPT or Claude in the browser](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/remote.md) |
 | Reference | [all commands](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/commands.md) · [settings and permissions](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/configuration.md) |
 | If something is wrong | [when something goes wrong](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/troubleshooting.md) · [security](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/security.md) |
 | Project | [roadmap](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/roadmap.md) · [comparison with other tools](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/compare.md) |
