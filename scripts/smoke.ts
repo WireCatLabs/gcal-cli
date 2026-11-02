@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import { packContents } from "@wirecat/cli-base/release"
@@ -57,6 +57,8 @@ try {
     execFileSync(process.execPath, [bin, ...args], { cwd: temp, env, encoding: "utf8", timeout: 20000 })
   assert.equal(run(["--version"]).trim(), version)
   assert.match(run(["--help"]), /Usage: gcal/)
+  assert.equal(JSON.parse(run(["--wcat-describe"])).name, "gcal")
+  assert.ok(existsSync(join(installed, "node_modules", ".bin", "wcat-gcal")), "the package installs wcat-gcal")
   const tree: unknown = JSON.parse(run(["commands", "--json"]))
   const names =
     isRecord(tree) && Array.isArray(tree.commands)

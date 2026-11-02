@@ -2,6 +2,13 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **`wcat gcal` runs the tool, and `wcat --help` lists it.** The package installs `wcat-gcal` beside `gcal`, and
+  `wcat-gcal --wcat-describe` prints the tool's name, version and description for `wcat`. `gcal` keeps working.
+
 ## 0.18.0 — 02.11.2026
 
 ### Added
