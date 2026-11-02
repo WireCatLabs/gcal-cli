@@ -16,10 +16,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
-- **A misspelled profile lists the profiles you have.** `gcal alpah events list` said only "profile alpah has no Google
-  account yet; run gcal alpah session start", which invited a sign-in under the typo. When other profiles exist, it
-  now says `no profile named "alpah" — profiles here: alpha, beta` before the sign-in hint, and `details.profiles`
-  lists them. The code and reason stay `authentication_error` and `profile.not-signed-in`.
+- **A misspelled profile lists the profiles you have.** `gcal persona events list` said only "profile persona has no
+  Google account yet; run gcal persona session start", which invited a sign-in under the typo. When other profiles
+  exist, it now says `no profile named "persona" — profiles here: personal, work` before the sign-in hint, and
+  `details.profiles` lists them. The code and reason stay `authentication_error` and `profile.not-signed-in`.
 - **Google's daily usage limit is no longer called a short rate limit.** Google's `quotaExceeded` said "retry the
   command" and was marked safe to retry; a retry fails the same way for hours. It is now `google.usage-limit`, not
   retryable, and links [Google's error guide](https://developers.google.com/workspace/calendar/api/guides/errors).
