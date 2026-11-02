@@ -7,6 +7,7 @@ import type { CalendarFeeds, CalendarSource, CalendarWriter } from "@wirecat/cli
 import { addCalendarCommands, type CalendarCommandDeps } from "@wirecat/cli-core/calendar/cli"
 import {
   type GlobalFlags,
+  isBody,
   itemOf,
   listOf,
   NO_EFFECTS,
@@ -88,6 +89,7 @@ const hitsOf = (command: Command, hits: unknown[], value: Record<string, unknown
  * `page.next` reruns the list with the same query, one page on.
  */
 const bodyOf = (command: Command, value: unknown) => {
+  if (isBody(value)) return value
   if (isRecord(value) && Array.isArray(value.hits)) return hitsOf(command, value.hits, value)
   if (isRecord(value) && Array.isArray(value.items) && Object.keys(value).every((key) => LIST_KEYS.has(key))) {
     const meta = isRecord(value.meta) ? snakeKeys(value.meta) : undefined
@@ -237,12 +239,16 @@ const mountOnce = () => {
       }),
     // 0600: an export holds the owner's meetings, attendees and descriptions.
     writeFile: (path, content) => fileError(path, () => writeFile(path, content, { mode: 0o600 })),
-    write: (value) => {
+    write: (value, _format, view) => {
       const at = action
       if (!at) throw notOpen()
       const body = bodyOf(at, value)
-      answers.push(() => renderAnswer(at, outputFor(at), body))
+      answers.push(() => renderAnswer(at, outputFor(at), body, view))
     },
+    note: (text) => {
+      if (action) outputFor(action).renderer.note(text)
+    },
+    app: IDENTITY,
     writes: {
       writer,
       app: IDENTITY,

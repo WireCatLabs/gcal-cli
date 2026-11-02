@@ -19,6 +19,7 @@
   "events import": "write",
   "events move": "write",
   "events respond": "write",
+  "search all": "read",
   "search events": "read",
   "people list": "read",
   "people link": "write",

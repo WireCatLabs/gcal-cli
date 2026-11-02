@@ -53,6 +53,7 @@ const mcpCommand = () => {
       "attendee and organizer names",
       "shared calendar names",
       "feed events and feed names",
+      "the messages, sender names and meeting transcripts search all finds",
     ],
     permissionExample: "api.calendar.events.insert=deny",
     skill: SKILL,
