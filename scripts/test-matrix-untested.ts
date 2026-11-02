@@ -16,9 +16,20 @@ const generatedOptions = [
 const SHARED_MCP =
   "cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts runs " +
   "gcal's own server, config, revoke and refusals"
+const SHARED_SCHEDULE =
+  "cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, " +
+  "lists, removes and runs gcal's reminder timer"
+
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
+  ...[
+    { command: "schedule command", option: "--at" },
+    { command: "schedule command", option: "--at-time" },
+    { command: "schedule agent" },
+    ...["--max-cost", "--every", "--at", "--at-time"].map((option) => ({ command: "schedule agent", option })),
+    { command: "schedule run" },
+  ].map((one) => ({ ...one, reason: SHARED_SCHEDULE })),
   ...["--http", "--port", "--public-url"].map((option) => ({ command: "mcp serve", option, reason: LONG_RUNNING })),
   ...[undefined, "--port", "--public-url", "--permission", "--profiles"].map((option) => ({
     command: "mcp server start",

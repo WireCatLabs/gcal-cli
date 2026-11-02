@@ -288,7 +288,34 @@ gcal events prepare "$GCAL_EVENT" --json > "$HOME/briefs/next-meeting.json"
 
 ### Run it on a timer
 
-Run it every 5 minutes. Use the full path to `gcal` (`command -v gcal` prints it): a timer starts with a short `PATH`.
+One command installs the timer: a systemd user timer on Linux, a launchd agent on macOS, a Task Scheduler task on
+Windows. Run it every 5 minutes, and keep `--due-within` at least that long:
+
+```sh
+gcal personal schedule command reminders --every 5m -- events remind --due-within 10m -- /home/me/bin/meeting-reminder
+```
+
+The words after the first `--` are what the timer runs, as you would type them after `gcal personal`; your program
+comes after the second `--`. Name the program by its full path or by a name on your `PATH`: the timer keeps your
+`PATH`, but runs from the schedule's own folder.
+
+- `gcal personal schedule list` shows the schedule and how its last run went. While it keeps failing, every `gcal`
+  command says so in one line on stderr.
+- `gcal personal schedule run reminders` runs it now, as the timer would.
+- `gcal personal schedule remove reminders` removes the timer. The output of past runs stays beside the schedule
+  file, in `schedules/reminders/runs/` of the state folder.
+
+Installing the timer does not allow your program. If `events.remind.hook` is not `allow` yet, the command says so and
+gives the `config set` line; until you run it, each run refuses to start the program. `GCAL_READ_ONLY` refuses
+`schedule command` and `schedule remove`, and no MCP tool offers `schedule`.
+
+On Linux with no systemd user session (some containers, WSL without systemd), `schedule command` fails at
+`systemctl`; use cron as below.
+
+#### By hand
+
+The same timer without `schedule`. Use the full path to `gcal` (`command -v gcal` prints it): a timer starts with a
+short `PATH`.
 
 cron (`crontab -e`):
 

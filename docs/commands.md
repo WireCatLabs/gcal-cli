@@ -1963,6 +1963,132 @@ gcal runs path <run-id>
 
 **Example:** `gcal personal runs path run-101`
 
+## `gcal schedule`
+
+run a gcal command or an agent later or on a timer (systemd, launchd, Task Scheduler); an agent cannot send
+
+### `gcal schedule command`
+
+run gcal <args…> on a timer — reads save what they read, so this is how a chat's history fills the store
+
+**Changes something on this computer only.**
+
+```sh
+gcal schedule command <name> <args> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | required | lowercase letters, digits and dashes. |
+| `args` | required | the gcal command after its name, e.g. -- messages list <chat> --limit 50. |
+
+| Option | What it does |
+|---|---|
+| `--every <duration>` | repeat: 30m, 2h, 1d. |
+| `--at <HH:MM>` | every day at this local time. |
+| `--at-time <time>` | one run: 30m, 2d from now, or an ISO time; the schedule removes itself after it. |
+
+**Returns:** run gcal <args…> on a timer — reads save what they read, so this is how a…
+
+**Example:** `gcal personal schedule command health --every 1h -- doctor`, `gcal personal schedule command morning-check --at 08:00 -- doctor`
+
+### `gcal schedule agent`
+
+start an agent (claude or codex) with a prompt on a timer; it runs with GCAL_READ_ONLY=1, so it reads and drafts and cannot send — its answer is kept and you are notified
+
+**Changes something on this computer only.**
+
+```sh
+gcal schedule agent <name> <harness> <prompt> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | required | lowercase letters, digits and dashes. |
+| `harness` | required | the agent to start. One of: `claude`, `codex`. |
+| `prompt` | required | what to do, e.g. "run the daily follow-up review: gcal skill show follow-ups". |
+
+| Option | What it does |
+|---|---|
+| `--max-cost <usd>` | claude only: stop a run that costs more than this, in US dollars. |
+| `--every <duration>` | repeat: 30m, 2h, 1d. |
+| `--at <HH:MM>` | every day at this local time. |
+| `--at-time <time>` | one run: 30m, 2d from now, or an ISO time; the schedule removes itself after it. |
+
+**Returns:** start an agent (claude or codex) with a prompt on a timer; it runs with…
+
+**Example:** `gcal personal schedule agent review claude "review what came in overnight and draft replies" --at 08:30`, `gcal personal schedule agent triage codex "list what needs an answer today" --every 2h --max-cost 1`
+
+### `gcal schedule list`
+
+the schedules, when they run and how their last run went
+
+```sh
+gcal schedule list [query]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+**Returns:** scheduled job — name, kind, when, last; every field: gcal commands info schedule list
+
+**Example:** `gcal personal schedule list`, `gcal personal schedule list kind:agent`
+
+### `gcal schedule run`
+
+run a schedule now, as its timer would, and wait for it
+
+**Changes something in the service.**
+
+```sh
+gcal schedule run <name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | required | the schedule's name, as `schedule list` shows it. |
+
+**Returns:** run a schedule now, as its timer would, and wait for it
+
+**Example:** `gcal personal schedule run health`
+
+### `gcal schedule remove`
+
+stop a schedule and remove its timer; its past output stays
+
+**Changes something on this computer only.**
+
+```sh
+gcal schedule remove <name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | required | the schedule's name, as `schedule list` shows it. |
+
+**Returns:** stop a schedule and remove its timer; its past output stays
+
+**Example:** `gcal personal schedule remove health`
+
+### `gcal schedule exec`
+
+what a timer runs, given the schedule's file; to run one by hand, use run
+
+**Changes something in the service.**
+
+```sh
+gcal schedule exec <file>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `file` | required | the schedule's schedule.json in the state folder, as the timer passes it. |
+
+**Returns:** what a timer runs, given the schedule's file; to run one by hand, use run
+
+**Example:** `gcal personal schedule exec ~/.local/share/gcal-cli/schedules/health/schedule.json`
+
 ## Exit codes
 
 Branch on the code, not on the text: the text can change, the code does not.
