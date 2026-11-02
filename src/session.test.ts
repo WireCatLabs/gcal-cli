@@ -491,7 +491,8 @@ describe("session status and end", () => {
   })
 
   it("with no keyring and no sign-in file, status says missing and end has nothing to end", async () => {
-    const { gcal } = harness(brokenKeyring("Platform failure: DBus error: Failed to connect to socket"), "default")
+    const { gcal, env } = harness(brokenKeyring("Platform failure: DBus error: Failed to connect to socket"), "default")
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true)
     for (const check of [[], ["--check"]]) {
       const status = await gcal(["personal", "session", "status", ...check, "--json"])
       expect(status.code).toBe(0)
@@ -504,12 +505,16 @@ describe("session status and end", () => {
       expect(status.out + status.err).not.toContain("DBus")
     }
     const ended = await gcal(["personal", "session", "end", "--json"])
+    const warnings = stderr.mock.calls.filter(([text]) => String(text).includes("could not reach the OS keyring"))
+    stderr.mockRestore()
     expect(ended.code).toBe(0)
     expect(item(ended.out)).toEqual({
       profile: "personal",
       ended: false,
       cached_data: "retained",
     })
+    expect(warnings).toHaveLength(1)
+    expect(String(warnings[0]?.[0])).toContain(join(env.HOME ?? "", ".local/share/gcal-cli/credentials.json"))
   })
 
   it("refuses --check offline", async () => {
@@ -673,7 +678,11 @@ describe("session start --credential-storage file", () => {
       profiles: ["personal"],
       private: true,
     })
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true)
     expect((await gcal(["personal", "session", "end", "--json"])).code).toBe(0)
+    const warnings = stderr.mock.calls.filter(([text]) => String(text).includes("could not reach the OS keyring"))
+    stderr.mockRestore()
+    expect(warnings).toHaveLength(1)
     expect(JSON.parse(readFileSync(file, "utf8"))).not.toHaveProperty(["oauth:google:personal"])
   })
 
