@@ -2,6 +2,25 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **`sync` asks a feed whether it changed** (`ETag` / `Last-Modified`), and keeps the stored events when the server
+  says nothing changed; the answer's `feeds` then says `unchanged: true`. The first `sync` of a day, and
+  `sync --rescan`, read every feed in full.
+- **`calendars add` warns once on stderr for an `http://` address**: the feed and any token in its address travel
+  unencrypted. It still works.
+- [Keep feeds fresh](docs/usage.md#keep-feeds-fresh) gives the timer that runs `sync` every hour beside the reminders
+  timer: `gcal personal schedule command feeds --every 1h -- sync`.
+
+### Changed — may break callers
+
+- **`calendars remove` deletes the feed's events** instead of leaving them in `events list` as cancelled: the feed's
+  calendar and every event stored from it go, from search too, and the answer's `events` counts them. An event also
+  on one of your Google calendars stays. `calendars remove` takes only a feed; `calendars unsync` still stops a Google
+  calendar and keeps its events. With `@wirecat/cli-core` 0.546.0 → 0.548.0.
+
 ## 0.16.0 — 02.11.2026
 
 ### Added

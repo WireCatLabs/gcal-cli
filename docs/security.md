@@ -33,8 +33,11 @@ token. `gcal` keeps the profile's feeds in the system keyring, under the service
 `feeds:<profile>`, or in `credentials.json` (mode 600) where the profile's sign-in is kept in the file. No answer,
 error, log or run record shows the address: the run record stores it as `[redacted]`, and an error names the feed by
 its calendar id and the server's HTTP status. `gcal` reads a feed over `https://` or `http://`, follows at most 5
-redirects and only to `https://`, reads at most 10 MB and waits at most 30 seconds. A feed's text is somebody else's,
-as an invitation's is: MCP marks feed events and feed names untrusted. `calendars remove` deletes the address.
+redirects and only to `https://`, reads at most 10 MB and waits at most 30 seconds. An `http://` address sends the
+feed and its token unencrypted, so `calendars add` warns once on stderr. A feed's text is somebody else's, as an
+invitation's is: MCP marks feed events and feed names untrusted. The `ETag` and `Last-Modified` a feed's server sent
+are kept in the store, beside the calendar's sync state, and hold nothing of the address. `calendars remove` deletes
+the address, and the feed's events from the store.
 
 The Google sign-in is kept in the system keyring, under the service `gcal-cli`, one entry per profile. That entry also
 holds your OAuth client's ID and secret, so refreshing the sign-in does not need the client file again. Google says a
