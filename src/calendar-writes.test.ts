@@ -20,6 +20,14 @@ afterEach(async () => {
 
 const TEAM = "team@group.calendar.example.com"
 
+const writable = async (input: string | URL | Request, init?: RequestInit) => {
+  const answer = await fakeGoogleCalendar([INVITATION]).fetch(input, init)
+  if (!String(input).includes("calendarList")) return answer
+  const list = (await answer.json()) as { items: { id: string; accessRole: string }[] }
+  for (const one of list.items) if (one.id === TEAM) one.accessRole = "writer"
+  return new Response(JSON.stringify(list), { headers: { "content-type": "application/json" } })
+}
+
 const harness = (
   scopes: string[] = [CALENDAR_READ_SCOPE, EVENTS_SCOPE],
   held: Event[] = [INVITATION],
@@ -127,13 +135,6 @@ describe("event writes over Google", () => {
   })
 
   it("events move takes the event, with its id, to another calendar of the account", async () => {
-    const writable = async (input: string | URL | Request, init?: RequestInit) => {
-      const answer = await fakeGoogleCalendar([INVITATION]).fetch(input, init)
-      if (!String(input).includes("calendarList")) return answer
-      const list = (await answer.json()) as { items: { id: string; accessRole: string }[] }
-      for (const one of list.items) if (one.id === TEAM) one.accessRole = "writer"
-      return new Response(JSON.stringify(list), { headers: { "content-type": "application/json" } })
-    }
     const { gcal, google } = harness(undefined, [INVITATION, SERIES], writable)
     const event = await eventRef(gcal)
     const mailed = await gcal("personal", "events", "move", event, "--to-calendar", TEAM, "--notify")
@@ -152,13 +153,6 @@ describe("event writes over Google", () => {
   })
 
   it("an occurrence moves to another calendar only with --series, the whole repeating event", async () => {
-    const writable = async (input: string | URL | Request, init?: RequestInit) => {
-      const answer = await fakeGoogleCalendar([INVITATION]).fetch(input, init)
-      if (!String(input).includes("calendarList")) return answer
-      const list = (await answer.json()) as { items: { id: string; accessRole: string }[] }
-      for (const one of list.items) if (one.id === TEAM) one.accessRole = "writer"
-      return new Response(JSON.stringify(list), { headers: { "content-type": "application/json" } })
-    }
     const { gcal, google } = harness(undefined, [INVITATION, SERIES], writable)
     await gcal("personal", "sync")
     const { items } = await gcal("personal", "events", "list", "ends_at>=2026-11-02", "starts_at<=2026-11-03")
@@ -513,7 +507,7 @@ describe("the calendar gaps: text, iCalendar, kinds and names", () => {
   })
 
   it("events export writes a 0600 .ics file; events import sends it to a calendar named by its title", async () => {
-    const { gcal, google } = harness()
+    const { gcal, google } = harness(undefined, undefined, writable)
     await gcal("personal", "sync")
     const file = join(scratch(), "review.ics")
     const exported = await gcal("personal", "events", "export", "starts_at:2026-11-05", "--output", file)

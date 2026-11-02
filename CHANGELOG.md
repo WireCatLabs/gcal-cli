@@ -18,6 +18,8 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 - A write to a calendar you may only read, such as one shared with you as `reader`, now refuses with
   `calendar.read-only` before it asks or sends anything; Google refused it before.
+- The reader of your own `--client-file` comes from `@wirecat/cli-core`, not a copy in gcal. The file shapes, the
+  `chmod 600` check and the errors are unchanged.
 
 ## 0.15.0 — 02.11.2026
 
