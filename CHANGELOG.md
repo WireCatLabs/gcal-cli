@@ -14,6 +14,13 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- **An Outlook or Exchange feed's events are read.** Such feeds name time zones the Windows way
+  (`TZID:W. Europe Standard Time`), and `calendars add` and `sync` skipped every timed event of them. They are now read
+  in the matching IANA zone (`Europe/Berlin`). From cli-core 0.551.0.
+- **`--help` no longer offers `OR` where the query refuses it.** A list that Google filters takes `field:value` terms
+  joined by AND, and its `Syntax:` line now says only that (`@wirecat/cli-base` 0.75.0).
+- **The browser login page of `mcp serve --http` talks about your calendar.** It said an app asks to reach "your
+  messages" through `gcal mcp --http`; it now says "your Google Calendar" and `gcal mcp serve --http`.
 - **The roadmap's "What works today" names what 0.11.0–0.17.0 added**: all accounts in one list, overlaps,
   meeting preparation, quick add, `.ics` files, feeds, `search all` and `schedule`.
 
