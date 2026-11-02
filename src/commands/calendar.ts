@@ -1,5 +1,6 @@
-import { readFile, stat, writeFile } from "node:fs/promises"
-import { CliError } from "@wirecat/cli-base"
+import { readFile, stat } from "node:fs/promises"
+import { dirname } from "node:path"
+import { CliError, writeSecurely } from "@wirecat/cli-base"
 import { annotate, metaOf } from "@wirecat/cli-base/commands"
 import { timezoneOf } from "@wirecat/cli-base/query"
 import { metaSchema, nextStepSchema } from "@wirecat/cli-base/standards"
@@ -288,8 +289,13 @@ const mountOnce = () => {
           throw new CliError("validation_error", `${path} is larger than 10 MB`, { reason: "ics.too-large" })
         return readFile(path, "utf8")
       }),
-    // 0600: an export holds the owner's meetings, attendees and descriptions.
-    writeFile: (path, content) => fileError(path, () => writeFile(path, content, { mode: 0o600 })),
+    // 0600 even over an existing file, written whole or not at all: an export holds the owner's meetings, attendees
+    // and descriptions. writeSecurely would make a missing folder; an export names one that exists.
+    writeFile: (path, content) =>
+      fileError(path, async () => {
+        await stat(dirname(path))
+        writeSecurely(path, content, 0o600)
+      }),
     write: (value, _format, view) => {
       const at = action
       if (!at) throw notOpen()

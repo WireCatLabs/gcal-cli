@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from "node:fs"
-import { join } from "node:path"
-import { CliError, resolvePaths } from "@wirecat/cli-base"
+import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { timezoneOf } from "@wirecat/cli-base/query"
 import { clockMeta } from "@wirecat/cli-base/standards"
@@ -16,17 +15,18 @@ import {
 } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
 import { configuration } from "../config.js"
-import { googleClient } from "../google.js"
+import { googleClient, signInFilePath } from "../google.js"
 import { IDENTITY } from "../identity.js"
 
+// The prefix of `oauthAccount("google", profile)`, which refuses an empty profile.
 const ACCOUNT = "oauth:google:"
 
 /**
  * Which profiles keep their sign-in in the file of `session start --credential-storage file`; the others use the
  * keyring, which doctor never opens.
  */
-const credentialFile = (state: string) => {
-  const path = join(state, "credentials.json")
+const credentialFile = (env: NodeJS.ProcessEnv) => {
+  const path = signInFilePath(env)
   if (!existsSync(path)) return { report: { path, found: false, profiles: [] }, fixes: [] }
   const mode = privateFiles({ files: [path], dirs: [] })
   let profiles: string[] | null
@@ -59,15 +59,15 @@ const oauthClient = (env: NodeJS.ProcessEnv) => {
 
 export const doctorReport = (env: NodeJS.ProcessEnv, command: Command) => {
   const shared = appDoctorReport(IDENTITY, configuration, env, command, { oauthClient })
-  const state = resolvePaths({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }).state
-  const credentials = credentialFile(state)
+  const credentials = credentialFile(env)
   return {
     report: { ...shared.report, credential_file: credentials.report },
     fixes: [...shared.fixes, ...credentials.fixes],
   }
 }
 
-// cli-core's appDoctorCommand has no hook for a field of the CLI's own, and gcal must keep `credential_file`.
+// Not cli-core's appDoctorCommand, which would add `--online`: as of cli-core 0.560.0 its answer has no `meta.now`
+// and `meta.timezone`, which a setup check carries (WC-TIME-7).
 export const doctorCommand = (): Command =>
   profileFree(
     annotate(new Command("doctor"), {

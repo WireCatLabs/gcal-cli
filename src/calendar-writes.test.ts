@@ -506,10 +506,11 @@ describe("the calendar gaps: text, iCalendar, kinds and names", () => {
     expect((await gcal(...create, ...at)).code).toBe(0)
   })
 
-  it("events export writes a 0600 .ics file; events import sends it to a calendar named by its title", async () => {
+  it("events export writes a 0600 .ics file, over an older readable one too; events import sends it to a calendar named by its title", async () => {
     const { gcal, google } = harness(undefined, undefined, writable)
     await gcal("personal", "sync")
     const file = join(scratch(), "review.ics")
+    writeFileSync(file, "an older export others could read", { mode: 0o644 })
     const exported = await gcal("personal", "events", "export", "starts_at:2026-11-05", "--output", file)
     expect(exported.item).toEqual({ format: "ics", events: 1, output: file })
     if (process.platform !== "win32") expect(statSync(file).mode & 0o777).toBe(0o600)

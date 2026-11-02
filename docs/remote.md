@@ -79,19 +79,21 @@ On Windows, in PowerShell run as Administrator:
 & "$env:ProgramFiles\Tailscale\tailscale.exe" funnel 8765
 ```
 
-Second window, as your normal user, without `sudo`:
+Second window, as your normal user, without `sudo`. First put the HTTPS address the tunnel printed into
+`PUBLIC_URL`; the one below is an example and works for no one:
 
 ```sh
-gcal personal mcp serve --http --port 8765 --public-url https://<device>.<network>.ts.net
+PUBLIC_URL=https://laptop.example-tailnet.ts.net
+gcal personal mcp serve --http --port 8765 --public-url "$PUBLIC_URL"
 ```
 
 It answers with the local address it serves on, the connector address for the app, and the login code.
 
 To run `gcal` beside `tg`, `drive` or another WireCat tool, give each server its own local port. Then either give
 each its own public HTTPS port, for example a second Funnel with `--https=8443 8766` and
-`gcal personal mcp serve --http --port 8766 --public-url https://<device>.<network>.ts.net:8443` (Funnel supports
+`gcal personal mcp serve --http --port 8766 --public-url "$PUBLIC_URL:8443"` (Funnel supports
 public ports `443`, `8443` and `10000`), or share one address under a path per tool:
-`--public-url https://<device>.<network>.ts.net/gcal`, with Funnel's `--set-path /gcal` pointing at that port. The
+`--public-url "$PUBLIC_URL/gcal"`, with Funnel's `--set-path /gcal` pointing at that port. The
 connector address is then `…/gcal/mcp`. See the
 [Funnel command reference](https://tailscale.com/docs/reference/tailscale-cli/funnel).
 
@@ -114,7 +116,7 @@ To keep the server running after its window closes, start it in the background i
 with the connector address and the login code:
 
 ```sh
-gcal personal mcp server start --port 8765 --public-url https://<device>.<network>.ts.net
+gcal personal mcp server start --port 8765 --public-url "$PUBLIC_URL"
 gcal personal mcp server status   # running, port, connector address, the current login code, apps logged in
 gcal personal mcp server stop     # stops only a server that `mcp server start` started
 ```
@@ -153,8 +155,8 @@ The server cannot see whether the app asked you before a call. Repeat `--permiss
 only for this server process:
 
 ```sh
-gcal personal mcp serve --http --public-url https://<device>.<network>.ts.net --permission api=readonly
-gcal personal mcp serve --http --public-url https://<device>.<network>.ts.net --permission api.calendar.acl=deny
+gcal personal mcp serve --http --public-url "$PUBLIC_URL" --permission api=readonly
+gcal personal mcp serve --http --public-url "$PUBLIC_URL" --permission api.calendar.acl=deny
 ```
 
 `api=readonly` refuses every change, events included; `api.calendar.acl=deny` keeps the app from sharing a calendar.
