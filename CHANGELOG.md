@@ -2,6 +2,23 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Security
+
+- **The published package is the one the checks passed.** The release adds WireCat's Google client to the checked
+  package. It now confirms that the new file holds the checked files and the client, nothing else, and the publish
+  step checks the file's hash again before `npm publish`.
+- **The ClawHub dry run in the release gets no sign-in token from GitHub.** It runs ClawHub's own code, so it now
+  runs the ClawHub CLI directly, as the real ClawHub step does, without `id-token: write`.
+- **The tests of `bin/gcal-live-check` and `bin/gcal-write-check` cannot reach the system keyring.** They started the
+  scripts with the owner's D-Bus address; they now pass `DBUS_SESSION_BUS_ADDRESS=disabled:`.
+
+### Fixed
+
+- **The upgrade check reads a store that 0.19.0 wrote.** It started from 0.6.0, so no check covered what 0.7.0 to
+  0.19.0 wrote.
+
 ## 0.19.0 — 02.11.2026
 
 ### Added

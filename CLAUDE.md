@@ -8,7 +8,13 @@ permissions. A gap in cli-core is fixed in cli-core.
 
 ## Local rules
 
-None yet. Add a rule here only when it holds for `gcal` alone, and link the handbook rule it narrows.
+Add a rule here only when it holds for `gcal` alone, and link the handbook rule it narrows.
+
+- **After each release, move the upgrade baseline to it** in a follow-up pull request, as
+  [TESTING.md](docs/dev/TESTING.md) says: `contracts/previous/package.json`, `previous.version` in
+  `contracts/upgrade.json`, then `pnpm --dir contracts/previous install`. `bin/release` does not do it: the script is
+  the template's, and a change there belongs in cli-template. Narrows
+  [WC-TEST-14](node_modules/@wirecat/cli-base/docs/standards/testing.md).
 
 ## Private working folder
 
