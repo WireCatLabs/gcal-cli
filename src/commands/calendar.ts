@@ -347,9 +347,10 @@ const mountOnce = () => {
       // cli-core types the environment as a loose record; gcal's own run() passes a GcalEnvironment.
       const gcalEnvironment = environment as GcalEnvironment
       const env = gcalEnvironment.env ?? process.env
-      const { profile, configuredProfiles } = configuration.resolveSettings(action.optsWithGlobals<GlobalFlags>(), {
-        env,
-      })
+      const { profile, configuredProfiles, profilesHere } = configuration.resolveSettings(
+        action.optsWithGlobals<GlobalFlags>(),
+        { env },
+      )
       const [
         { apiAccess, savedAccount, signedInAccounts },
         { openGcalStore, PROVIDER },
@@ -368,12 +369,18 @@ const mountOnce = () => {
         import("../feeds.js"),
       ])
       const account = savedAccount(env, profile)
-      if (!account)
+      if (!account) {
+        const signIn = `run ${IDENTITY.command} ${profile} session start`
+        // A name no config and no sign-in knows is most likely a typo: the choices come before the sign-in hint.
+        const others = profilesHere.includes(profile) ? [] : profilesHere
         throw new CliError(
           "authentication_error",
-          `profile ${profile} has no Google account yet; run ${IDENTITY.command} ${profile} session start`,
-          { reason: "profile.not-signed-in" },
+          others.length
+            ? `no profile named "${profile}" — profiles here: ${others.join(", ")}; to add it, ${signIn}`
+            : `profile ${profile} has no Google account yet; ${signIn}`,
+          { reason: "profile.not-signed-in", ...(others.length ? { profiles: others } : {}) },
         )
+      }
       const key = { provider: PROVIDER.name, account }
       // So `events list --source gcal:<profile>` finds this account by its profile, as tg's and max's lists do. A
       // profile signed in but never opened has no store row, and `--source` would leave it out without a word; with

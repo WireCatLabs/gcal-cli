@@ -17,7 +17,8 @@ const reasonsOf = (body: unknown): string[] => {
   ].filter((reason): reason is string => typeof reason === "string")
 }
 
-const RATE = new Set(["rateLimitExceeded", "userRateLimitExceeded", "quotaExceeded", "RESOURCE_EXHAUSTED"])
+const RATE = new Set(["rateLimitExceeded", "userRateLimitExceeded", "RESOURCE_EXHAUSTED"])
+const ERRORS_GUIDE = "https://developers.google.com/workspace/calendar/api/guides/errors"
 
 export interface GoogleFailure {
   status: number
@@ -49,6 +50,19 @@ export const googleError = ({ status, body, mutates, retryAfterMs }: GoogleFailu
       reason: "api.scope-missing",
       status,
     })
+  // Google's guide answers it with the Workspace usage limits, not with a retry (link in the message).
+  if (reasons.includes("quotaExceeded"))
+    return new CliError(
+      "rate_limited",
+      `Google Calendar usage limits are exceeded for this account; wait before writing again (${ERRORS_GUIDE})`,
+      { reason: "google.usage-limit", retryable: false, status },
+    )
+  if (reasons.includes("forbiddenForNonOrganizer"))
+    return new CliError(
+      "permission_error",
+      "only the organizer can change this; change your own copy's fields only, such as your answer or reminders",
+      { reason: "event.organizer-only", status },
+    )
   if (status === 429 || reasons.some((reason) => RATE.has(reason)))
     // Google turned the request away before acting on it, so even a write is safe to send again.
     return new CliError("rate_limited", "Google rate limit reached; retry the command", {

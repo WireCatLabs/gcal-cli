@@ -28,6 +28,8 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
   ],
   ["api.disabled", "configuration_error", "the Google Calendar API is turned off for this OAuth project"],
   ["google.denied", "permission_error", "Google denied the operation to this account"],
+  ["google.usage-limit", "rate_limited", "Google Calendar usage limits are exceeded for this account"],
+  ["event.organizer-only", "permission_error", "only the event's organizer can change these fields"],
   ["google.not-found", "not_found", "Google Calendar has no such item, or this account cannot see it"],
 ]
 
