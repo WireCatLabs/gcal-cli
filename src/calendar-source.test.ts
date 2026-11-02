@@ -204,3 +204,33 @@ describe("an event's zone", () => {
     }
   })
 })
+
+describe("paging through a Google list", () => {
+  const looping = (next: (page: number) => string | undefined) => {
+    let calls = 0
+    const api = {
+      call: async () => {
+        const token = next(calls++)
+        return { items: [], ...(token ? { nextPageToken: token } : {}) }
+      },
+    }
+    return { source: googleCalendarSource(api), calls: () => calls }
+  }
+
+  it("stops when Google repeats a page token, for the calendar list and a series' slots", async () => {
+    const calendars = looping(() => "same-token")
+    await expect(calendars.source.calendars()).rejects.toMatchObject({ code: "invalid_response" })
+    expect(calendars.calls()).toBe(2)
+    const slots = looping(() => "same-token")
+    await expect(slots.source.occurrences?.(MADRID, "series1", WINDOW)).rejects.toMatchObject({
+      code: "invalid_response",
+    })
+    expect(slots.calls()).toBe(2)
+  })
+
+  it("stops after a thousand pages of new tokens", async () => {
+    const endless = looping((page) => `token-${page}`)
+    await expect(endless.source.calendars()).rejects.toThrow(/past 1000 pages/u)
+    expect(endless.calls()).toBe(1000)
+  })
+})

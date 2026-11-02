@@ -18,6 +18,12 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 - **The upgrade check reads a store that 0.19.0 wrote.** It started from 0.6.0, so no check covered what 0.7.0 to
   0.19.0 wrote.
+- **Reading commands no longer write to the shared store.** `events list`, `events show`, `store status`, `people
+  list` and the other reads open the store read-only once the profile is stored, so reads that run at once over MCP
+  take no write lock. The first command of a profile, `sync`, the searches and every write still open it to write,
+  and save the account and profile rows as before.
+- **A calendar list or a series' slots that Google pages without end stop with an error.** A repeated page token,
+  or more than 1000 pages, now ends the read with `invalid_response` instead of looping until the time limit.
 
 ## 0.19.0 — 02.11.2026
 

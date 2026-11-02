@@ -1,4 +1,4 @@
-import { isCliError } from "@wirecat/cli-base"
+import { CliError, isCliError } from "@wirecat/cli-base"
 import { timezoneOf, zonedMoment } from "@wirecat/cli-base/query"
 import type {
   BusyTimes,
@@ -27,6 +27,7 @@ import type {
 import { answerOf, type GoogleApi } from "./google-api.js"
 
 const PAGE_SIZE = 2500
+const MAX_PAGES = 1000
 const SPAN = { start: 0, end: 0 }
 
 const ROLE: Record<string, CalendarAccessRole> = {
@@ -206,6 +207,26 @@ const calendarOf = (entry: CalendarCalendarListEntry): CalendarInput | null => {
 
 const statusOf = (error: unknown) => (isCliError(error) ? error.details.status : undefined)
 
+/** Every page of one Google list. A repeated page token or an endless list is Google's fault and stops the read. */
+const allPages = async <T>(
+  what: string,
+  read: (pageToken?: string) => Promise<{ items?: T[]; nextPageToken?: string }>,
+) => {
+  const items: T[] = []
+  const seen = new Set<string>()
+  let pageToken: string | undefined
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const answer = await read(pageToken)
+    for (const item of answer.items ?? []) items.push(item)
+    if (!answer.nextPageToken) return items
+    if (seen.has(answer.nextPageToken))
+      throw new CliError("invalid_response", `Google repeated a page token of ${what}`)
+    seen.add(answer.nextPageToken)
+    pageToken = answer.nextPageToken
+  }
+  throw new CliError("invalid_response", `Google listed ${what} past ${MAX_PAGES} pages`)
+}
+
 /**
  * Google Calendar as a `CalendarSource`, read only, through the generated API layer. A series' slots come from
  * `events.instances` on request; a sync token holds no window, so a full round lists the window again.
@@ -219,20 +240,13 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
     traits: { expands: "on-request", cursorHoldsWindow: false, fullListOnly: false },
 
     async calendars() {
-      const found: CalendarInput[] = []
-      let pageToken: string | undefined
-      do {
-        const page = answerOf(
+      const entries = await allPages("the calendar list", async (pageToken) =>
+        answerOf(
           schema.CalendarCalendarList,
           await api.call("calendar.calendarList.list", { maxResults: 250, ...(pageToken ? { pageToken } : {}) }),
-        )
-        for (const entry of page.items ?? []) {
-          const calendar = calendarOf(entry)
-          if (calendar) found.push(calendar)
-        }
-        pageToken = page.nextPageToken
-      } while (pageToken)
-      return found
+        ),
+      )
+      return entries.flatMap((entry) => calendarOf(entry) ?? [])
     },
 
     async changes(calendar, { cursor, page, window }): Promise<ChangeResult> {
@@ -265,11 +279,9 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
     },
 
     async occurrences(calendar, seriesExternalId, window: SyncWindow) {
-      const slots: EntryInput[] = []
-      let pageToken: string | undefined
-      do {
-        // Without showDeleted Google leaves a cancelled slot out, and the store would keep it as scheduled.
-        const page = await list("calendar.events.instances", {
+      // Without showDeleted Google leaves a cancelled slot out, and the store would keep it as scheduled.
+      const events = await allPages("a series' slots", (pageToken) =>
+        list("calendar.events.instances", {
           calendarId: calendar.externalId,
           eventId: seriesExternalId,
           timeMin: iso(window.from),
@@ -277,11 +289,9 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
           showDeleted: true,
           maxResults: PAGE_SIZE,
           ...(pageToken ? { pageToken } : {}),
-        })
-        for (const event of page.items ?? []) if (event.id) slots.push(entryOf(event, calendar))
-        pageToken = page.nextPageToken
-      } while (pageToken)
-      return slots
+        }),
+      )
+      return events.filter((event) => event.id).map((event) => entryOf(event, calendar))
     },
 
     // Google's own text search also finds events outside the sync window; read only and stored nowhere.

@@ -1,6 +1,6 @@
 import { readFile, stat, writeFile } from "node:fs/promises"
 import { CliError } from "@wirecat/cli-base"
-import { annotate } from "@wirecat/cli-base/commands"
+import { annotate, metaOf } from "@wirecat/cli-base/commands"
 import { timezoneOf } from "@wirecat/cli-base/query"
 import { metaSchema, nextStepSchema } from "@wirecat/cli-base/standards"
 import type { CalendarFeeds, CalendarSource, CalendarWriter } from "@wirecat/cli-core/calendar"
@@ -31,7 +31,7 @@ interface Opened {
   profile: string
   store: MessageStore
   accountId: number
-  account: { provider: string; account: string }
+  account: AccountKey
   env: NodeJS.ProcessEnv
   /** Built on first use: a local read never reads the sign-in. */
   source: () => CalendarSource
@@ -145,6 +145,57 @@ const fileError = async <T>(path: string, act: () => Promise<T>): Promise<T> => 
 }
 
 const notOpen = () => new CliError("configuration_error", "the shared store is not open for this command")
+
+type AccountKey = { provider: string; account: string }
+type ProfileRow = [profile: string, key: AccountKey]
+type OpenStore = (env: NodeJS.ProcessEnv, options?: { readOnly?: boolean }) => Promise<MessageStore>
+
+/** The own account's id when every profile already points at its account in the store; nothing is written. */
+const storedId = async (store: MessageStore, rows: [ProfileRow, ...ProfileRow[]]) => {
+  const profiles = (await store.accounts.profiles())[IDENTITY.command] ?? {}
+  const current = rows.every(([name, key]) => {
+    const saved = profiles[name]
+    return saved?.provider === key.provider && saved.account === key.account
+  })
+  return current ? (await store.accounts.storedAccount(rows[0][1])).id : undefined
+}
+
+/**
+ * A command that only reads opens the store read-only, so parallel MCP reads take no write lock. The first read of a
+ * profile, a store that is missing or needs a migration, and every command that writes open it for writing and save
+ * the account and profile rows. The own profile's row comes first.
+ */
+const storeFor = async (
+  env: NodeJS.ProcessEnv,
+  reads: boolean,
+  rows: [ProfileRow, ...ProfileRow[]],
+  open: OpenStore,
+) => {
+  if (reads) {
+    // A failed read-only open is never the answer: the writable open below says what is wrong, or fixes it.
+    const store = await open(env, { readOnly: true }).catch(() => undefined)
+    if (store) {
+      const accountId = await storedId(store, rows).catch(() => undefined)
+      if (accountId !== undefined) return { store, accountId }
+      await store.close()
+    }
+  }
+  const store = await open(env)
+  try {
+    const save = async ([name, key]: ProfileRow) => {
+      const id = await store.accounts.saveAccount(key, { name: null })
+      await store.accounts.saveProfile(IDENTITY.command, name, key)
+      return id
+    }
+    const [own, ...others] = rows
+    const accountId = await save(own)
+    for (const other of others) await save(other)
+    return { store, accountId }
+  } catch (error) {
+    await store.close()
+    throw error
+  }
+}
 
 /**
  * cli-core's shared calendar commands over Google, mounted for one program. The commands are mounted when the program
@@ -323,23 +374,21 @@ const mountOnce = () => {
           `profile ${profile} has no Google account yet; run ${IDENTITY.command} ${profile} session start`,
           { reason: "profile.not-signed-in" },
         )
-      const store = await openGcalStore(env)
+      const key = { provider: PROVIDER.name, account }
+      // So `events list --source gcal:<profile>` finds this account by its profile, as tg's and max's lists do. A
+      // profile signed in but never opened has no store row, and `--source` would leave it out without a word; with
+      // one, the answer names it and says it has no synced calendar. A lock keeps the other profiles out of reach.
+      const rows: [ProfileRow, ...ProfileRow[]] = [[profile, key]]
+      if (action.opts<{ source?: string }>().source !== undefined && !env[`${IDENTITY.envPrefix}_PROFILE_LOCK`])
+        for (const [other, address] of signedInAccounts(env, configuredProfiles))
+          rows.push([other, { provider: PROVIDER.name, account: address }])
+      // cli-core's search fills its pending search index before it answers, which is a write.
+      const reads = metaOf(action).effects?.local !== "write" && pathOf(action)[0] !== "search"
+      const { store, accountId } = await storeFor(env, reads, rows, openGcalStore)
       let closed: Promise<void> | undefined
       const close = () => (closed ??= store.close())
       // Still tracked: a command that fails never reaches postAction.
       gcalEnvironment.trackCloseable?.({ close })
-      const key = { provider: PROVIDER.name, account }
-      const accountId = await store.accounts.saveAccount(key, { name: null })
-      // So `events list --source gcal:<profile>` finds this account by its profile, as tg's and max's lists do.
-      await store.accounts.saveProfile(IDENTITY.command, profile, key)
-      // A profile signed in but never opened has no store row, and `--source` would leave it out without a word; with
-      // one, the answer names it and says it has no synced calendar. A lock keeps the other profiles out of reach.
-      if (action.opts<{ source?: string }>().source !== undefined && !env[`${IDENTITY.envPrefix}_PROFILE_LOCK`])
-        for (const [other, address] of signedInAccounts(env, configuredProfiles)) {
-          const otherKey = { provider: PROVIDER.name, account: address }
-          await store.accounts.saveAccount(otherKey, { name: null })
-          await store.accounts.saveProfile(IDENTITY.command, other, otherKey)
-        }
       let source: CalendarSource | undefined
       let writer: GoogleCalendarWriter | undefined
       let api: GoogleApi | undefined
