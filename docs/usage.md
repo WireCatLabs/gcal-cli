@@ -105,21 +105,33 @@ link. `calendars add` follows one as a read-only calendar of the profile, beside
 gcal personal calendars add webcal://example.com/holidays.ics --title Holidays
 gcal personal sync                          # reads Google, then every feed again
 gcal personal events list calendar:Holidays
-gcal personal calendars remove Holidays     # forget the address and the feed's events
+gcal personal calendars remove Holidays     # forget the address and delete the feed's events
 ```
 
 `gcal` reads the feed itself: Google's API documents no way to add a calendar from a URL, as its web page's "From URL"
 does. `calendars add` reads the feed once to check it, and the answer shows how many events it holds. Each `sync`
-reads the whole feed again, keeps the events inside the sync window and marks those the feed no longer has. The
-feed's events show in `events list`, `search events`, `overlapping:true` and `events remind` like any calendar's. `events remind` reads what the last `sync` stored and does not read the feeds itself, since a timer runs it every few
-minutes; schedule `sync` too, every hour or so, to keep a feed fresh.
+asks the feed whether it changed since the last read, with the `ETag` and `Last-Modified` the feed's server sent. When
+the server answers that nothing changed, `sync` keeps the stored events and reads nothing; the answer's `feeds` then
+says `unchanged: true`. Otherwise, and on the first `sync` of each day, it reads the whole feed again, keeps the events
+inside the sync window and cancels those the feed no longer has. `sync --rescan` always reads it in full. The feed's
+events show in `events list`, `search events`, `overlapping:true` and `events remind` like any calendar's.
+`events remind` reads what the last `sync` stored and does not read the feeds itself, since a timer runs it every few
+minutes. Schedule `sync` too, every hour, to keep a feed fresh: see [Keep feeds fresh](#keep-feeds-fresh).
 Repeating events are expanded in their own time zone, so a weekly 10:00 stays at 10:00 when the clocks change; a rule
 `gcal` cannot read, such as one that repeats by the hour, is left out and counted in the sync answer's `skipped`.
 
 A feed's events cannot be changed: `events update`, `delete`, `respond` and `create` on its calendar refuse with
 `calendar.read-only` before anything is sent. `calendars busy` leaves feeds out. The address may hold a private
 token, so `gcal` keeps it as it keeps your sign-in and never prints it; see [Security](security.md). An address is
-`https://`, `http://` or `webcal://`. No MCP tool offers `calendars add` or `remove`.
+`https://`, `http://` or `webcal://`. A `webcal://` address is read over `https://`. An `http://` address works, but
+the feed and any token in its address travel unencrypted, so `calendars add` prints one warning on stderr; use
+`https://` when the server offers it. No MCP tool offers `calendars add` or `remove`.
+
+`calendars remove` takes only a feed. It deletes the address, the feed's calendar and every event stored from it:
+they leave `events list` and `search events` at once, with nothing kept as cancelled history, because a feed is
+somebody else's calendar and nothing you do to it goes back. An event that is also on one of your Google calendars
+stays, as that calendar has it. To stop syncing a Google calendar, use `calendars unsync`: it keeps the calendar's
+stored events as they are, and `calendars sync` starts it again.
 
 ## Read your events
 
@@ -329,6 +341,19 @@ comes after the second `--`. Name the program by its full path or by a name on y
 - `gcal personal schedule run reminders` runs it now, as the timer would.
 - `gcal personal schedule remove reminders` removes the timer. The output of past runs stays beside the schedule
   file, in `schedules/reminders/runs/` of the state folder.
+
+#### Keep feeds fresh
+
+`events remind` reads only what is stored, and does not read the [feeds](#follow-a-calendar-feed) you follow. A
+second timer that runs `sync` every hour keeps them fresh:
+
+```sh
+gcal personal schedule command feeds --every 1h -- sync
+```
+
+`sync` reads Google and then each feed; it has no option to read only the feeds. A feed that has not changed costs
+one short request, since `sync` asks the server first. `gcal personal schedule remove feeds` removes the timer. If a
+feed fails, `sync` fails with `sync.partial` and the other calendars are still saved.
 
 Installing the timer does not allow your program. If `events.remind.hook` is not `allow` yet, the command says so and
 gives the `config set` line; until you run it, each run refuses to start the program. `GCAL_READ_ONLY` refuses

@@ -68,12 +68,24 @@ const harness = () => {
   })
   rememberAccount(IDENTITY, "personal", "owner@example.com", env)
   const google = fakeGoogleCalendar()
-  const feed = { text: feedText(MATCH, TRAINING), status: 200, asked: 0 }
+  const feed = {
+    text: feedText(MATCH, TRAINING),
+    status: 200,
+    asked: 0,
+    etag: null as string | null,
+    conditional: [] as (string | undefined)[],
+  }
   const fetch = async (input: string | URL | Request, init?: RequestInit) => {
     const url = new URL(String(input))
     if (url.hostname !== "feeds.example.com") return google.fetch(input, init)
     feed.asked++
-    return new Response(feed.status === 200 ? feed.text : null, { status: feed.status })
+    const sent = new Headers(init?.headers).get("if-none-match") ?? undefined
+    feed.conditional.push(sent)
+    if (feed.etag !== null && sent === feed.etag) return new Response(null, { status: 304 })
+    return new Response(feed.status === 200 ? feed.text : null, {
+      status: feed.status,
+      headers: feed.etag === null ? {} : { etag: feed.etag },
+    })
   }
   const gcal = async (...argv: string[]) => {
     const out: string[] = []
@@ -154,15 +166,44 @@ describe("feeds", () => {
     expect(keyring.get(IDENTITY.appName, "feeds:personal")).toBeNull()
   })
 
-  it("remove forgets the address in the keyring and the feed's events", async () => {
-    const { json, keyring } = harness()
+  it("remove forgets the address in the keyring and deletes the feed's events, cancelled ones included", async () => {
+    const { json, errorOf, keyring } = harness()
     const calendar = (await json("personal", "calendars", "add", FEED)).item
     await json("personal", "sync")
     expect(keyring.get(IDENTITY.appName, "feeds:personal")).not.toBeNull()
+    const titles = async () =>
+      (await json("personal", "events", "list", "starts_at>=today")).items.map(({ title }: { title: string }) => title)
+    expect(await titles()).toContain("Example match")
     const removed = (await json("personal", "calendars", "remove", calendar.id)).item
-    expect(removed).toMatchObject({ synced: false })
+    expect(removed).toMatchObject({ synced: false, events: expect.any(Number) })
+    expect(removed.events).toBeGreaterThan(0)
     expect(keyring.get(IDENTITY.appName, "feeds:personal")).toBeNull()
-    const left = (await json("personal", "events", "list", `calendar:${calendar.id}`)).items
-    expect(left.every(({ status }: { status: string }) => status === "cancelled")).toBe(true)
+    expect(await titles()).not.toContain("Example match")
+    expect(await titles()).not.toContain("Example training")
+    expect(await errorOf("personal", "events", "list", `calendar:${calendar.id}`)).toMatchObject({ code: "not_found" })
+  })
+
+  it("asks the feed whether it changed, and keeps its events when the server answers 304", async () => {
+    const { json, feed } = harness()
+    feed.etag = '"v1"'
+    await json("personal", "calendars", "add", FEED)
+    await json("personal", "sync")
+    const again = (await json("personal", "sync")).item
+    expect(feed.conditional).toEqual([undefined, undefined, '"v1"'])
+    expect(again.feeds).toEqual([expect.objectContaining({ unchanged: true })])
+    const titles = (await json("personal", "events", "list", "starts_at>=today")).items.map(
+      ({ title, status }: { title: string; status: string }) => `${title} ${status}`,
+    )
+    expect(titles).toContain("Example match confirmed")
+  })
+
+  it("warns once on stderr for an http:// feed, without the address, and follows it", async () => {
+    const { gcal } = harness()
+    const added = await gcal("personal", "calendars", "add", FEED.replace("https://", "http://"))
+    expect(added.code, added.err).toBe(0)
+    expect(added.err.match(/unencrypted/g)).toHaveLength(1)
+    expect(added.err).not.toContain(TOKEN)
+    const quiet = await gcal("personal", "calendars", "add", FEED)
+    expect(quiet.err).not.toContain("unencrypted")
   })
 })

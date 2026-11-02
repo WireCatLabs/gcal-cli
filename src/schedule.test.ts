@@ -81,6 +81,21 @@ describe("gcal schedule", () => {
     expect(added.err).toContain("`gcal personal config set permissions.events.remind.hook allow`")
   })
 
+  it("installs the hourly sync that keeps feeds fresh beside the reminders timer, as docs/usage.md gives it", async () => {
+    const { gcal, env, root } = harness("linux")
+    await gcal("personal", "schedule", "command", "reminders", "--every", "5m", "--", ...REMIND)
+    const added = await gcal("personal", "schedule", "command", "feeds", "--every", "1h", "--", "sync")
+    expect(added.code, added.err).toBe(0)
+    expect(added.err).not.toContain("events.remind.hook")
+    expect(JSON.parse(readFileSync(join(root, "state", "schedules", "feeds", "schedule.json"), "utf8"))).toMatchObject({
+      argv: ["sync"],
+      when: { every: 60 },
+    })
+    const units = join(env.XDG_CONFIG_HOME ?? "", "systemd", "user")
+    expect(readFileSync(join(units, "gcal-schedule-feeds.timer"), "utf8")).toContain("OnUnitInactiveSec=60min")
+    expect(existsSync(join(units, "gcal-schedule-reminders.timer"))).toBe(true)
+  })
+
   it("installing a schedule leaves events.remind.hook denied, and says nothing once the owner allows it", async () => {
     const { gcal } = harness("linux")
     await gcal("personal", "schedule", "command", "reminders", "--every", "5m", "--", ...REMIND)

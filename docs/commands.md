@@ -201,7 +201,7 @@ gcal calendars add <url> [options]
 
 ### `gcal calendars remove`
 
-stop following a feed calendars add added: its address is forgotten and its stored events go
+stop following a feed calendars add added: its address is forgotten and its stored events are deleted, not cancelled. Only a feed; calendars unsync stops a provider's calendar
 
 **Changes something on this computer only.**
 
@@ -213,7 +213,7 @@ gcal calendars remove <calendar>
 |---|---|---|
 | `calendar` | required | the feed calendar's id, its ics: id, or its title. |
 
-**Returns:** calendar feed removal — id, external_id, title, timezone, access_role, primary, synced, seen_at, and 1 more; every field: gcal commands info calendars remove
+**Returns:** calendar feed removal — id, external_id, title, timezone, access_role, primary, synced, seen_at, and 2 more; every field: gcal commands info calendars remove
 
 **Example:** `gcal personal calendars remove 7`
 
