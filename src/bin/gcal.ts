@@ -14,11 +14,18 @@ const wcat = await wcatStart({
 if (wcat.code !== undefined) {
   process.exitCode = wcat.code
 } else {
-  const { startCli } = await import("@wirecat/cli-core/cli/start")
+  const [{ startCli }, { REASONS }] = await Promise.all([
+    import("@wirecat/cli-core/cli/start"),
+    import("../reasons.js"),
+  ])
   await startCli({
     app: IDENTITY,
-    run: async ({ args, openBrowser }) =>
-      (await import("../program.js")).run(args, { openBrowser: (url: string) => openBrowser(url) }),
+    reasons: REASONS,
+    run: async (entry) =>
+      (await import("../program.js")).run(entry.args, {
+        signal: entry.signal,
+        openBrowser: (url: string) => entry.openBrowser(url),
+      }),
     fail: (error, { tty }) => {
       const object = errorObjectOf(error)
       process.stderr.write(`${renderError(object, { cli: IDENTITY.command, interactive: tty })}\n`)

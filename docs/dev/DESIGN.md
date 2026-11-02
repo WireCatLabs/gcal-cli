@@ -24,7 +24,7 @@ for events and meetings in the store.
 - **Records kept:** calendars and calendar entries as source records; events and event series as entities; attendees
   as `email` contacts (WC-DATA-1, WC-DATA-2). All through cli-core's `EventStore`; gcal keeps no tables of its own.
 - **Provider:** `registerProvider(store, { name: "google-calendar", kind: "events", aliases: ["gcal", "calendar"],
-  command: "gcal" })` on every run that opens the store.
+  command: "gcal" })` on every run that opens the store to write; a read opens it read-only and writes nothing.
 - **Sync:** by change token (`syncToken`), on demand (`gcal <profile> sync`). Occurrences of a series from
   `events.instances` over a window, 1 year back and 3 months ahead, configurable. `410 Gone` lists everything again
   and marks what is missing; nothing is wiped.
@@ -53,10 +53,14 @@ for events and meetings in the store.
   API documents no way to subscribe a URL (not tried against a live account). The addresses are one keyring entry
   per profile, `feeds:<profile>`, kept where the sign-in is. Verbs `add` and `remove` from the vocabulary (WC-CMD-2).
 - **Shared commands:** `mcp` is cli-core's `appMcpCommand` and the first screen and `guide` are cli-core's
-  (`scenarios/`). `doctor` is cli-core's `appDoctorReport` plus `credential_file`, which no hook of
-  `appDoctorCommand` can add. `session list` is gcal's own: cli-core has no helper for a CLI that is not a messenger
+  (`scenarios/`). `doctor` is cli-core's `appDoctorReport` plus `credential_file` and the clock
+  (`meta.now`, WC-TIME-7). cli-core's `appDoctorCommand` would add `--online`, but up to cli-core 0.560.0 its answer
+  carries no clock. `session list` is gcal's own: cli-core has no helper for a CLI that is not a messenger
   (WC-ACCT-12, NEED-1884). A profile is signed in when its sign-in is in the file or the keyring, not when its account
   file exists: `session end` keeps that file.
+- **Command names:** the package installs both `gcal` and `wcat-gcal`, as mail installs `mail` and `wcat-mail`.
+  `cli-dev lint` warns `wcat-bin-name` on `gcal`; the owner decided to keep the short name while every CLI still has
+  one. The warning sits outside `lint/overrides.json`, which cannot hold it, so the decision is recorded here.
 - **Google app:** `--client-file`, then `GCAL_GOOGLE_CLIENT_ID`, then WireCat's Desktop client in
   `google-client.json` at the package root, which the release workflow writes from the `GCAL_GOOGLE_CLIENT_JSON`
   secret (`bin/set-google-client`). A release without the secret carries none. The owner's console steps:

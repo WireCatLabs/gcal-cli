@@ -13,6 +13,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   runs the ClawHub CLI directly, as the real ClawHub step does, without `id-token: write`.
 - **The tests of `bin/gcal-live-check` and `bin/gcal-write-check` cannot reach the system keyring.** They started the
   scripts with the owner's D-Bus address; they now pass `DBUS_SESSION_BUS_ADDRESS=disabled:`.
+- **`events export --output` writes the file whole and private.** It wrote in place, so an interrupted run left half a
+  file, and an existing file kept its old mode, such as 0644, so others on the computer could read your meetings. It
+  now writes a new file with mode 0600 and moves it over the old one.
 
 ### Fixed
 
@@ -35,6 +38,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   and save the account and profile rows as before.
 - **A calendar list or a series' slots that Google pages without end stop with an error.** A repeated page token,
   or more than 1000 pages, now ends the read with `invalid_response` instead of looping until the time limit.
+- **A closed output pipe reaches a running command.** The entry now hands the program cli-core's stop signal, as
+  drive's does, so `gcal … | head` is stopped once `head` exits; a crash also names gcal's own error reasons.
+- **The remote guide's commands run as written.** [Remote use](docs/remote.md) asks you to put your tunnel address in
+  `PUBLIC_URL` once; its commands no longer hold a `<device>.<network>` placeholder.
 
 ## 0.19.0 — 02.11.2026
 
