@@ -38,10 +38,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   and save the account and profile rows as before.
 - **A calendar list or a series' slots that Google pages without end stop with an error.** A repeated page token,
   or more than 1000 pages, now ends the read with `invalid_response` instead of looping until the time limit.
-- **A closed output pipe reaches a running command.** The entry now hands the program cli-core's stop signal, as
-  drive's does, so `gcal … | head` is stopped once `head` exits; a crash also names gcal's own error reasons.
-- **The remote guide's commands run as written.** [Remote use](docs/remote.md) asks you to put your tunnel address in
-  `PUBLIC_URL` once; its commands no longer hold a `<device>.<network>` placeholder.
+- **The program gets cli-core's stop signal and gcal's error reasons from the entry, as drive's does.** A crash now
+  names gcal's own reasons.
+- **The remote guide's commands no longer hold a `<device>.<network>` placeholder.** [Remote use](docs/remote.md)
+  writes a labelled example address, the same in every shell, which you replace with your tunnel's.
 
 ## 0.19.0 — 02.11.2026
 
