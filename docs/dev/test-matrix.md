@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**213 ✅ · 342 ⛔ · 0 ❌** — 95 commands, 460 options.
+**222 ✅ · 342 ⛔ · 0 ❌** — 96 commands, 468 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -96,6 +96,14 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events respond` | `--calendar` | ✅ |  |
 | `events respond` | `--notify` | ✅ |  |
 | `events respond` | `--no-notify` | ✅ |  |
+| `search all` |  | ✅ |  |
+| `search all` | `--only` | ✅ |  |
+| `search all` | `--source` | ✅ |  |
+| `search all` | `--max-meetings` | ✅ |  |
+| `search all` | `--limit` | ✅ |  |
+| `search all` | `--page` | ✅ |  |
+| `search all` | `--exact` | ✅ |  |
+| `search all` | `--timezone` | ✅ |  |
 | `search events` |  | ✅ |  |
 | `search events` | `--limit` | ✅ |  |
 | `search events` | `--cursor` | ✅ |  |
@@ -561,6 +569,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | *global* | `--max-output-bytes` | ✅ |  |
 | *global* | `--brief` | ✅ |  |
 | *global* | `--full` | ✅ |  |
+| *global* | `--compact` | ✅ |  |
 | *global* | `--dry-run` | ✅ |  |
 | *global* | `--yes` | ✅ |  |
 | *global* | `--record` | ✅ |  |

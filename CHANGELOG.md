@@ -6,6 +6,14 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Added
 
+- **One search over meetings, chats and notes: `gcal <profile> search all <query>`**, as `tg` and `max` have it.
+  It reads the store every WireCat tool shares, so your meetings come back beside the messages `tg`, `max` or `wa`
+  stored and your notes, best match first, each with its `kind` and `ref`. The answer names every account it read in
+  `meta.accounts`, and at a terminal on a `searched:` line. `--only`, `--source`, `--limit`, `--page`, `--exact` and
+  `--timezone` work as in the other tools. Meeting transcripts are read only when `--source` names a meeting account,
+  and mail stays with `memo search mail`. It reads the local store only, never Google. Agents get it over MCP as a
+  read, and `permissions.search.all` can deny it. With `@wirecat/cli-core` 0.548.0 → 0.549.0 and
+  `@wirecat/cli-base` 0.73.0 → 0.74.0.
 - **`sync` asks a feed whether it changed** (`ETag` / `Last-Modified`), and keeps the stored events when the server
   says nothing changed; the answer's `feeds` then says `unchanged: true`. The first `sync` of a day, and
   `sync --rescan`, read every feed in full.

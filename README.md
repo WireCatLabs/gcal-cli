@@ -142,6 +142,8 @@ More: [agents](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md#a
   events with it.
 - **Search in Google.** `search events --backend server` asks Google's own search. It also finds events outside the
   synced span. `--backend both` asks the store and Google together.
+- **One search over everything.** `search all roadmap` finds your meetings beside the chats that other WireCat tools
+  stored and your notes, and says which accounts it read.
 - **Every Google Calendar method.** `gcal api` reaches each one, under its own permission key.
 
 ## Sign-in and profiles

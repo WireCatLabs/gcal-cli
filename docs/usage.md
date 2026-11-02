@@ -148,6 +148,7 @@ gcal personal events list -event_type:birthday -event_type:focus  # without birt
 gcal personal events list calendar:Team                         # one calendar, by its name
 gcal personal events show event:42                              # attendees, Drive files and history
 gcal personal search events roadmap planning                    # by words, and by meaning with the model
+gcal personal search all roadmap                                # events, messages and notes of every WireCat tool
 gcal personal people list                                       # everyone in this week's events
 gcal personal people list event:42                              # one event's attendees
 gcal personal people link email:ana@example.com telegram:12345  # the same person in another WireCat tool
@@ -217,6 +218,29 @@ gcal personal search events --backend both quarterly review
 
 Each answers a list of events under `items`. A store search pages by cursor: with more to show, `page.next_cursor`
 is the value for `--cursor`. Each event names, under `untrusted`, the fields an invitation's sender wrote.
+
+### Search everything at once
+
+`search all` reads the shared store that every WireCat tool on this computer writes to. One query finds your
+meetings beside the messages that `tg`, `max` or `wa` stored and your notes, best match first:
+
+```sh
+gcal personal search all roadmap
+gcal personal search all "quarterly review" --source telegram,gcal --json
+gcal personal search all roadmap --only events,notes
+```
+
+Each hit says its `kind` (`event`, `message`, `note`, or `meeting` for a meeting transcript) and its `ref`.
+`meta.accounts` names every account read; at a terminal the same list comes first, as `searched:`. It reads the
+local store only and never asks Google or a messenger, so run `gcal personal sync` (and the other tools' syncs)
+first. `--only` keeps some kinds: `messages`, `notes`, `events`, `meetings`. `--source` reads only the accounts
+named, as in `events list`: a provider (`telegram`), a profile (`gcal:work`), a kind or `group:<name>`.
+
+Meeting transcripts, such as the ones `zm` stores, are read only when `--source` names a meeting account, for
+example `--source gcal,zoom`. Without it the answer says `meetings` was not searched, in `meta.issues`, and
+`meta.complete` is `false`. Mail is not read: `memo search mail` searches it, and `--only mail` says so. When
+`GCAL_PROFILE_LOCK` is set, `search all` reads only that profile's calendar and refuses `--source`. Each hit names,
+under `untrusted`, the fields someone else wrote: a message's text and sender, an event's title.
 
 ## Prepare for a meeting
 
