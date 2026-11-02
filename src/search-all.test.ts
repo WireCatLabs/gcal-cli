@@ -103,6 +103,10 @@ it("search all finds a stored message and the synced meeting, and names the acco
   expect(text.out).toContain("event · google-calendar · Weekly planning")
   expect(text.out).toContain("message · telegram · Team")
 
+  const compact = await gcal("--tty", "personal", "search", "all", "planning", "--compact")
+  expect(compact.code).toBe(0)
+  expect(compact.out).toContain("event:")
+
   const events = await gcal("personal", "search", "all", "planning", "--only", "events", "--exact", "--json")
   expect(JSON.parse(events.out).items.map(({ kind }: { kind: string }) => kind)).toEqual(["event"])
   const second = await gcal("personal", "search", "all", "planning", "--limit", "1", "--page", "2", "--json")
