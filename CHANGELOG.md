@@ -12,6 +12,11 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   background with `mcp server start`, and how to stop it and log every app out with `mcp revoke`. The README, the
   overview, the usage page and the skill link to it.
 
+### Fixed
+
+- **The roadmap's "What works today" names what 0.11.0–0.17.0 added**: all accounts in one list, overlaps,
+  meeting preparation, quick add, `.ics` files, feeds, `search all` and `schedule`.
+
 ## 0.17.0 — 02.11.2026
 
 ### Added
