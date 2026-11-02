@@ -299,7 +299,7 @@ gcal events list [query] [options]
 
 **Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 13 more; every field: gcal commands info events list
 
-**Example:** `gcal personal events list starts_at>=2026-11-02 starts_at<2026-11-07 --json`, `gcal personal events list ends_at>=today person:ana@example.com`, `gcal personal events list overlapping:true --source all`
+**Example:** `gcal personal events list 'starts_at:[2026-11-02 TO 2026-11-07}' --json`, `gcal personal events list ends_at>=today person:ana@example.com`, `gcal personal events list overlapping:true --source all`
 
 ### `gcal events export`
 
@@ -321,7 +321,7 @@ gcal events export [query] [options]
 
 **Returns:** calendar export — format, events, content, output, untrusted; every field: gcal commands info events export
 
-**Example:** `gcal personal events export id:42 --output planning.ics`, `gcal personal events export starts_at:[2026-11-02 TO 2026-11-09} NOT event_type:birthday --output week.ics`
+**Example:** `gcal personal events export id:42 --output planning.ics`, `gcal personal events export 'starts_at:[2026-11-02 TO 2026-11-09}' NOT event_type:birthday --output week.ics`
 
 ### `gcal events show`
 
@@ -575,7 +575,7 @@ gcal search all <query> [options]
 | `--exact` | bare words and quotes match their exact form only, as exact:word does. |
 | `--timezone <zone>` | the IANA timezone for calendar date boundaries. |
 
-**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 10 more; every field: gcal commands info search all
+**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 13 more; every field: gcal commands info search all
 
 **Example:** `gcal personal search all roadmap`, `gcal personal search all "quarterly review" --source telegram,gcal --json`
 
@@ -1969,6 +1969,24 @@ gcal config unset <setting> [options]
 
 **Example:** `gcal personal config unset limit`
 
+### `gcal config repair`
+
+fix broken JSON syntax in the settings file — comments, a missing or extra comma, unquoted keys, single quotes, missing closing brackets at the end — keeping every value, with a backup beside it; refuses anything with more than one reading and changes nothing then
+
+**Changes something on this computer only.**
+
+```sh
+gcal config repair [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--dry-run` | say what it would fix, and change nothing. |
+
+**Returns:** fix the settings file's JSON syntax, keeping every value
+
+**Example:** `gcal config repair`, `gcal config repair --dry-run`
+
 ## `gcal runs`
 
 recorded runs — what this tool did, and when
@@ -2073,7 +2091,7 @@ gcal schedule agent <name> <harness> <prompt> [options]
 |---|---|---|
 | `name` | required | lowercase letters, digits and dashes. |
 | `harness` | required | the agent to start. One of: `claude`, `codex`. |
-| `prompt` | required | what to do, e.g. "run the daily follow-up review: gcal skill show follow-ups". |
+| `prompt` | required | what to do, e.g. "summarize what came in during the last day: gcal personal search messages 'date>1d' --newest --limit 20". |
 
 | Option | What it does |
 |---|---|

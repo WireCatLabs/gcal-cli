@@ -17,6 +17,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   file, and an existing file kept its old mode, such as 0644, so others on the computer could read your meetings. It
   now writes a new file with mode 0600 and moves it over the old one.
 
+### Added
+
+- **`gcal config repair`** fixes broken JSON syntax in the settings file and keeps a backup beside it. From cli-core.
+
 ### Fixed
 
 - **gcal runs on cli-base 0.75.2.** Its own check for a test that reaches the system keyring moved into cli-base,
@@ -45,6 +49,16 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   names gcal's own reasons.
 - **The remote guide's commands no longer hold a `<device>.<network>` placeholder.** [Remote use](docs/remote.md)
   writes a labelled example address, the same in every shell, which you replace with your tunnel's.
+- **`links review` under `GCAL_PROFILE_LOCK` lists only the locked profile's link choices,** and shows a candidate
+  event the profile holds no copy of by its ref alone, so another account's event titles are not shown. Without the
+  lock it still lists every account's, and now names them in `meta.accounts`. From cli-core 0.561.0.
+- **At a terminal, event times are shown in your computer's time zone, and the last line names it** (`times in
+  Europe/Madrid`). `--json` and `--jsonl` keep UTC times. From cli-core 0.561.0.
+- **`calendars busy` says when Google did not answer for a calendar or person.** `meta.complete` is false with an
+  issue for each one, so free times are no longer shown as certain, and `meta` names `now` and the time zone. From
+  cli-core 0.561.0.
+- **The first `events list` help example works:** `gcal personal events list 'starts_at:[2026-11-02 TO 2026-11-07}'`.
+- **`gcal api` writes use cli-core's permission guard** (`keyedGuard`) instead of a copy, so a fix there reaches them.
 
 ## 0.19.0 — 02.11.2026
 

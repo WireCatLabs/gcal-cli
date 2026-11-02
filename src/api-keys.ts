@@ -1,5 +1,4 @@
 import { EVENTS_DELETE_SERIES_KEY, EVENTS_NOTIFY_KEY } from "@wirecat/cli-core/calendar"
-import type { Asker, GuardRequest, Level, SendGuard } from "@wirecat/cli-core/sends"
 
 export { EVENTS_DELETE_SERIES_KEY, EVENTS_NOTIFY_KEY }
 
@@ -47,54 +46,4 @@ export const cancels = (method: string, body: Record<string, unknown> | undefine
 export const isSeries = (event: unknown): boolean => {
   if (typeof event !== "object" || event === null || !("recurrence" in event)) return false
   return Array.isArray(event.recurrence) && event.recurrence.length > 0
-}
-
-/**
- * The profile's guard over a write's main key and its extra keys, as cli-core's calendar writes check theirs: a key
- * that refuses refuses before anything is asked, and one question names every key at `ask`. Extra keys are probed
- * as reads, so the write itself holds the one journal line.
- */
-export const keyedGuard = (
-  build: (ask: Asker) => SendGuard,
-  ask: Asker,
-  levelOf: (key: string) => Level,
-  extra: readonly string[],
-): SendGuard & { refuse(request: GuardRequest): void } => {
-  let question: string | undefined
-  let answered = false
-  const guard = build(async (key, request) => {
-    if (answered) return
-    await ask(question || key, request)
-    answered = true
-  })
-  const probes = new WeakMap<GuardRequest, GuardRequest[]>()
-  const all = (request: GuardRequest) => {
-    let found = probes.get(request)
-    if (!found) {
-      found = extra.map((key): GuardRequest => ({ chatId: null, kind: "read", key }))
-      probes.set(request, found)
-    }
-    return [request, ...found]
-  }
-  const refuse = (request: GuardRequest) => {
-    const refused = all(request).find(({ key }) => ["deny", "readonly"].includes(levelOf(key ?? "")))
-    if (refused) guard.check(refused, { reserve: false })
-  }
-  return {
-    refuse,
-    ask: async (request) => {
-      refuse(request)
-      question = all(request)
-        .filter(({ key }) => levelOf(key ?? "") === "ask")
-        .map(({ key }) => key)
-        .join(" and ")
-      for (const one of all(request)) await guard.ask?.(one)
-    },
-    check: (request, options) => {
-      for (const one of all(request).slice(1)) guard.check(one, { reserve: false })
-      guard.check(request, options)
-    },
-    ...(guard.reserve ? { reserve: guard.reserve } : {}),
-    record: (entry) => guard.record(entry),
-  }
 }

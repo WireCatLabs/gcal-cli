@@ -527,6 +527,16 @@ describe("calendar commands over Google", () => {
     )
   })
 
+  it("prints event times to a person in the computer's zone, and names the zone", async () => {
+    const { json, gcal } = harness()
+    await json("personal", "sync")
+    const shown = await gcal("--tty", "personal", "events", "list", "ends_at>=2026-11-02")
+    expect(shown.code).toBe(0)
+    expect(shown.out).toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/u)
+    expect(shown.out).not.toMatch(/T\d{2}:\d{2}:\d{2}\.\d{3}Z/u)
+    expect(shown.out.trim().split("\n").at(-1)).toBe(`times in ${Intl.DateTimeFormat().resolvedOptions().timeZone}`)
+  })
+
   it("turns a calendar's sync on and off, links a person, and reviews links", async () => {
     const { json, gcal } = harness()
     await json("personal", "sync")
@@ -539,7 +549,11 @@ describe("calendar commands over Google", () => {
     expect((await json("personal", "people", "link", "email:ana@example.com", "me")).item.identities).toContain(
       "email:ana@example.com",
     )
-    expect(await json("personal", "links", "review")).toMatchObject({ items: [], page: { has_more: false } })
+    expect(await json("personal", "links", "review")).toMatchObject({
+      items: [],
+      page: { has_more: false },
+      meta: { accounts: [expect.stringMatching(/^google-calendar:/u)], complete: true },
+    })
     const resolved = await gcal("personal", "links", "resolve", "1", "apart", "--json")
     expect(JSON.parse(resolved.err.trim().split("\n").at(-1) ?? "{}").error.code).toBe("not_found")
   })
@@ -629,8 +643,14 @@ describe("calendars busy over Google", () => {
     const { json, google } = harness()
     await json("personal", "sync")
     google.requests.length = 0
-    const answer = (await json(...busy, "person:bo@example.com", "--duration-minutes", "60", "--hours", "08:00-13:00"))
-      .item
+    const whole = await json(...busy, "person:bo@example.com", "--duration-minutes", "60", "--hours", "08:00-13:00")
+    const answer = whole.item
+    expect(whole.meta).toMatchObject({
+      complete: false,
+      issues: [{ code: "provider_error", reason: "busy.unanswered", source: "person:bo@example.com" }],
+      now: "2026-11-01T11:00:00.000Z",
+      timezone: "Europe/Madrid",
+    })
     expect(google.requests.map(({ path }) => path)).toEqual(["freeBusy"])
     expect(answer.calendars).toEqual([
       {
