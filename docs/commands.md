@@ -1610,13 +1610,17 @@ gcal api calendar-settings-list [options]
 
 ## `gcal doctor`
 
-check this installation: version, paths, config, profiles, store, OAuth client, where each sign-in is kept; no keyring or network
+the state this installation is in, without connecting unless --online
 
 ```sh
-gcal doctor
+gcal doctor [options]
 ```
 
-**Returns:** check this installation; no keyring or network
+| Option | What it does |
+|---|---|
+| `--online` | also connect once and read the account; sends nothing. |
+
+**Returns:** the state this installation is in, without connecting unless --online
 
 **Example:** `gcal doctor`, `gcal doctor --json`
 

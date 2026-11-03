@@ -64,6 +64,22 @@ it("doctor names the store, the OAuth client and the profile lock, and says a si
   })
 })
 
+it("doctor --online says whether npm has a newer gcal, asking npm only", async () => {
+  const asked: string[] = []
+  const out: string[] = []
+  const code = await run(["doctor", "--online", "--json"], {
+    streams: { data: (text) => out.push(text), diagnostic: () => undefined },
+    tty: false,
+    fetch: (async (url: string) => {
+      asked.push(String(url))
+      return new Response(JSON.stringify({ version: "999.0.0" }), { status: 200 })
+    }) as typeof fetch,
+  })
+  expect(code).toBe(0)
+  expect(asked).toEqual(["https://registry.npmjs.org/@wirecat/gcal-cli/latest"])
+  expect(JSON.stringify(json(out.join("\n")).item.online)).toContain('"newer":true')
+})
+
 const withConfig = async (text: string, check: (config: unknown) => void) => {
   const dir = process.env.GCAL_CONFIG_DIR ?? ""
   mkdirSync(dir, { recursive: true })
