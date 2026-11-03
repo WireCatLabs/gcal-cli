@@ -19,6 +19,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- **gcal runs on cli-base 0.75.2.** Its own check for a test that reaches the system keyring moved into cli-base,
+  so gcal's copy is gone; the check is the same. `cli-dev lint` no longer warns about the short `gcal` command: the
+  decision to keep it beside `wcat-gcal` is now an override with its reason.
 - **A misspelled profile lists the profiles you have.** `gcal persona events list` said only "profile persona has no
   Google account yet; run gcal persona session start", which invited a sign-in under the typo. When other profiles
   exist, it now says `no profile named "persona" — profiles here: personal, work` before the sign-in hint, and

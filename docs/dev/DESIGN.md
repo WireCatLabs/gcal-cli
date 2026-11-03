@@ -68,7 +68,7 @@ for events and meetings in the store.
   file exists: `session end` keeps that file.
 - **Command names:** the package installs both `gcal` and `wcat-gcal`, as mail installs `mail` and `wcat-mail`.
   `cli-dev lint` warns `wcat-bin-name` on `gcal`; the owner decided to keep the short name while every CLI still has
-  one. The warning sits outside `lint/overrides.json`, which cannot hold it, so the decision is recorded here.
+  one. `lint/overrides.json` holds that decision with its reason (cli-base 0.75.2 lets it), which silences the warning.
 - **Google app:** `--client-file`, then `GCAL_GOOGLE_CLIENT_ID`, then WireCat's Desktop client in
   `google-client.json` at the package root, which the release workflow writes from the `GCAL_GOOGLE_CLIENT_JSON`
   secret (`bin/set-google-client`). A release without the secret carries none. The owner's console steps:
