@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/WireCatLabs/gcal-cli/main/docs/images/social-preview.png" alt="Google Calendar for your AI agents" width="100%">
+</p>
+
 # gcal — Google Calendar CLI for AI agents
 
 <p align="center">
