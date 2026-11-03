@@ -20,6 +20,8 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 ### Added
 
 - **`gcal config repair`** fixes broken JSON syntax in the settings file and keeps a backup beside it. From cli-core.
+- **`gcal doctor --online`** also checks npm for a newer gcal. `doctor` is now cli-core's shared one, with gcal's
+  `credential_file` kept, and still answers `meta.now` and the time zone.
 
 ### Fixed
 
