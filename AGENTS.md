@@ -16,8 +16,9 @@ from the reference CLI below; the template has no sample code on purpose.
 <!-- cli-template:reference-cli:start -->
 ## Reference CLI
 
-No calendar CLI exists yet. Chosen with the owner: [drive-cli](https://github.com/WireCatLabs/drive-cli) for the
-Google sign-in, the Google client, the store import and the command shape;
+gcal is the reference for calendar CLIs. It learned from these, chosen with the owner:
+[drive-cli](https://github.com/WireCatLabs/drive-cli) for the Google sign-in, the Google client, the store import and the
+command shape;
 [zoom-cli](https://github.com/WireCatLabs/zoom-cli) for events and meetings in the store.
 <!-- cli-template:reference-cli:end -->
 
