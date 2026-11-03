@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**222 ✅ · 342 ⛔ · 0 ❌** — 96 commands, 468 options.
+**223 ✅ · 344 ⛔ · 0 ❌** — 97 commands, 470 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -488,6 +488,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-settings-list` | `--sync-token` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-settings-list` | `--max-results` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `doctor` |  | ✅ |  |
+| `doctor` | `--online` | ✅ |  |
 | `models list` |  | ✅ |  |
 | `models download` |  | ✅ |  |
 | `models download` | `--offline` | ✅ |  |
@@ -535,6 +536,8 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `config unset` | `--defaults` | ✅ |  |
 | `config unset` | `--personal` | ✅ |  |
 | `config unset` | `--bot` | ✅ |  |
+| `config repair` |  | ⛔ | cli-core's shared config command; its config-repair and config-command tests drive it |
+| `config repair` | `--dry-run` | ⛔ | cli-core's shared config command; its config-repair and config-command tests drive it |
 | `runs list` |  | ✅ |  |
 | `runs list` | `--limit` | ✅ |  |
 | `runs list` | `--page` | ✅ |  |

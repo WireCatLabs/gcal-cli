@@ -49,8 +49,7 @@ const pathOf = (command: Command): string[] =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
-// `links review` adds `accounts: "all"`, which the envelope has no room for: `meta.accounts` names accounts.
-const LIST_KEYS = new Set(["items", "page", "limit", "hasMore", "meta", "accounts"])
+const LIST_KEYS = new Set(["items", "page", "limit", "hasMore", "meta"])
 const META = v.partial(metaSchema)
 
 const listedFields = (fields: unknown, prefix: string) =>

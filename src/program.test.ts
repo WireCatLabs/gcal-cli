@@ -1,16 +1,16 @@
 import { chmodSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { expect, it } from "vitest"
-import { doctorReport } from "./commands/doctor.js"
 import { IDENTITY } from "./identity.js"
-import { createProgram, run } from "./program.js"
+import { run } from "./program.js"
 
-const ran = async (argv: string[]) => {
+const ran = async (argv: string[], env?: NodeJS.ProcessEnv) => {
   const out: string[] = []
   const err: string[] = []
   const code = await run(argv, {
     streams: { data: (text) => out.push(text), diagnostic: (text) => err.push(text) },
     tty: false,
+    ...(env ? { env } : {}),
   })
   return { code, out: out.join("\n"), err: err.join("\n") }
 }
@@ -48,20 +48,36 @@ it("doctor answers without a config file", async () => {
   expect(json(out).item).toMatchObject({ config: { found: false, issues: [] }, profiles: [], read_only: null })
 })
 
-it("doctor names the store, the OAuth client and the profile lock, and says a signed-in profile keeps its client", () => {
+it("doctor names the store, the OAuth client and the profile lock, and says a signed-in profile keeps its client", async () => {
   const bare = { ...process.env, GCAL_GOOGLE_CLIENT_ID: "", GCAL_GOOGLE_CLIENT_SECRET: "" }
-  const { report } = doctorReport(bare, createProgram())
+  const report = json((await ran(["doctor", "--json"], bare)).out).item
   expect(report).toMatchObject({
     store: { path: expect.any(String), exists: expect.any(Boolean) },
     oauth_client: { client: null, error: expect.stringContaining("keeps its own client") },
     profile_lock: null,
     credential_file: { found: false },
   })
-  const own = doctorReport(
-    { ...bare, GCAL_GOOGLE_CLIENT_ID: "fixture.apps", GCAL_PROFILE_LOCK: "work" },
-    createProgram(),
-  )
-  expect(own.report).toMatchObject({ oauth_client: { client: "own" }, profile_lock: "work" })
+  const own = { ...bare, GCAL_GOOGLE_CLIENT_ID: "fixture.apps", GCAL_PROFILE_LOCK: "work" }
+  expect(json((await ran(["doctor", "--json"], own)).out).item).toMatchObject({
+    oauth_client: { client: "own" },
+    profile_lock: "work",
+  })
+})
+
+it("doctor --online says whether npm has a newer gcal, asking npm only", async () => {
+  const asked: string[] = []
+  const out: string[] = []
+  const code = await run(["doctor", "--online", "--json"], {
+    streams: { data: (text) => out.push(text), diagnostic: () => undefined },
+    tty: false,
+    fetch: (async (url: string) => {
+      asked.push(String(url))
+      return new Response(JSON.stringify({ version: "999.0.0" }), { status: 200 })
+    }) as typeof fetch,
+  })
+  expect(code).toBe(0)
+  expect(asked).toEqual(["https://registry.npmjs.org/@wirecat/gcal-cli/latest"])
+  expect(JSON.stringify(json(out.join("\n")).item.online)).toContain('"newer":true')
 })
 
 const withConfig = async (text: string, check: (config: unknown) => void) => {
@@ -107,8 +123,8 @@ it("doctor names a saved permission key no command checks", async () => {
   )
 })
 
-it("doctor reports settings an environment variable breaks, and still answers", () => {
-  const { report } = doctorReport({ ...process.env, GCAL_EMBEDDING_DIMS: "many" }, createProgram())
+it("doctor reports settings an environment variable breaks, and still answers", async () => {
+  const report = json((await ran(["doctor", "--json"], { ...process.env, GCAL_EMBEDDING_DIMS: "many" })).out).item
   expect(report).toMatchObject({ config: { issues: [] }, settings: { error: expect.any(String) }, profiles: null })
 })
 

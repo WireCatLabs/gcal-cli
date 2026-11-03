@@ -1,22 +1,10 @@
 import { existsSync, readFileSync } from "node:fs"
 import { CliError } from "@wirecat/cli-base"
-import { annotate } from "@wirecat/cli-base/commands"
-import { timezoneOf } from "@wirecat/cli-base/query"
-import { clockMeta } from "@wirecat/cli-base/standards"
-import {
-  appDoctorReport,
-  environmentOf,
-  itemOf,
-  LOCAL_READ,
-  outputFor,
-  privateFiles,
-  profileFree,
-  renderAnswer,
-} from "@wirecat/cli-core/cli"
-import { Command } from "commander"
+import { appDoctorCommand, privateFiles } from "@wirecat/cli-core/cli"
+import type { Command } from "commander"
 import { configuration } from "../config.js"
 import { googleClient, signInFilePath } from "../google.js"
-import { IDENTITY } from "../identity.js"
+import { IDENTITY, PACKAGE } from "../identity.js"
 
 // The prefix of `oauthAccount("google", profile)`, which refuses an empty profile.
 const ACCOUNT = "oauth:google:"
@@ -57,33 +45,16 @@ const oauthClient = (env: NodeJS.ProcessEnv) => {
   }
 }
 
-export const doctorReport = (env: NodeJS.ProcessEnv, command: Command) => {
-  const shared = appDoctorReport(IDENTITY, configuration, env, command, { oauthClient })
-  const credentials = credentialFile(env)
-  return {
-    report: { ...shared.report, credential_file: credentials.report },
-    fixes: [...shared.fixes, ...credentials.fixes],
-  }
-}
-
-// Not cli-core's appDoctorCommand, which would add `--online`: as of cli-core 0.560.0 its answer has no `meta.now`
-// and `meta.timezone`, which a setup check carries (WC-TIME-7).
+/** cli-core's doctor, with `--online`, and where each profile's sign-in is kept as gcal's own field. */
 export const doctorCommand = (): Command =>
-  profileFree(
-    annotate(new Command("doctor"), {
-      effects: LOCAL_READ,
-      examples: [`${IDENTITY.command} doctor`, `${IDENTITY.command} doctor --json`],
-    }),
-  )
-    .summary("check this installation; no keyring or network")
-    .description(
-      "check this installation: version, paths, config, profiles, store, OAuth client, where each sign-in is kept; " +
-        "no keyring or network",
-    )
-    .action(function (this: Command) {
-      const env = environmentOf(this).env ?? process.env
-      const { report, fixes } = doctorReport(env, this)
-      const output = outputFor(this)
-      renderAnswer(this, output, itemOf(report, { meta: clockMeta(Date.now(), timezoneOf()) }))
-      for (const fix of fixes) output.renderer.note(`to make it private: ${fix}`)
-    })
+  appDoctorCommand(IDENTITY, configuration, {
+    oauthClient,
+    packageName: PACKAGE,
+    local: (env) => {
+      const credentials = credentialFile(env)
+      return {
+        fields: { credential_file: credentials.report },
+        notes: credentials.fixes.map((fix) => `to make it private: ${fix}`),
+      }
+    },
+  })

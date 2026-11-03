@@ -61,9 +61,9 @@ for events and meetings in the store.
   API documents no way to subscribe a URL (not tried against a live account). The addresses are one keyring entry
   per profile, `feeds:<profile>`, kept where the sign-in is. Verbs `add` and `remove` from the vocabulary (WC-CMD-2).
 - **Shared commands:** `mcp` is cli-core's `appMcpCommand` and the first screen and `guide` are cli-core's
-  (`scenarios/`). `doctor` is cli-core's `appDoctorReport` plus `credential_file` and the clock
-  (`meta.now`, WC-TIME-7). cli-core's `appDoctorCommand` would add `--online`, but up to cli-core 0.560.0 its answer
-  carries no clock. `session list` is gcal's own: cli-core has no helper for a CLI that is not a messenger
+  (`scenarios/`). `doctor` is cli-core's `appDoctorCommand` (with `--online`, and the clock,
+  `meta.now`, WC-TIME-7, from cli-core 0.562.0), and gcal adds `credential_file` through its `local` option.
+  `session list` is gcal's own: cli-core has no helper for a CLI that is not a messenger
   (WC-ACCT-12, NEED-1884). A profile is signed in when its sign-in is in the file or the keyring, not when its account
   file exists: `session end` keeps that file.
 - **Command names:** the package installs both `gcal` and `wcat-gcal`, as mail installs `mail` and `wcat-mail`.
