@@ -167,6 +167,25 @@ it("config show names the profile it was given", async () => {
   expect(json(out).item).toMatchObject({ profile: "personal", profile_from: "first word" })
 })
 
+it("config migrate writes the settings the file lacks, keeps the owner's, and repeats as a no-op", async () => {
+  const file = join(process.env.GCAL_CONFIG_DIR ?? "", "config.json")
+  mkdirSync(join(file, ".."), { recursive: true })
+  writeFileSync(file, JSON.stringify({ profiles: {}, defaults: { limit: 5 } }))
+  try {
+    const { code, out } = await ran(["config", "migrate", "--json"])
+    expect(code).toBe(0)
+    expect(json(out).item.added).toContain("defaults.record")
+    const saved = JSON.parse(readFileSync(file, "utf8"))
+    expect(Object.keys(saved)).toEqual(["profiles", "defaults"])
+    expect(saved.defaults).toMatchObject({ limit: 5, record: true })
+    const filled = readFileSync(file, "utf8")
+    expect(json((await ran(["config", "migrate", "--json"])).out).item.added).toEqual([])
+    expect(readFileSync(file, "utf8")).toBe(filled)
+  } finally {
+    rmSync(file)
+  }
+})
+
 it("skill show prints the packaged skill", async () => {
   const { code, out } = await ran(["skill", "show"])
   expect(code).toBe(0)
