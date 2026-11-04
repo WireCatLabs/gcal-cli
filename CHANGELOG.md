@@ -19,6 +19,8 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Added
 
+- **`gcal config migrate` writes each setting the file lacks into `defaults` at its default**, keeping your values,
+  their order and keys gcal does not know; a second run changes nothing (cli-core 0.563.0).
 - **`gcal config repair`** fixes broken JSON syntax in the settings file and keeps a backup beside it. From cli-core.
 - **`gcal doctor --online`** also checks npm for a newer gcal. `doctor` is now cli-core's shared one, with gcal's
   `credential_file` kept, and still answers `meta.now` and the time zone.

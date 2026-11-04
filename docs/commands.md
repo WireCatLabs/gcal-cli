@@ -1973,6 +1973,20 @@ gcal config unset <setting> [options]
 
 **Example:** `gcal personal config unset limit`
 
+### `gcal config migrate`
+
+write each setting the file lacks at its default, keeping yours
+
+**Changes something on this computer only.**
+
+```sh
+gcal config migrate
+```
+
+**Returns:** write each setting the file lacks at its default, keeping yours
+
+**Example:** `gcal config migrate`
+
 ### `gcal config repair`
 
 fix broken JSON syntax in the settings file — comments, a missing or extra comma, unquoted keys, single quotes, missing closing brackets at the end — keeping every value, with a backup beside it; refuses anything with more than one reading and changes nothing then
