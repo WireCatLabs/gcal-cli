@@ -14,6 +14,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- **The Google sign-in notes no longer describe WireCat's review status.** They say that making a shared Google app
+  public for Calendar is complex, so Google may refuse the sign-in, and point to your own Google app. No behaviour
+  changes.
 - **The 0.20.0 notes named two error reasons by their old names.** A misspelled profile answers reason
   `oauth.missing`, not `profile.not-signed-in`, and Google's Calendar usage limit is `provider.usage-limit`, not
   `google.usage-limit`. 0.20.0 already answered these names. Only its notes were wrong.

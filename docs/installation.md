@@ -28,12 +28,10 @@ project of your own. `gcal doctor --json` then shows `oauth_client.client` as `w
 gcal personal session start
 ```
 
-Google has not verified WireCat's app yet, so Google may show an "unverified app" page first. To go on, use the link
-on that page that goes on to the app, then allow read access to Calendar. Google limits an unverified app to 100 new
-users in total, and WireCat's other Google tools, such as drive, share those 100. When WireCat's app reaches that limit,
-use your own app below. See [Google's page on unverified apps](https://support.google.com/cloud/answer/7454865).
+Making a shared Google app public for Calendar is complex, so Google may refuse the sign-in with WireCat's app. If it
+does, use your own app below. Otherwise allow read access to Calendar when Google asks.
 
-**Your own app.** Use one when WireCat's app has reached its limit, or when you would rather not sign in through it.
+**Your own app.** Use one when Google refuses WireCat's app, or when you would rather not sign in through it.
 [Make your own Google app](#make-your-own-google-app) once, in about ten minutes, then pass its file:
 
 ```sh
