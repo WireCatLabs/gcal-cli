@@ -5,7 +5,7 @@ import { brokenKeyring, type KeyringStore, memoryKeyring, systemKeyring } from "
 import { openStore, storePath } from "@wirecat/cli-core/store"
 import type { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
-import { CALENDAR_READ_SCOPE, googleClient, sessionStorage } from "./google.js"
+import { CALENDAR_READ_SCOPE, googleClient, sessionStorage, signInFilePath } from "./google.js"
 import { ACLS_SCOPE, EVENTS_SCOPE } from "./grants.js"
 import { run } from "./program.js"
 
@@ -519,7 +519,7 @@ describe("session status and end", () => {
       cached_data: "retained",
     })
     expect(warnings).toHaveLength(1)
-    expect(String(warnings[0]?.[0])).toContain(join(env.HOME ?? "", ".local/share/gcal-cli/credentials.json"))
+    expect(String(warnings[0]?.[0])).toContain(signInFilePath(env))
   })
 
   it("refuses --check offline", async () => {
