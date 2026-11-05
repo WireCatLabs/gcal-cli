@@ -2,6 +2,16 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **`session start --client-id <id>` and the `google_client_id` setting choose your own Google app**:
+  `--client-file` or `--client-id`, then `GCAL_GOOGLE_CLIENT_ID`, then the profile's or the defaults'
+  `google_client_id`, then WireCat's app. The secret comes from `GCAL_GOOGLE_CLIENT_SECRET`, never the settings file,
+  and `session start` warns before the browser opens when your app has none. `doctor` reports `"source": "config"`
+  for the defaults' setting. `config set` refuses `google_client_id` to an agent.
+
 ## 0.20.0 — 05.11.2026
 
 ### Changed — may break callers
