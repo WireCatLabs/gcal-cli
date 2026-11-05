@@ -581,7 +581,7 @@ describe("the Google client", () => {
   })
 
   it("loses to the owner's client file and to GCAL_GOOGLE_CLIENT_ID", () => {
-    expect(googleClient({}, clientFile()).clientId).toBe("fixture-client.apps")
+    expect(googleClient({}, { file: clientFile() }).clientId).toBe("fixture-client.apps")
     expect(googleClient({ GCAL_GOOGLE_CLIENT_ID: "own" })).toEqual({ clientId: "own", source: "env" })
   })
 
@@ -596,14 +596,49 @@ describe("the Google client", () => {
     )
   })
 
+  it("takes --client-id, then GCAL_GOOGLE_CLIENT_ID, then the profile's google_client_id, then the defaults'", async () => {
+    const { gcal, env, opened } = harness()
+    for (const name of ["GCAL_GOOGLE_CLIENT_ID", "CLAUDECODE", "AI_AGENT", "CODEX_THREAD_ID", "CODEX_SANDBOX"])
+      delete env[name]
+    env.GCAL_GOOGLE_CLIENT_SECRET = SECRET
+    const fake = google()
+    const signedInWith = async (argv: string[] = [], extra: NodeJS.ProcessEnv = {}) => {
+      Object.assign(env, extra)
+      expect((await gcal(["personal", "session", "start", "--json", ...argv], fake)).code).toBe(0)
+      for (const name of Object.keys(extra)) delete env[name]
+      return new URL(opened.at(-1) ?? "").searchParams.get("client_id")
+    }
+    expect((await gcal(["config", "set", "--defaults", "google_client_id", "defaults.apps"])).code).toBe(0)
+    expect(await signedInWith()).toBe("defaults.apps")
+    expect((await gcal(["personal", "config", "set", "google_client_id", "profile.apps"])).code).toBe(0)
+    expect(await signedInWith()).toBe("profile.apps")
+    expect(await signedInWith([], { GCAL_GOOGLE_CLIENT_ID: "env.apps" })).toBe("env.apps")
+    expect(await signedInWith(["--client-id", "flag.apps"], { GCAL_GOOGLE_CLIENT_ID: "env.apps" })).toBe("flag.apps")
+    const exchange = fake.requests.findLast(({ url }) => url === "https://oauth2.googleapis.com/token")
+    expect(new URLSearchParams(exchange?.body).get("client_secret")).toBe(SECRET)
+    expect(item((await gcal(["doctor", "--json"])).out).oauth_client).toEqual({ client: "own", source: "config" })
+  })
+
+  it("warns before the browser when the owner's app has no secret, and refuses google_client_id to an agent", async () => {
+    const { gcal, env } = harness()
+    for (const name of ["GCAL_GOOGLE_CLIENT_ID", "GCAL_GOOGLE_CLIENT_SECRET"]) delete env[name]
+    const started = await gcal(["personal", "session", "start", "--client-id", "flag.apps", "--json"])
+    expect(started.err).toContain("set GCAL_GOOGLE_CLIENT_SECRET")
+    expect((await gcal(["personal", "session", "start", "--json"])).err).not.toContain("GCAL_GOOGLE_CLIENT_SECRET")
+    env.AI_AGENT = "claude"
+    const refused = await gcal(["config", "set", "--defaults", "google_client_id", "agent.apps", "--json"])
+    expect(refused.code).not.toBe(0)
+    expect(failure(refused.err).code).toBe("permission_error")
+  })
+
   it.skipIf(process.platform === "win32")("refuses a client file other users can read", () => {
-    expect(() => googleClient({}, clientFile(0o644))).toThrow(/chmod 600/)
+    expect(() => googleClient({}, { file: clientFile(0o644) })).toThrow(/chmod 600/)
   })
 
   it("refuses a file that is not a Desktop client, without quoting it", () => {
     const file = clientFile()
     writeFileSync(file, JSON.stringify({ web: { client_secret: SECRET } }))
-    expect(() => googleClient({}, file)).toThrow(/^could not read a Desktop app OAuth client JSON[^{]*$/)
+    expect(() => googleClient({}, { file })).toThrow(/^could not read a Desktop app OAuth client JSON[^{]*$/)
   })
 })
 

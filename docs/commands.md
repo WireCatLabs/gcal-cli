@@ -70,13 +70,14 @@ gcal session start [options]
 | Option | What it does |
 |---|---|
 | `--client-file <file>` | your own Desktop app OAuth client JSON; without it, WireCat's app when this package has one. |
+| `--client-id <id>` | your own Desktop app OAuth client ID, used instead of WireCat's; its secret comes from GCAL_GOOGLE_CLIENT_SECRET. |
 | `--no-browser` | print the sign-in URL instead of opening a browser. |
 | `--credential-storage <storage>` | where the sign-in is kept: keyring, which falls back to a private file, or file. Default: `keyring`. |
 | `--grant <scopes>` | also ask for these, comma-separated: write, sharing. |
 
 **Returns:** sign in to Google in the browser; read-only unless you pass --grant write
 
-**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --no-browser`, `gcal personal session start --grant write,sharing`
+**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --client-id 1234-abc.apps.googleusercontent.com`, `gcal personal session start --grant write,sharing`
 
 ### `gcal session status`
 
@@ -1940,7 +1941,7 @@ gcal config set <setting> <value> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, google_client_id, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin. |
 | `value` | required | a number, true or false; for a group tg:work,max:Alice,email:me@x. |
 
 | Option | What it does |
@@ -1963,7 +1964,7 @@ gcal config unset <setting> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, google_client_id, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin. |
 
 | Option | What it does |
 |---|---|

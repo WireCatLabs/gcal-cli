@@ -7,6 +7,7 @@ import {
   baseContext,
   commandWords,
   environmentOf,
+  fromFile,
   type GlobalFlags,
   itemOf,
   LOCAL_READ,
@@ -40,10 +41,12 @@ export const contextOf = (command: Command) => {
   const environment = environmentOf<GcalEnvironment>(command)
   const env = environment.env ?? process.env
   const flags = command.optsWithGlobals<GlobalFlags>()
-  const { profile } = configuration.resolveSettings(flags, { env })
+  const settings = configuration.resolveSettings(flags, { env })
+  const { profile } = settings
   return {
     environment,
     flags,
+    settings,
     common: {
       env,
       profile,
@@ -90,7 +93,7 @@ const startCommand = () =>
       mcp: false,
       examples: [
         `${IDENTITY.command} personal session start --client-file ~/client_secret.json`,
-        `${IDENTITY.command} personal session start --no-browser`,
+        `${IDENTITY.command} personal session start --client-id 1234-abc.apps.googleusercontent.com`,
         `${IDENTITY.command} personal session start --grant write,sharing`,
       ],
     }),
@@ -99,6 +102,10 @@ const startCommand = () =>
     .option(
       "--client-file <file>",
       "your own Desktop app OAuth client JSON; without it, WireCat's app when this package has one",
+    )
+    .option(
+      "--client-id <id>",
+      "your own Desktop app OAuth client ID, used instead of WireCat's; its secret comes from GCAL_GOOGLE_CLIENT_SECRET",
     )
     .option("--no-browser", "print the sign-in URL instead of opening a browser")
     .option(
@@ -116,14 +123,27 @@ const startCommand = () =>
     )
     .action(async function (
       this: Command,
-      args: { clientFile?: string; browser: boolean; grant?: Grant[]; credentialStorage: CredentialStorage },
+      args: {
+        clientFile?: string
+        clientId?: string
+        browser: boolean
+        grant?: Grant[]
+        credentialStorage: CredentialStorage
+      },
     ) {
-      const { environment, flags, common } = contextOf(this)
+      const { environment, flags, settings, common } = contextOf(this)
       refuseCommandName(common.profile, commandWords(rootOf(this)), IDENTITY.command)
       refuseOffline(flags)
       const { googleClient } = await import("../google.js")
-      const client = await worded(common.profile, async () => googleClient(common.env, args.clientFile))
+      const configClientId = fromFile<string | undefined>(settings, "google_client_id", undefined).value
+      const client = await worded(common.profile, async () =>
+        googleClient(common.env, { file: args.clientFile, clientId: args.clientId, configClientId }),
+      )
       const { streams } = outputFor(this)
+      if (!client.clientSecret)
+        streams.diagnostic(
+          "your Google app has no secret here, and Google refuses a Desktop app without one: set GCAL_GOOGLE_CLIENT_SECRET\n",
+        )
       const steps = signInSteps({
         diagnostic: (line) => streams.diagnostic(`${line}\n`),
         json: flags.json === true || flags.jsonl === true || environment.tty === false,

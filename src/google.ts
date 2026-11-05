@@ -148,9 +148,21 @@ export const sessionKeeper = (options: KeeperOptions): TokenKeeper =>
     ...(options.signal ? { signal: options.signal } : {}),
   })
 
-/** The owner's client file wins, then GCAL_GOOGLE_CLIENT_ID, then WireCat's app from cli-core's constants. */
-export const googleClient = (env: NodeJS.ProcessEnv, file?: string, platform = process.platform): OAuthClient =>
-  googleApp({ env, prefix: "GCAL", clientFile: file, platform }).client
+export interface AppChoice {
+  /** `--client-file`. */
+  file?: string | undefined
+  /** `--client-id`. */
+  clientId?: string | undefined
+  /** The profile's `google_client_id`, else the defaults'. */
+  configClientId?: string | undefined
+}
+
+/** The Google app a sign-in uses (WC-SECR-25): a flag, GCAL_GOOGLE_CLIENT_ID, `google_client_id`, then WireCat's. */
+export const googleClient = (
+  env: NodeJS.ProcessEnv,
+  { file, clientId, configClientId }: AppChoice = {},
+  platform = process.platform,
+): OAuthClient => googleApp({ env, prefix: "GCAL", clientFile: file, clientId, configClientId, platform }).client
 
 const UserInfo = v.object({ email: v.optional(v.string()), email_verified: v.optional(v.boolean()) })
 

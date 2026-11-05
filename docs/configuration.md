@@ -13,10 +13,21 @@ gcal personal config unset limit
 
 ## Your own Google client
 
-`session start` signs in through a Google app of your own: pass its Desktop app client file with `--client-file`, or
-set `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`. Either one wins over WireCat's app, which the current
-releases do not carry yet. `gcal` refuses a client file other users of the computer can read. The client is needed
-only at sign-in: `gcal` keeps it with the sign-in, so later commands work without the file.
+`session start` signs in through WireCat's Google app unless you name one of your own. The first of these wins:
+
+1. `--client-file <file>`, your Desktop app client file, or `--client-id <id>`, its client ID;
+2. `GCAL_GOOGLE_CLIENT_ID`;
+3. the `google_client_id` setting of the profile, then of the defaults:
+   `gcal config set --defaults google_client_id 1234-abc.apps.googleusercontent.com`;
+4. WireCat's app.
+
+With 1 to 3, the secret comes from `GCAL_GOOGLE_CLIENT_SECRET`, never from the settings file. Google refuses a
+Desktop app without its secret, so `session start` warns before the browser opens when it has none. Only you change
+`google_client_id`: `config set` refuses it to an agent. `gcal doctor` shows the app a profile without its own setting
+would use as `oauth_client`, with `source` `flag`, `env`, `config` or `constants`.
+
+`gcal` refuses a client file other users of the computer can read. The client is needed only at sign-in: `gcal` keeps
+it with the sign-in, so later commands and refreshes use the same app, even after you change the setting.
 
 [Make your own Google app](installation.md#make-your-own-google-app) walks through Google Cloud Console step by step.
 

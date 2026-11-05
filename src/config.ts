@@ -1,6 +1,7 @@
 import { CALENDAR_WRITE_DEFAULTS, CALENDAR_WRITE_KEYS, type CalendarWrite } from "@wirecat/cli-core/calendar"
 import { type Configuration, commandPathKey, commandPermissions, settingsFor } from "@wirecat/cli-core/cli"
 import type { Level } from "@wirecat/cli-core/sends"
+import * as v from "valibot"
 import { SHARING_NOTIFY_KEY } from "./api-keys.js"
 import { operations } from "./generated/manifest.js"
 import { IDENTITY } from "./identity.js"
@@ -74,4 +75,11 @@ export const permissions = commandPermissions({
   },
 })
 
-export const configuration: Configuration = settingsFor(IDENTITY, { permissions })
+export const configuration: Configuration = settingsFor(IDENTITY, {
+  permissions,
+  // Only the id: the secret comes from GCAL_GOOGLE_CLIENT_SECRET, as cli-core's oauthApp reads it.
+  profile: { google_client_id: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1))) },
+})
+
+/** Settings only the owner changes, at a terminal: which Google app a sign-in trusts. */
+export const OWNER_ONLY_SETTINGS = { settings: ["google_client_id"] }

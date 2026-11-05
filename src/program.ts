@@ -24,7 +24,7 @@ import { doctorCommand } from "./commands/doctor.js"
 import { modelsCommand } from "./commands/models.js"
 import { scheduleCommand } from "./commands/schedule.js"
 import { sessionCommand } from "./commands/session.js"
-import { configuration } from "./config.js"
+import { configuration, OWNER_ONLY_SETTINGS } from "./config.js"
 import { FIRST_SCREEN, guide, placeInSections } from "./first-screen.js"
 import { holdsSignIn } from "./google.js"
 import { IDENTITY, PACKAGE, SKILL } from "./identity.js"
@@ -92,7 +92,7 @@ export const definition = (): ProgramDefinition => ({
       latest: () => update.latest({}),
       install: (argv) => update.runUpdate(argv, {}),
     })),
-    configCommand(IDENTITY, configuration),
+    configCommand(IDENTITY, configuration, { ownerOnly: OWNER_ONLY_SETTINGS }),
     runsCommand(IDENTITY),
     scheduleCommand(),
   ],

@@ -22,8 +22,8 @@ A row that says "in the browser" is Google's page; the other texts are what `gca
 
 | Symptom | Cause and fix |
 | --- | --- |
-| "no Google OAuth client is set up" | The package carries no WireCat app, and you gave no client. Pass `--client-file` with your Desktop app client file, or set `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`. |
-| `doctor` shows `oauth_client.client: null` | No client is in the environment, and the package carries no WireCat app. A profile signed in with `--client-file` still works: its sign-in keeps the client. Only a new `session start` needs one. |
+| `doctor` shows `oauth_client.client: null` | `doctor` gives the reason: usually `GCAL_GOOGLE_CLIENT_SECRET` is set without `GCAL_GOOGLE_CLIENT_ID`. Set the ID too, or unset the secret to use WireCat's app. A profile already signed in still works: its sign-in keeps its app. |
+| "your Google app has no secret here" | You named your own app with `--client-id`, `GCAL_GOOGLE_CLIENT_ID` or `google_client_id`, but `GCAL_GOOGLE_CLIENT_SECRET` is not set. Google refuses a Desktop app without its secret: set it, or pass `--client-file`. |
 | "the client file can be read by other users of this computer" | Run the `chmod 600` the message gives, then `session start` again. |
 | "could not read a Desktop app OAuth client JSON from the client file" | The file is not a Desktop app client. A **Web application** client's file has the wrong shape. In Google Cloud Console, make a client of type **Desktop app** ([step 6](installation.md#6-make-the-client-and-download-its-file)) and pass its file. |
 | Google shows `redirect_uri_mismatch` in the browser | `GCAL_GOOGLE_CLIENT_ID` names a Web application client. `gcal` signs in through a local address on your computer, which only a Desktop app client allows. Make a Desktop app client and use its ID and secret. |

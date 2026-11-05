@@ -41,8 +41,9 @@ yours. [Make your own Google app](#make-your-own-google-app) once, in about ten 
 gcal personal session start --client-file ~/client_secret.json
 ```
 
-Your own app also wins when the package has WireCat's: pass `--client-file`, or set `GCAL_GOOGLE_CLIENT_ID` and
-`GCAL_GOOGLE_CLIENT_SECRET`.
+Your own app also wins when the package has WireCat's: pass `--client-file` or `--client-id`, set
+`GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`, or save the ID as the `google_client_id` setting
+([the order](configuration.md#your-own-google-client)).
 
 ## Make your own Google app
 
@@ -162,7 +163,14 @@ gcal personal session start --client-file ~/client_secret.json --grant write
 ```
 
 Instead of the file, you can set `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET` to the `client_id` and
-`client_secret` in it. `--client-file` wins over them.
+`client_secret` in it, or pass the ID with `--client-id` and keep the secret in `GCAL_GOOGLE_CLIENT_SECRET`.
+`--client-file` and `--client-id` win over the environment. To use your app for every later sign-in, save its ID once:
+
+```sh
+gcal config set --defaults google_client_id 1234-abc.apps.googleusercontent.com
+```
+
+The secret never goes into the settings file: set `GCAL_GOOGLE_CLIENT_SECRET` when you sign in.
 
 `gcal` keeps the client with the sign-in, in the system keyring. Later commands, and each refresh of the sign-in,
 do not read the file again, so you can move it somewhere safe. Only a new `session start` needs it.

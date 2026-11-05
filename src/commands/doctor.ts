@@ -31,7 +31,12 @@ const credentialFile = (env: NodeJS.ProcessEnv) => {
   }
 }
 
-const oauthClient = (env: NodeJS.ProcessEnv) => oauthClientReport(googleApp({ env, prefix: "GCAL" }))
+// doctor names no profile, so it reports the app of a profile without its own google_client_id.
+const oauthClient = (env: NodeJS.ProcessEnv) => {
+  const { shared } = configuration.resolveSettings({}, { env, readOnly: true, needsProfile: false, withIssues: true })
+  const configClientId = typeof shared.google_client_id === "string" ? shared.google_client_id : undefined
+  return oauthClientReport(googleApp({ env, prefix: "GCAL", configClientId }))
+}
 
 /** cli-core's doctor, with `--online`, and where each profile's sign-in is kept as gcal's own field. */
 export const doctorCommand = (): Command =>
