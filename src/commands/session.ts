@@ -99,10 +99,7 @@ const startCommand = () =>
     }),
   )
     .description("sign in to Google in the browser; read-only unless you pass --grant write")
-    .option(
-      "--client-file <file>",
-      "your own Desktop app OAuth client JSON; without it, WireCat's app when this package has one",
-    )
+    .option("--client-file <file>", "your own Desktop app OAuth client JSON; without it, WireCat's app")
     .option(
       "--client-id <id>",
       "your own Desktop app OAuth client ID, used instead of WireCat's; its secret comes from GCAL_GOOGLE_CLIENT_SECRET",

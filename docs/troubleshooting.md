@@ -12,7 +12,6 @@ support request.
 | `doctor` lists `files.problems` | Other users of the computer can read `config.json` or enter its folder. Run each `chmod` that `doctor` prints after "to make it private:". `doctor` never changes a file mode itself. |
 | `profile.wrong-account` or `profile.same-account` | Each Google account has one profile. Use the profile that account already has, or a new profile name for a new account. |
 | `oauth.not-saved` | The sign-in file (`credentials.json` in the state folder, used by `--credential-storage file` and whenever the keyring fails) exists but cannot be read as a sign-in file. Move it aside and sign in again. |
-| "the WireCat Google client in this gcal package cannot be read" | The package is damaged. Install `gcal` again, or pass `--client-file` with your own client. |
 | A write is refused | The profile's permissions or `GCAL_READ_ONLY` stop it; see [settings](configuration.md#permissions). |
 
 ## Sign-in problems

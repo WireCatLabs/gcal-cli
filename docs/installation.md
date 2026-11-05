@@ -21,27 +21,26 @@ exist, and whether other users of the computer can read the settings.
 `gcal` signs in through a Google app, called an OAuth client. Google uses the app to ask you which access to give
 `gcal`. There are two ways to get one.
 
-**WireCat's app.** A `gcal` package can carry WireCat's own Google app. The current releases do not carry it yet,
-so for now every user makes an app of their own. Check with `gcal doctor --json`: if `oauth_client.client` is
-`wirecat`, the package has the app, and you sign in with no Google Cloud project of your own:
+**WireCat's app.** Every `gcal` package carries WireCat's own Google app, so you can sign in with no Google Cloud
+project of your own. `gcal doctor --json` then shows `oauth_client.client` as `wirecat`:
 
 ```sh
 gcal personal session start
 ```
 
-Until Google finishes its review of WireCat's app, Google may show an "unverified app" page first. To go on, use the
-link on that page that goes on to the app, then allow read access to Calendar. Google limits an unverified app to 100
-new users in total; when WireCat's app reaches that limit, use your own app below. See
-[Google's page on unverified apps](https://support.google.com/cloud/answer/7454865).
+Google has not verified WireCat's app yet, so Google may show an "unverified app" page first. To go on, use the link
+on that page that goes on to the app, then allow read access to Calendar. Google limits an unverified app to 100 new
+users in total, and WireCat's other Google tools, such as drive, share those 100. When WireCat's app reaches that limit,
+use your own app below. See [Google's page on unverified apps](https://support.google.com/cloud/answer/7454865).
 
-**Your own app.** If `oauth_client.client` is `null`, the package has no WireCat app, so `session start` needs one of
-yours. [Make your own Google app](#make-your-own-google-app) once, in about ten minutes, then pass its file:
+**Your own app.** Use one when WireCat's app has reached its limit, or when you would rather not sign in through it.
+[Make your own Google app](#make-your-own-google-app) once, in about ten minutes, then pass its file:
 
 ```sh
 gcal personal session start --client-file ~/client_secret.json
 ```
 
-Your own app also wins when the package has WireCat's: pass `--client-file` or `--client-id`, set
+Your own app always wins over WireCat's: pass `--client-file` or `--client-id`, set
 `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET`, or save the ID as the `google_client_id` setting
 ([the order](configuration.md#your-own-google-client)).
 
