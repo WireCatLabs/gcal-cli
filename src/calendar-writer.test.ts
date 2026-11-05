@@ -53,6 +53,43 @@ describe("calendarWriterContract over hand-written Google answers", () => {
 })
 
 describe("the Google calls behind each write", () => {
+  it("quickAdded lists the events changed since, and keeps those this account created since", async () => {
+    const since = Date.parse("2026-11-02T09:00:00Z")
+    const asked: Record<string, unknown>[] = []
+    const event = (id: string, self: boolean, created: string) => ({
+      id,
+      status: "confirmed",
+      summary: `Example ${id}`,
+      creator: { email: "owner@example.com", self },
+      created,
+      start: { dateTime: "2026-11-03T13:00:00Z" },
+      end: { dateTime: "2026-11-03T14:00:00Z" },
+    })
+    const writer = googleCalendarWriter({
+      call: async (method, params) => {
+        asked.push({ method, ...(params as object) })
+        return {
+          items: [
+            event("mine", true, "2026-11-02T09:00:05Z"),
+            event("older", true, "2026-11-01T09:00:00Z"),
+            event("someone-else", false, "2026-11-02T09:00:05Z"),
+          ],
+        }
+      },
+    })
+    const found = await writer.quickAdded(CALENDAR, since)
+    expect(found.map(({ externalId }) => externalId)).toEqual(["mine"])
+    expect(asked).toEqual([
+      {
+        method: "calendar.events.list",
+        calendarId: "owner@example.com",
+        updatedMin: "2026-11-02T09:00:00.000Z",
+        singleEvents: false,
+        maxResults: 250,
+      },
+    ])
+  })
+
   it("create inserts with the client's id and sendUpdates, and reads Google's answer", async () => {
     const { google, writer } = adapter()
     const made = await writer.create(
@@ -287,7 +324,7 @@ describe("the Google calls behind each write", () => {
   it("an event Google does not have fails with a registered reason", async () => {
     const { writer } = adapter()
     await expect(writer.respond(CALENDAR, "unknown1", "accepted", { etag: ETAG, notify: false })).rejects.toMatchObject(
-      { code: "not_found", details: { reason: "google.not-found", status: 404 } },
+      { code: "not_found", details: { reason: "item.not-found", status: 404 } },
     )
   })
 
@@ -311,7 +348,7 @@ describe("the Google calls behind each write", () => {
     ).rejects.toMatchObject({
       code: "permission_error",
       message: expect.not.stringContaining("session start"),
-      details: { reason: "api.scope-missing", grant: "write" },
+      details: { reason: "oauth.scope-missing", grant: "write" },
     })
     expect(google.requests).toEqual([])
   })

@@ -1,5 +1,6 @@
 import { defineReasons } from "@wirecat/cli-base/standards"
 
+/** gcal's own reasons; the shared ones (`oauth.*`, `api.*`, `file.*`, `offline.refused`) are cli-core's. */
 const ENTRIES: [reason: string, code: string, message: string][] = [
   [
     "sign-in.no-client",
@@ -7,30 +8,17 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
     "no Google OAuth client is set up; pass --client-file or set GCAL_GOOGLE_CLIENT_ID",
   ],
   ["sign-in.bundled-client-invalid", "configuration_error", "the WireCat Google client in this package is damaged"],
-  ["sign-in.scope-missing", "permission_error", "Google did not grant a permission the sign-in asked for"],
   ["sign-in.lookup-unavailable", "provider_unavailable", "Google did not answer the account lookup"],
   ["sign-in.lookup-refused", "authentication_error", "Google refused the account lookup"],
   ["sign-in.no-email", "authentication_error", "Google did not share a verified email address for this account"],
   ["profile.same-account", "validation_error", "this Google account is already signed in as another profile"],
-  ["profile.not-signed-in", "authentication_error", "this profile has no Google sign-in yet"],
-  ["offline.refused", "permission_error", "this command needs Google; --offline was given"],
-  ["file.not-found", "not_found", "the file named, or its folder, does not exist"],
-  ["file.not-a-file", "validation_error", "the path names a folder or another thing that is not a file"],
-  ["file.denied", "permission_error", "the file cannot be opened: permission denied"],
-  ["sign-in.expired", "authentication_error", "Google no longer accepts this profile's sign-in"],
-  ["api.unknown-method", "validation_error", "no Google Calendar method has this name"],
-  ["api.scope-missing", "permission_error", "the sign-in lacks the Google permission this method needs"],
   ["api.bad-path-id", "validation_error", 'an id in the request\'s address is empty, "." or ".."'],
   [
     "event.not-invited",
     "validation_error",
     "the calendar is not an attendee of the event, so it has no answer to give",
   ],
-  ["api.disabled", "configuration_error", "the Google Calendar API is turned off for this OAuth project"],
-  ["google.denied", "permission_error", "Google denied the operation to this account"],
-  ["google.usage-limit", "rate_limited", "Google Calendar usage limits are exceeded for this account"],
   ["event.organizer-only", "permission_error", "only the event's organizer can change these fields"],
-  ["google.not-found", "not_found", "Google Calendar has no such item, or this account cannot see it"],
 ]
 
 export const REASONS = defineReasons(ENTRIES.map(([reason, code, message]) => ({ reason, code, message, details: [] })))

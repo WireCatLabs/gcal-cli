@@ -43,13 +43,13 @@ export const savedAccount = (env: NodeJS.ProcessEnv, profile: string): string | 
 
 const scopeMissing = () =>
   new CliError("permission_error", "Google did not grant read access to Calendar", {
-    reason: "sign-in.scope-missing",
+    reason: "oauth.scope-missing",
     grant: "read",
   })
 
 const grantMissing = (grant: Grant) =>
   new CliError("permission_error", `Google did not grant the ${grant} permission`, {
-    reason: "sign-in.scope-missing",
+    reason: "oauth.scope-missing",
     grant,
   })
 
@@ -135,8 +135,7 @@ export const apiAccess = (options: Common) => {
     signal: options.signal,
     scopes: () => session?.saved.tokens.scopes,
     accessToken: async () => {
-      if (!session)
-        throw new CliError("authentication_error", "not signed in to Google", { reason: "profile.not-signed-in" })
+      if (!session) throw new CliError("authentication_error", "not signed in to Google", { reason: "oauth.missing" })
       const { accessToken } = await session.keeper.tokens()
       if (!accessToken) throw new CliError("authentication_error", "Google returned no access token")
       return accessToken

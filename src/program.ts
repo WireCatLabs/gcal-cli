@@ -19,7 +19,7 @@ import {
 import { appUpdate } from "@wirecat/cli-core/update"
 import type { Command } from "commander"
 import { apiCommand } from "./commands/api.js"
-import { calendarMount } from "./commands/calendar.js"
+import { calendarCommands } from "./commands/calendar.js"
 import { doctorCommand } from "./commands/doctor.js"
 import { modelsCommand } from "./commands/models.js"
 import { scheduleCommand } from "./commands/schedule.js"
@@ -71,39 +71,32 @@ const mcpCommand = () => {
   })
 }
 
-export const definition = (): ProgramDefinition => {
-  const calendar = calendarMount()
-  return {
-    app: IDENTITY,
-    configuration,
-    configure: (program) => {
-      calendar.configure(program)
-      placeInSections(program)
-    },
-    firstScreen: FIRST_SCREEN,
-    prepare: calendar.prepare,
-    commands: () => [
-      commandsCommand(IDENTITY),
-      sessionCommand(),
-      ...calendar.commands(),
-      apiCommand(),
-      doctorCommand(),
-      modelsCommand(),
-      guide(),
-      skillCommand(IDENTITY, SKILL),
-      mcpCommand(),
-      upgradeCommand(IDENTITY, PACKAGE, (command) => ({
-        ...outputFor(command),
-        installer: () => update.installer({}),
-        latest: () => update.latest({}),
-        install: (argv) => update.runUpdate(argv, {}),
-      })),
-      configCommand(IDENTITY, configuration),
-      runsCommand(IDENTITY),
-      scheduleCommand(),
-    ],
-  }
-}
+export const definition = (): ProgramDefinition => ({
+  app: IDENTITY,
+  configuration,
+  configure: placeInSections,
+  firstScreen: FIRST_SCREEN,
+  commands: () => [
+    commandsCommand(IDENTITY),
+    sessionCommand(),
+    ...calendarCommands(),
+    apiCommand(),
+    doctorCommand(),
+    modelsCommand(),
+    guide(),
+    skillCommand(IDENTITY, SKILL),
+    mcpCommand(),
+    upgradeCommand(IDENTITY, PACKAGE, (command) => ({
+      ...outputFor(command),
+      installer: () => update.installer({}),
+      latest: () => update.latest({}),
+      install: (argv) => update.runUpdate(argv, {}),
+    })),
+    configCommand(IDENTITY, configuration),
+    runsCommand(IDENTITY),
+    scheduleCommand(),
+  ],
+})
 
 export const createProgram = (options?: ProgramOptions): Command => createSharedProgram(definition(), options)
 

@@ -2,6 +2,7 @@
 import { enableCompileCache } from "node:module"
 import { errorObjectOf, exitCodeOfError, renderError } from "@wirecat/cli-base"
 import { wcatStart } from "@wirecat/cli-base/wcat/start"
+import type { Command } from "commander"
 import { IDENTITY } from "../identity.js"
 
 enableCompileCache()
@@ -24,7 +25,7 @@ if (wcat.code !== undefined) {
     run: async (entry) =>
       (await import("../program.js")).run(entry.args, {
         signal: entry.signal,
-        openBrowser: (url: string) => entry.openBrowser(url),
+        openBrowser: (url: string, command?: Command) => entry.openBrowser(url, undefined, command),
       }),
     fail: (error, { tty }) => {
       const object = errorObjectOf(error)

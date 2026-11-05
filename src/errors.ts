@@ -36,7 +36,7 @@ export const googleError = ({ status, body, mutates, retryAfterMs }: GoogleFailu
   const wait = retryAfterMs === undefined ? {} : { retry_after_ms: retryAfterMs }
   if (status === 401)
     return new CliError("authentication_error", "Google sign-in expired", {
-      reason: "sign-in.expired",
+      reason: "oauth.expired",
       status,
     })
   if (reasons.some((reason) => reason === "accessNotConfigured" || reason === "SERVICE_DISABLED"))
@@ -47,7 +47,7 @@ export const googleError = ({ status, body, mutates, retryAfterMs }: GoogleFailu
     )
   if (reasons.some((reason) => reason === "insufficientPermissions" || reason === "ACCESS_TOKEN_SCOPE_INSUFFICIENT"))
     return new CliError("permission_error", "the sign-in lacks the Google permission this method needs", {
-      reason: "api.scope-missing",
+      reason: "oauth.scope-missing",
       status,
     })
   // Google's guide answers it with the Workspace usage limits, not with a retry (link in the message).
@@ -55,7 +55,7 @@ export const googleError = ({ status, body, mutates, retryAfterMs }: GoogleFailu
     return new CliError(
       "rate_limited",
       `Google Calendar usage limits are exceeded for this account; wait before writing again (${ERRORS_GUIDE})`,
-      { reason: "google.usage-limit", retryable: false, status },
+      { reason: "provider.usage-limit", retryable: false, status },
     )
   if (reasons.includes("forbiddenForNonOrganizer"))
     return new CliError(
@@ -83,12 +83,12 @@ export const googleError = ({ status, body, mutates, retryAfterMs }: GoogleFailu
         })
   if (status === 403)
     return new CliError("permission_error", "Google denied this operation; check access to the calendar", {
-      reason: "google.denied",
+      reason: "access.denied",
       status,
     })
   if (status === 404)
     return new CliError("not_found", "Google Calendar has no such item, or this account cannot see it", {
-      reason: "google.not-found",
+      reason: "item.not-found",
       status,
     })
   return new CliError(statusToCode(status), `Google Calendar refused the request (HTTP ${status})`, { status })

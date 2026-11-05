@@ -7,14 +7,14 @@ const LIST_METHODS = `run ${IDENTITY.command} api list`
 const fixFor = (error: CliError, start: string): string | undefined => {
   const { reason, grant, next } = error.details
   switch (reason) {
-    case "sign-in.expired":
+    case "oauth.expired":
       return `run ${start} again`
-    case "profile.not-signed-in":
+    case "oauth.missing":
       return `run ${start}`
     // At sign-in the same reason means "use a new profile": signing in again there is what was just refused.
     case "profile.wrong-account":
       return next === "sign-in" ? `run ${start}` : undefined
-    case "sign-in.scope-missing":
+    case "oauth.scope-missing":
       if (grant === "read") return `run ${start} again and allow it on the consent screen`
       return typeof grant === "string"
         ? `run ${start} --grant ${grant} again and leave it ticked on the consent screen`
@@ -23,8 +23,6 @@ const fixFor = (error: CliError, start: string): string | undefined => {
       return "or pass --client-file <path> with the Desktop app client JSON from Google Cloud Console"
     case "api.unknown-method":
       return LIST_METHODS
-    case "api.scope-missing":
-      return typeof grant === "string" ? `sign in again with ${start} --grant ${grant}` : undefined
     default:
       return undefined
   }
