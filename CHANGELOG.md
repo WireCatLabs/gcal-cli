@@ -12,6 +12,16 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   and `session start` warns before the browser opens when your app has none. `doctor` reports `"source": "config"`
   for the defaults' setting. `config set` refuses `google_client_id` to an agent.
 
+### Fixed
+
+- **The 0.20.0 notes named two error reasons by their old names.** A misspelled profile answers reason
+  `oauth.missing`, not `profile.not-signed-in`, and Google's Calendar usage limit is `provider.usage-limit`, not
+  `google.usage-limit`. 0.20.0 already answered these names. Only its notes were wrong.
+- **The guides say every package carries WireCat's Google app.** Installation, troubleshooting, the roadmap and
+  `session start --help` said releases might not carry it. They now say Google has not verified it yet: Google may
+  show an "unverified app" page, and the app allows 100 users in total, shared with drive. Your own app always wins
+  and is the way out, including when a command fails with `api.disabled`.
+
 ## 0.20.0 — 05.11.2026
 
 ### Changed — may break callers

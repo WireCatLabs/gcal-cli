@@ -12,7 +12,6 @@ support request.
 | `doctor` lists `files.problems` | Other users of the computer can read `config.json` or enter its folder. Run each `chmod` that `doctor` prints after "to make it private:". `doctor` never changes a file mode itself. |
 | `profile.wrong-account` or `profile.same-account` | Each Google account has one profile. Use the profile that account already has, or a new profile name for a new account. |
 | `oauth.not-saved` | The sign-in file (`credentials.json` in the state folder, used by `--credential-storage file` and whenever the keyring fails) exists but cannot be read as a sign-in file. Move it aside and sign in again. |
-| "the WireCat Google client in this gcal package cannot be read" | The package is damaged. Install `gcal` again, or pass `--client-file` with your own client. |
 | A write is refused | The profile's permissions or `GCAL_READ_ONLY` stop it; see [settings](configuration.md#permissions). |
 
 ## Sign-in problems
@@ -33,7 +32,7 @@ A row that says "in the browser" is Google's page; the other texts are what `gca
 | "Google sign-in was declined" | You chose **Cancel** on Google's page. Run `session start` again and allow access. |
 | Google shows an "unverified app" page | Google has not verified the app: your own app, or WireCat's until Google finishes its review. Use the link on the page that goes on to the app. |
 | "Google did not grant read access to Calendar" (`oauth.scope-missing`) | Google's consent page lets you untick Calendar. Run `session start` again and leave it ticked. With `--grant write`, "Google did not grant the write permission": leave the events access ticked too. |
-| "the Google Calendar API is turned off for this OAuth project" | Sign-in worked, but the project's Calendar API is off. [Turn it on](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com) in the project of your client, wait a few minutes, and run the command again. |
+| "the Google Calendar API is turned off for this OAuth project" | Sign-in worked, but the project's Calendar API is off. [Turn it on](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com) in the project of your client, wait a few minutes, and run the command again. With WireCat's app (`api.disabled`), you cannot turn it on: sign in with your own app. |
 | "Google sign-in was refused (HTTP 400); run gcal personal session start again" (`oauth.expired`) a week after sign-in | Your app is in **Testing**, where a sign-in ends 7 days after consent ([Google's note](https://developers.google.com/identity/protocols/oauth2#expiration)). Run `session start` again. To stop this, publish the app: see [step 4](installation.md#4-audience). |
 
 Never paste a token, a password or private content into a support request.
