@@ -43,5 +43,3 @@ coverage/
 /gitignore
 /CLEANUP.md
 
-# WireCat's Google client, written into the package by the release workflow only.
-/google-client.json

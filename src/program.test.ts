@@ -48,19 +48,25 @@ it("doctor answers without a config file", async () => {
   expect(json(out).item).toMatchObject({ config: { found: false, issues: [] }, profiles: [], read_only: null })
 })
 
-it("doctor names the store, the OAuth client and the profile lock, and says a signed-in profile keeps its client", async () => {
+it("doctor names the store, the OAuth app and where it comes from, and the profile lock", async () => {
   const bare = { ...process.env, GCAL_GOOGLE_CLIENT_ID: "", GCAL_GOOGLE_CLIENT_SECRET: "" }
   const report = json((await ran(["doctor", "--json"], bare)).out).item
   expect(report).toMatchObject({
     store: { path: expect.any(String), exists: expect.any(Boolean) },
-    oauth_client: { client: null, error: expect.stringContaining("keeps its own client") },
+    oauth_client: { client: "wirecat", source: "constants" },
     profile_lock: null,
     credential_file: { found: false },
   })
   const own = { ...bare, GCAL_GOOGLE_CLIENT_ID: "fixture.apps", GCAL_PROFILE_LOCK: "work" }
   expect(json((await ran(["doctor", "--json"], own)).out).item).toMatchObject({
-    oauth_client: { client: "own" },
+    oauth_client: { client: "own", source: "env" },
     profile_lock: "work",
+  })
+  const secretOnly = { ...bare, GCAL_GOOGLE_CLIENT_SECRET: "fixture-secret" }
+  expect(json((await ran(["doctor", "--json"], secretOnly)).out).item.oauth_client).toEqual({
+    client: null,
+    source: null,
+    reason: expect.stringContaining("GCAL_GOOGLE_CLIENT_ID"),
   })
 })
 

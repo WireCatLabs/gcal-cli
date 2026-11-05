@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from "node:fs"
-import { CliError } from "@wirecat/cli-base"
 import { appDoctorCommand, privateFiles } from "@wirecat/cli-core/cli"
+import { googleApp, oauthClientReport } from "@wirecat/cli-core/constants"
 import type { Command } from "commander"
 import { configuration } from "../config.js"
-import { googleClient, signInFilePath } from "../google.js"
+import { signInFilePath } from "../google.js"
 import { IDENTITY, PACKAGE } from "../identity.js"
 
 // The prefix of `oauthAccount("google", profile)`, which refuses an empty profile.
@@ -31,19 +31,7 @@ const credentialFile = (env: NodeJS.ProcessEnv) => {
   }
 }
 
-/** Without a client here, a profile signed in with `--client-file` still works: its sign-in keeps its client. */
-const oauthClient = (env: NodeJS.ProcessEnv) => {
-  try {
-    googleClient(env)
-    return { client: env.GCAL_GOOGLE_CLIENT_ID ? ("own" as const) : ("wirecat" as const) }
-  } catch (error) {
-    if (!(error instanceof CliError)) throw error
-    throw new CliError(
-      "configuration_error",
-      `${error.message}; a profile already signed in with --client-file keeps its own client`,
-    )
-  }
-}
+const oauthClient = (env: NodeJS.ProcessEnv) => oauthClientReport(googleApp({ env, prefix: "GCAL" }))
 
 /** cli-core's doctor, with `--online`, and where each profile's sign-in is kept as gcal's own field. */
 export const doctorCommand = (): Command =>

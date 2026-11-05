@@ -16,14 +16,22 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **A sync where one calendar fails answers with the others.** It used to print nothing and fail with
   `sync.partial`. It now saves and prints what the healthy calendars brought, with `meta.complete: false` and a
   `sync.partial` issue for each failed calendar. The exit code is 0.
-- **cli-core 0.565.0.** `doctor` connects nowhere by default; `doctor --online` connects once and reads the account,
+- **cli-core 0.566.0 and cli-base 0.77.1.** A failure can now be `conflict` (exit 15). `doctor` connects nowhere by default; `doctor --online` connects once and reads the account,
   sending nothing.
+- **gcal signs in with WireCat's Google app with no client file and no environment.** 0.19.0 expected a
+  `google-client.json` the release workflow wrote from a secret that was missing, so it could not sign in without
+  `--client-file`. WireCat's app now comes from cli-core's `constants.json`. The order is unchanged: `--client-file`,
+  then `GCAL_GOOGLE_CLIENT_ID` (with `GCAL_GOOGLE_CLIENT_SECRET`), then WireCat's app.
+- **`GCAL_GOOGLE_CLIENT_SECRET` without `GCAL_GOOGLE_CLIENT_ID` fails with reason `sign-in.secret-without-id`**
+  (was `sign-in.no-client`). `sign-in.no-client` and `sign-in.bundled-client-invalid` are gone: there is always an
+  app.
+- **`doctor`'s `oauth_client` says where the app comes from:** `{ "client": "wirecat", "source": "constants" }`, or
+  `"own"` with `"flag"` or `"env"`.
 
 ### Security
 
-- **The published package is the one the checks passed.** The release adds WireCat's Google client to the checked
-  package. It now confirms that the new file holds the checked files and the client, nothing else, and the publish
-  step checks the file's hash again before `npm publish`.
+- **The published package is the one the checks passed.** The release no longer adds a file to the checked package,
+  and the publish step checks its hash again before `npm publish`.
 - **The ClawHub dry run in the release gets no sign-in token from GitHub.** It runs ClawHub's own code, so it now
   runs the ClawHub CLI directly, as the real ClawHub step does, without `id-token: write`.
 - **The tests of `bin/gcal-live-check` and `bin/gcal-write-check` cannot reach the system keyring.** They started the

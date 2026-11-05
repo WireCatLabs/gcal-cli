@@ -69,10 +69,9 @@ for events and meetings in the store.
 - **Command names:** the package installs both `gcal` and `wcat-gcal`, as mail installs `mail` and `wcat-mail`.
   `cli-dev lint` warns `wcat-bin-name` on `gcal`; the owner decided to keep the short name while every CLI still has
   one. `lint/overrides.json` holds that decision with its reason (cli-base 0.75.2 lets it), which silences the warning.
-- **Google app:** `--client-file`, then `GCAL_GOOGLE_CLIENT_ID`, then WireCat's Desktop client in
-  `google-client.json` at the package root, which the release workflow writes from the `GCAL_GOOGLE_CLIENT_JSON`
-  secret (`bin/set-google-client`). A release without the secret carries none. The owner's console steps:
-  [google-app-verification.md](google-app-verification.md).
+- **Google app:** `--client-file`, then `GCAL_GOOGLE_CLIENT_ID` (with `GCAL_GOOGLE_CLIENT_SECRET`), then WireCat's
+  Desktop app from cli-core's `constants.json`, through cli-core's `googleApp`. `doctor` reports which as
+  `oauth_client`. The owner's console steps: [google-app-verification.md](google-app-verification.md).
 
 ## Open questions for the owner
 

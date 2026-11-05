@@ -1,13 +1,12 @@
-import { existsSync } from "node:fs"
 import { join } from "node:path"
 import { CliError, Credentials, isMovedRun, type KeyringStore, resolvePaths, systemKeyring } from "@wirecat/cli-base"
 import { type EventSink, providerRequest } from "@wirecat/cli-core/cli"
+import { googleApp } from "@wirecat/cli-core/constants"
 import {
   credentialStorage,
   type OAuthClient,
   type OAuthProvider,
   oauthAccount,
-  readClientFile,
   standardCodec,
   type TokenCodec,
   type TokenKeeper,
@@ -149,50 +148,9 @@ export const sessionKeeper = (options: KeeperOptions): TokenKeeper =>
     ...(options.signal ? { signal: options.signal } : {}),
   })
 
-const NO_CLIENT =
-  "no Google OAuth client is set up: set GCAL_GOOGLE_CLIENT_ID and GCAL_GOOGLE_CLIENT_SECRET to your own Desktop app client"
-
-/**
- * WireCat's Desktop client, which the release workflow writes into the package from a repository secret. A source
- * checkout and a release made without that secret have none.
- */
-export const BUNDLED_CLIENT = new URL("../google-client.json", import.meta.url)
-
-// npm installs package files readable by everyone, so this file skips the owner's-file privacy check: Google treats a
-// Desktop client as public (https://developers.google.com/identity/protocols/oauth2/native-app).
-export const bundledClient = (location: URL | string = BUNDLED_CLIENT): OAuthClient | undefined => {
-  if (!existsSync(location)) return undefined
-  return readClientFile(location, {
-    shipped: true,
-    invalid: new CliError(
-      "configuration_error",
-      "the WireCat Google client in this gcal package cannot be read; reinstall gcal",
-      { reason: "sign-in.bundled-client-invalid" },
-    ),
-  })
-}
-
-/** The owner's client file wins, then GCAL_GOOGLE_CLIENT_ID, then WireCat's client when the package has one. */
-export const googleClient = (
-  env: NodeJS.ProcessEnv,
-  file?: string,
-  platform = process.platform,
-  bundled: URL | string = BUNDLED_CLIENT,
-): OAuthClient => {
-  if (!file) {
-    const clientId = env.GCAL_GOOGLE_CLIENT_ID
-    const clientSecret = env.GCAL_GOOGLE_CLIENT_SECRET
-    if (clientId) return { clientId, ...(clientSecret ? { clientSecret } : {}) }
-    if (clientSecret)
-      throw new CliError("configuration_error", "GCAL_GOOGLE_CLIENT_SECRET requires GCAL_GOOGLE_CLIENT_ID", {
-        reason: "sign-in.no-client",
-      })
-    const wirecat = bundledClient(bundled)
-    if (wirecat) return wirecat
-    throw new CliError("configuration_error", NO_CLIENT, { reason: "sign-in.no-client" })
-  }
-  return readClientFile(file, { platform })
-}
+/** The owner's client file wins, then GCAL_GOOGLE_CLIENT_ID, then WireCat's app from cli-core's constants. */
+export const googleClient = (env: NodeJS.ProcessEnv, file?: string, platform = process.platform): OAuthClient =>
+  googleApp({ env, prefix: "GCAL", clientFile: file, platform }).client
 
 const UserInfo = v.object({ email: v.optional(v.string()), email_verified: v.optional(v.boolean()) })
 
