@@ -46,8 +46,22 @@ const keyOf = (path: readonly string[]) => {
   return operation ? apiKey(operation.id) : commandPathKey(path)
 }
 
+const WRITE_COMMANDS: Record<string, CalendarWrite> = {
+  "events create": "create",
+  "events import": "import",
+  "events update": "update",
+  "events delete": "delete",
+  "events respond": "respond",
+  "events move": "move",
+}
+
 export const permissions = commandPermissions({
   keyOf,
+  // A preview shows the api.* keys the write checks too; `create --text` checks quickAdd's, which a path cannot tell.
+  alsoChecks: (path) => {
+    const write = WRITE_COMMANDS[path.join(" ")]
+    return write ? writeKeys(write) : []
+  },
   extra: [...operations.map((operation) => apiKey(operation.id)), ...CALENDAR_WRITE_KEYS, SHARING_NOTIFY_KEY],
   defaults: {
     ...Object.fromEntries(

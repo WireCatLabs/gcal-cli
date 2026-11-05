@@ -3,6 +3,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { brokenKeyring, type KeyringStore, memoryKeyring, systemKeyring } from "@wirecat/cli-base"
 import { openStore, storePath } from "@wirecat/cli-core/store"
+import type { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
 import { bundledClient, CALENDAR_READ_SCOPE, googleClient, sessionStorage } from "./google.js"
 import { ACLS_SCOPE, EVENTS_SCOPE } from "./grants.js"
@@ -83,6 +84,7 @@ const harness = (keyring: KeyringStore = memoryKeyring(), paths: "overridden" | 
           GCAL_STATE_DIR: mkdtempSync(join(tmpdir(), "state-")),
         }
   const opened: string[] = []
+  const commands: Command[] = []
   const gcal = async (argv: string[], fake = google()) => {
     const out: string[] = []
     const err: string[] = []
@@ -100,14 +102,15 @@ const harness = (keyring: KeyringStore = memoryKeyring(), paths: "overridden" | 
       env,
       keyring,
       fetch: fake.fetch,
-      openBrowser: async (url: string) => {
+      openBrowser: async (url: string, command?: Command) => {
         opened.push(url)
+        if (command) commands.push(command)
         await consent(url)
       },
     })
     return { code, out: out.join("\n"), err: err.join("\n") }
   }
-  return { gcal, env, keyring, opened }
+  return { gcal, env, keyring, opened, commands }
 }
 
 const item = (text: string) => JSON.parse(text).item
@@ -120,7 +123,7 @@ const filesUnder = (dir: string): string[] =>
 
 describe("session start", () => {
   it("signs in with read-only Calendar access, remembers the account and registers the provider", async () => {
-    const { gcal, env, opened } = harness()
+    const { gcal, env, opened, commands } = harness()
     const fake = google()
     const file = clientFile()
     const started = await gcal(["personal", "session", "start", "--client-file", file, "--json"], fake)
@@ -134,6 +137,8 @@ describe("session start", () => {
       credential_storage: "keyring",
     })
 
+    // The entry reads the command's --json and opens no browser for it (WC-CMD-15).
+    expect(commands[0]?.optsWithGlobals()).toMatchObject({ json: true })
     const authorize = new URL(opened[0] ?? "")
     expect(authorize.origin + authorize.pathname).toBe("https://accounts.google.com/o/oauth2/v2/auth")
     expect(authorize.searchParams.get("scope")).toBe(`openid email ${CALENDAR_READ_SCOPE}`)
@@ -183,7 +188,7 @@ describe("session start", () => {
       google({ scope: "openid https://www.googleapis.com/auth/userinfo.email" }),
     )
     expect(refused.code).not.toBe(0)
-    expect(failure(refused.err)).toMatchObject({ code: "permission_error", reason: "sign-in.scope-missing" })
+    expect(failure(refused.err)).toMatchObject({ code: "permission_error", reason: "oauth.scope-missing" })
     expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({ state: "missing" })
   })
 
@@ -227,7 +232,7 @@ describe("session start", () => {
       "write",
       "--json",
     ])
-    expect(failure(unticked.err)).toMatchObject({ code: "permission_error", reason: "sign-in.scope-missing" })
+    expect(failure(unticked.err)).toMatchObject({ code: "permission_error", reason: "oauth.scope-missing" })
     expect(failure(unticked.err).message).toContain("--grant write")
     expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({ state: "missing" })
     const unknown = await gcal([

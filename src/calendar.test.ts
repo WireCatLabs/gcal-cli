@@ -236,7 +236,7 @@ describe("calendar commands over Google", () => {
     expect((await json("personal", "store", "status")).items).toMatchObject([{ state: "complete" }])
   })
 
-  it("a sync where one calendar fails prints nothing and fails with sync.partial naming that calendar", async () => {
+  it("a sync where one calendar fails keeps the others and answers partial, naming that calendar (WC-OUT-8)", async () => {
     const { gcal, json, google } = harness()
     await json("personal", "sync")
     await json("personal", "calendars", "sync", "team@group.calendar.example.com")
@@ -246,20 +246,19 @@ describe("calendar commands over Google", () => {
         ? new Response(JSON.stringify({ error: { code: 403, message: "Forbidden" } }), { status: 403 })
         : real(input, init)
     const answer = await gcal("personal", "sync", "--json")
-    expect(answer.code).not.toBe(0)
-    expect(answer.out).toBe("")
-    const { error } = JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}")
-    expect(error).toMatchObject({ reason: "sync.partial", retry: expect.objectContaining({ safe: true }) })
-    expect(error.message).toContain("(Team (shared)): Google denied")
-    expect(error.details.calendars).toContainEqual(
+    expect(answer.code).toBe(0)
+    const { item, meta } = JSON.parse(answer.out)
+    expect(meta).toMatchObject({
+      complete: false,
+      issues: [{ code: "provider_error", reason: "sync.partial", source: expect.stringMatching(/^calendar:\d+$/u) }],
+    })
+    expect(item.hint).toContain("(Team (shared)): Google denied")
+    expect(item.synced).toContainEqual(
       expect.objectContaining({ external_id: "team@group.calendar.example.com", error: expect.any(String) }),
     )
-    expect(error.details.calendars).toContainEqual(
-      expect.objectContaining({ external_id: "owner@example.com", state: "complete" }),
-    )
-    expect(
-      error.details.calendars.find(({ external_id }: { external_id: string }) => external_id === "owner@example.com"),
-    ).not.toHaveProperty("error")
+    const own = item.synced.find(({ external_id }: { external_id: string }) => external_id === "owner@example.com")
+    expect(own).toMatchObject({ state: "complete" })
+    expect(own).not.toHaveProperty("error")
   })
 
   it("stores the same times whatever the machine's zone (WC-TIME-6)", async () => {
@@ -576,7 +575,7 @@ describe("calendar commands over Google", () => {
       ["calendars", "sync", "owner@example.com"],
       ["calendars", "unsync", "busy@group.calendar.example.com"],
       ["links", "review"],
-      ["calendars", "busy", "start>=today", "end<=today"],
+      ["calendars", "busy", "starts_at>=today", "ends_at<=today"],
       ["store", "status"],
     ]
     for (const words of reads) {
@@ -602,7 +601,7 @@ describe("calendar commands over Google", () => {
     const answer = await gcal("personal", "events", "list", "--json")
     expect(answer.code).not.toBe(0)
     expect(answer.err).toContain("session start")
-    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("profile.not-signed-in")
+    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("oauth.missing")
     expect(google.requests).toEqual([])
   })
 
@@ -610,7 +609,7 @@ describe("calendar commands over Google", () => {
     const { gcal, google } = harness()
     const answer = await gcal("persnal", "events", "list", "--json")
     const error = JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
-    expect(error).toMatchObject({ reason: "profile.not-signed-in", details: { profiles: ["personal"] } })
+    expect(error).toMatchObject({ reason: "oauth.missing", details: { profiles: ["personal"] } })
     expect(error.message).toContain('no profile named "persnal" — profiles here: personal')
     expect(error.message).toContain("gcal persnal session start")
     expect(google.requests).toEqual([])
@@ -637,7 +636,14 @@ describe("calendars busy over Google", () => {
     if (zone === undefined) delete process.env.TZ
     else process.env.TZ = zone
   })
-  const busy = ["personal", "calendars", "busy", "start>=2026-11-02", "end<=2026-11-02", "person:ana@example.com"]
+  const busy = [
+    "personal",
+    "calendars",
+    "busy",
+    "starts_at>=2026-11-02",
+    "ends_at<=2026-11-02",
+    "person:ana@example.com",
+  ]
 
   it("asks freeBusy for the synced calendars and each person, and stores nothing of theirs", async () => {
     const { json, google } = harness()
@@ -656,20 +662,20 @@ describe("calendars busy over Google", () => {
       {
         calendar: expect.any(String),
         id: "owner@example.com",
-        busy: [{ start: "2026-11-02T09:00:00.000Z", end: "2026-11-02T10:00:00.000Z" }],
+        busy: [{ starts_at: "2026-11-02T09:00:00.000Z", ends_at: "2026-11-02T10:00:00.000Z" }],
       },
       {
         person: "ana@example.com",
         id: "ana@example.com",
         busy: [
-          { start: "2026-11-01T23:00:00.000Z", end: "2026-11-02T08:30:00.000Z" },
-          { start: "2026-11-02T11:00:00.000Z", end: "2026-11-02T12:00:00.000Z" },
+          { starts_at: "2026-11-01T23:00:00.000Z", ends_at: "2026-11-02T08:30:00.000Z" },
+          { starts_at: "2026-11-02T11:00:00.000Z", ends_at: "2026-11-02T12:00:00.000Z" },
         ],
       },
       { person: "bo@example.com", id: "bo@example.com", busy: [], error: "notFound" },
     ])
     // Madrid is UTC+1 on 2 November: working hours 08:00-13:00 are 07:00Z-12:00Z.
-    expect(answer.slots).toEqual([{ start: "2026-11-02T10:00:00.000Z", end: "2026-11-02T11:00:00.000Z" }])
+    expect(answer.slots).toEqual([{ starts_at: "2026-11-02T10:00:00.000Z", ends_at: "2026-11-02T11:00:00.000Z" }])
     expect(answer.unknown).toEqual(["bo@example.com"])
     expect((await json("personal", "people", "list")).items).not.toContainEqual(
       expect.objectContaining({ email: "bo@example.com" }),

@@ -50,18 +50,18 @@ const scopeMissing = (name: string) =>
     ? new CliError(
         "permission_error",
         "this method changes Google Calendar events, and this profile signed in with read access only",
-        { reason: "api.scope-missing", grant: "write", sent: false },
+        { reason: "oauth.scope-missing", grant: "write", sent: false },
       )
     : scopesOf(name).includes(ACLS_SCOPE)
       ? new CliError("permission_error", `this method reads or changes who can see a calendar (${scopeNames(name)})`, {
-          reason: "api.scope-missing",
+          reason: "oauth.scope-missing",
           grant: "sharing",
           sent: false,
         })
       : new CliError(
           "permission_error",
           `this method needs a Google permission gcal does not ask for at sign-in (${scopeNames(name)})`,
-          { reason: "api.scope-missing", sent: false },
+          { reason: "oauth.scope-missing", sent: false },
         )
 
 /** Refuses a method the saved sign-in cannot call; with no saved scopes Google decides. */

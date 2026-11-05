@@ -115,6 +115,23 @@ describe("event writes over Google", () => {
     })
   })
 
+  it("a --dry-run preview shows the api key a shared write checks, and refuses as the write would", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    const previewed = await gcal(...create, ...at, "--dry-run")
+    expect(previewed.item.permission).toEqual({
+      key: "events.create",
+      level: "allow",
+      also: [{ key: "api.calendar.events.insert", level: "allow" }],
+    })
+    expect((await gcal("personal", "config", "set", "permissions.api.calendar.events.insert", "deny")).code).toBe(0)
+    expect((await gcal(...create, ...at, "--dry-run")).error).toMatchObject({
+      code: "permission_error",
+      details: { permission: "api.calendar.events.insert" },
+    })
+    expect(posts(google)).toEqual([])
+  })
+
   it("a delete still asks; an api key the owner set to ask makes the shared write ask too", async () => {
     const { gcal, google, atTerminal } = harness()
     const event = await eventRef(gcal)
@@ -340,7 +357,7 @@ describe("event writes over Google", () => {
     const { gcal, google } = harness([CALENDAR_READ_SCOPE])
     await gcal("personal", "sync")
     const refused = await gcal(...create, ...at, "--yes")
-    expect(refused.error).toMatchObject({ code: "permission_error", reason: "api.scope-missing" })
+    expect(refused.error).toMatchObject({ code: "permission_error", reason: "oauth.scope-missing" })
     expect(refused.error.message).toContain("session start --grant write")
     expect(posts(google)).toEqual([])
   })

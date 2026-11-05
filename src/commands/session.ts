@@ -32,7 +32,8 @@ import { signInWords, worded } from "./words.js"
 /** What a test hands `run()` in place of Google and the system browser. */
 export interface GcalEnvironment extends BaseEnvironment {
   fetch?: typeof fetch
-  openBrowser?: (url: string) => Promise<void>
+  /** Gets the command, so the entry opens nothing under `--json`, `--no-input`, CI or without a terminal (WC-CMD-15). */
+  openBrowser?: (url: string, command?: Command) => Promise<void>
 }
 
 export const contextOf = (command: Command) => {
@@ -137,7 +138,9 @@ const startCommand = () =>
             client,
             grants: args.grant,
             storage: args.credentialStorage,
-            openBrowser: args.browser ? (environment.openBrowser ?? (async () => {})) : async () => {},
+            openBrowser: async (url) => {
+              if (args.browser) await environment.openBrowser?.(url, this)
+            },
             showUrl: (url) => {
               steps.openUrl(
                 url,

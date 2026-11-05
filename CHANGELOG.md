@@ -4,6 +4,21 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ## Unreleased
 
+### Changed — may break callers
+
+- **Error reasons use the names cli-core and drive share.** `sign-in.expired` is now `oauth.expired`;
+  `sign-in.scope-missing` and `api.scope-missing` are both `oauth.scope-missing`; `profile.not-signed-in` is
+  `oauth.missing`; `google.denied` is `access.denied`; `google.not-found` is `item.not-found`; `google.usage-limit` is
+  `provider.usage-limit`. `file.*`, `offline.refused`, `api.unknown-method` and `api.disabled` keep their names and
+  now come from cli-core.
+- **`calendars busy` takes and answers `starts_at` and `ends_at`**, as every event answer does, in place of `start`
+  and `end`: `gcal personal calendars busy starts_at>=2026-11-02 ends_at<=2026-11-06`.
+- **A sync where one calendar fails answers with the others.** It used to print nothing and fail with
+  `sync.partial`. It now saves and prints what the healthy calendars brought, with `meta.complete: false` and a
+  `sync.partial` issue for each failed calendar. The exit code is 0.
+- **cli-core 0.565.0.** `doctor` connects nowhere by default; `doctor --online` connects once and reads the account,
+  sending nothing.
+
 ### Security
 
 - **The published package is the one the checks passed.** The release adds WireCat's Google client to the checked
@@ -27,6 +42,13 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- **`events create --text` can be retried safely after a lost answer.** It names an `operation_id`; run the same line
+  again with `--operation-id <that id>` and gcal looks for the event that attempt made before adding another.
+- **`session start` opens no browser under `--json`, `--no-input` or `CI`.** It prints the address to open instead.
+- **A `--dry-run` of an event write shows the Google key it checks**, `api.calendar.events.insert` for a create, under
+  `permission.also`, and refuses where the real run would.
+- **The calendar commands keep every fact cli-core puts in `meta`.** gcal dropped one that did not fit its own copy
+  of the schema; cli-core now prints the answers itself, so gcal's adapter is gone.
 - **gcal runs on cli-base 0.75.2.** Its own check for a test that reaches the system keyring moved into cli-base,
   so gcal's copy is gone; the check is the same. `cli-dev lint` no longer warns about the short `gcal` command: the
   decision to keep it beside `wcat-gcal` is now an override with its reason.

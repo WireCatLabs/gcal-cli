@@ -67,7 +67,8 @@ const bodyOf = (patch: EventPatch, recurring = patch.recurrence !== undefined): 
  * `start`, and clearing its `dateTime` would need a `null` the generated request check refuses. Google documents get
  * then update with etags for a partial change (https://developers.google.com/workspace/calendar/api/v3/reference/events/update).
  */
-export type GoogleCalendarWriter = CalendarWriter & Required<Pick<CalendarWriter, "move" | "quickAdd" | "importEvent">>
+export type GoogleCalendarWriter = CalendarWriter &
+  Required<Pick<CalendarWriter, "move" | "quickAdd" | "quickAdded" | "importEvent">>
 
 export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
   const where = (calendar: StoredCalendar, eventId: string, notify: boolean) => ({
@@ -144,6 +145,25 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
         sendUpdates: notify ? "all" : "none",
       })
       return entryOf(answerOf(schema.CalendarEvent, made), calendar)
+    },
+
+    /**
+     * What a lost quickAdd may have made: one page of the events changed since, kept to those this account created
+     * since. A quick add is minutes old, so one page of the newest changes holds it.
+     */
+    async quickAdded(calendar, since) {
+      const changed = answerOf(
+        schema.CalendarEvents,
+        await api.call("calendar.events.list", {
+          calendarId: calendar.externalId,
+          updatedMin: new Date(since).toISOString(),
+          singleEvents: false,
+          maxResults: 250,
+        }),
+      )
+      return (changed.items ?? [])
+        .filter((event) => event.id && event.creator?.self === true && Date.parse(event.created ?? "") >= since)
+        .map((event) => entryOf(event, calendar))
     },
 
     /** events.import takes no sendUpdates: Google mails nobody about an imported copy. */
@@ -240,7 +260,7 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
       if (!event || event.status === "cancelled") {
         const there = await get(target, externalId)
         if (there.status === "cancelled")
-          throw new CliError("not_found", "the event is on neither calendar any more", { reason: "google.not-found" })
+          throw new CliError("not_found", "the event is on neither calendar any more", { reason: "item.not-found" })
         return entryOf(there, target)
       }
       if (event.etag !== etag) throw calendarConflict()

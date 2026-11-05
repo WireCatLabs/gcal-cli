@@ -84,9 +84,9 @@ may need several runs: the answer then says `state: "partial"` and ends with the
 when an agent runs it over MCP; `--timeout` changes it, and the number of requests to Google follows it.
 `--max-pages <n>` lowers that number further. `--rescan` starts every calendar over.
 
-When a calendar fails to sync, `sync` prints nothing on stdout and fails with `sync.partial`. The message names each
-failed calendar and its error; `details.calendars` holds every calendar's result, with `error` on the failed ones. The
-calendars that did sync are saved, and running `sync` again is safe.
+When a calendar fails to sync, the calendars that did sync are saved and answered. The answer has `meta.complete: false`
+and a `sync.partial` issue for each failed calendar; `synced` holds every calendar's result, with `error` on the failed
+ones, and `hint` names them. Running `sync` again is safe.
 
 A repeating event's slots are read one by one, cancelled slots included. A deleted event in the past keeps its record;
 a deleted future event is marked cancelled. `--embed` needs the meaning model, which `gcal` never downloads by itself:
@@ -377,7 +377,7 @@ gcal personal schedule command feeds --every 1h -- sync
 
 `sync` reads Google and then each feed; it has no option to read only the feeds. A feed that has not changed costs
 one short request, since `sync` asks the server first. `gcal personal schedule remove feeds` removes the timer. If a
-feed fails, `sync` fails with `sync.partial` and the other calendars are still saved.
+feed fails, `sync` answers with a `sync.partial` issue for it and the other calendars are still saved.
 
 Installing the timer does not allow your program. If `events.remind.hook` is not `allow` yet, the command says so and
 gives the `config set` line; until you run it, each run refuses to start the program. `GCAL_READ_ONLY` refuses
@@ -502,12 +502,12 @@ keeps nothing: a person appears in the answer only by the address you gave.
 
 ```sh
 gcal personal calendars busy person:ana@example.com                # this week; busy times only, never what fills them
-gcal personal calendars busy start>=2026-11-02 end<=2026-11-06 person:ana@example.com --duration-minutes 30
-gcal personal calendars busy start>=today end<=today calendar:3 --duration-minutes 60 --hours 10:00-16:00
+gcal personal calendars busy starts_at>=2026-11-02 ends_at<=2026-11-06 person:ana@example.com --duration-minutes 30
+gcal personal calendars busy starts_at>=today ends_at<=today calendar:3 --duration-minutes 60 --hours 10:00-16:00
 ```
 
-- The query names the window by the answer's own `start` and `end`: `start>=<date>` from the start of that day,
-  `end<=<date>` through its end. Without `start` the window starts today; without `end` it lasts seven days.
+- The query names the window by the answer's own `starts_at` and `ends_at`: `starts_at>=<date>` from the start of that day,
+  `ends_at<=<date>` through its end. Without `starts_at` the window starts today; without `ends_at` it lasts seven days.
 - `person:<email>` and `calendar:<id>` may be repeated, one term for each: every one named is asked. Without
   `calendar:` every calendar that syncs is asked.
 - `--duration-minutes` adds `slots`: the stretches at least that long that are free for everyone, inside working
@@ -609,8 +609,9 @@ gcal personal events delete event:42 --following --no-notify
   [quick add](https://developers.google.com/workspace/calendar/api/v3/reference/events/quickAdd), which reads the title,
   day, time and place from it the way Google Calendar's own quick add does. It takes no other field option. Its key is
   `events.create`, and `api.calendar.events.quickAdd`. Nobody is mailed unless you add `--notify`. Google chooses the
-  event's id, so `--operation-id` does not apply: when the answer is lost (`outcome_unknown`), run `sync` and look with
-  `events list changed_at>=today` before you add it again, or you may get it twice.
+  event's id. When the answer is lost (`outcome_unknown`), it names an `operation_id`: run the same line again with
+  `--operation-id <that id>`, and gcal first looks for an event this account made on that calendar since then whose
+  title's words are all in the line. It takes that one instead of adding another, and refuses if two could be it.
 
 ## Output for scripts
 

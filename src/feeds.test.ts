@@ -152,9 +152,13 @@ describe("feeds", () => {
     expect(google.requests.length).toBe(asked)
 
     feed.status = 404
-    const failed = await errorOf("personal", "sync")
-    expect(failed).toMatchObject({ code: "provider_error", reason: "sync.partial" })
-    expect(failed.message).toContain(`feed ${calendar.id} answered HTTP 404`)
+    const partial = await json("personal", "sync")
+    expect(partial.meta).toMatchObject({
+      complete: false,
+      issues: [{ code: "provider_error", reason: "sync.partial" }],
+    })
+    expect(partial.item.hint).toContain(`feed ${calendar.id} answered HTTP 404`)
+    expect(JSON.stringify(partial)).not.toContain(TOKEN)
     expect(await errorOf("personal", "calendars", "add", `${FEED}?other=1`)).toMatchObject({ reason: "feed.gone" })
   })
 

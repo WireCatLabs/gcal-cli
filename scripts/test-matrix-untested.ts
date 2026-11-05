@@ -57,6 +57,7 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
     reason: `starts the installed gcal as a child process, as the agent would; ${SHARED_MCP}`,
   })),
   { command: "api *", reason: GENERATED },
+  { command: "config migrate", reason: "cli-core's shared config command; its config-command tests drive it" },
   ...[undefined, "--dry-run"].map((option) => ({
     command: "config repair",
     ...(option ? { option } : {}),

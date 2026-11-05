@@ -200,7 +200,7 @@ describe("reading through the API", () => {
     const { gcal } = harness()
     const fake = google()
     const refused = await gcal(["personal", "api", "calendar-acl-list", "--calendar-id", "primary", "--json"], fake)
-    expect(failure(refused.err)).toMatchObject({ code: "permission_error", reason: "api.scope-missing" })
+    expect(failure(refused.err)).toMatchObject({ code: "permission_error", reason: "oauth.scope-missing" })
     expect(failure(refused.err).message).toContain("calendar.acls.readonly")
     expect(toCalendar(fake.requests)).toEqual([])
   })
@@ -230,12 +230,12 @@ describe("reading through the API", () => {
   })
 
   it.each([
-    [401, {}, {}, { code: "authentication_error", reason: "sign-in.expired" }],
+    [401, {}, {}, { code: "authentication_error", reason: "oauth.expired" }],
     [
       403,
       { error: { errors: [{ reason: "insufficientPermissions" }], status: "PERMISSION_DENIED" } },
       {},
-      { code: "permission_error", reason: "api.scope-missing" },
+      { code: "permission_error", reason: "oauth.scope-missing" },
     ],
     [
       403,
@@ -248,7 +248,7 @@ describe("reading through the API", () => {
       403,
       { error: { errors: [{ reason: "quotaExceeded" }] } },
       {},
-      { code: "rate_limited", reason: "google.usage-limit", retry: { safe: false } },
+      { code: "rate_limited", reason: "provider.usage-limit", retry: { safe: false } },
     ],
     [
       403,
@@ -333,7 +333,7 @@ describe("writes", () => {
       details: { permission: "api.calendar.calendarList.delete" },
     })
     expect((await gcal(remove, fake, "n")).err).toContain("the answer was no")
-    expect(failure((await gcal([...remove, "--yes", "--json"], fake)).err).reason).toBe("api.scope-missing")
+    expect(failure((await gcal([...remove, "--yes", "--json"], fake)).err).reason).toBe("oauth.scope-missing")
     expect((await gcal(remove, fake, "y")).err).toContain("Google permission gcal does not ask for")
     expect(toCalendar(fake.requests)).toEqual([])
   })
@@ -351,7 +351,7 @@ describe("writes", () => {
     ]
     expect(failure((await gcal(share)).err).code).toBe("confirmation_required")
     const shared = failure((await gcal([...share, "--yes"])).err)
-    expect(shared.reason).toBe("api.scope-missing")
+    expect(shared.reason).toBe("oauth.scope-missing")
     expect(shared.message).toContain("session start --grant sharing")
     const give = [
       ...["personal", "api", "calendar-calendars-transfer-ownership", "--calendar-id", "team@example.com"],
@@ -372,12 +372,12 @@ describe("writes", () => {
       (await gcal(["personal", "config", "set", "permissions.api.calendar.calendars.transferOwnership", "ask"])).code,
     ).toBe(0)
     const allowed = failure((await gcal([...give, "--new-data-owner", "a@example.com", "--yes", "--json"])).err)
-    expect(allowed.reason).toBe("api.scope-missing")
+    expect(allowed.reason).toBe("oauth.scope-missing")
     expect(allowed.message).toContain("calendar.calendars")
     expect((await gcal(["personal", "config", "set", "permissions.api", "allow"])).code).toBe(0)
     expect(failure((await gcal([...clear, "--yes", "--json"])).err).code).toBe("permission_error")
     expect((await gcal(["personal", "config", "set", "permissions.api.calendar.calendars.clear", "ask"])).code).toBe(0)
-    expect(failure((await gcal([...clear, "--yes", "--json"])).err).reason).toBe("api.scope-missing")
+    expect(failure((await gcal([...clear, "--yes", "--json"])).err).reason).toBe("oauth.scope-missing")
   })
 
   it("allows an ordinary change, asks for a delete or a share, and denies emptying, deleting or giving a calendar away", () => {
@@ -477,7 +477,7 @@ describe("writes", () => {
       ],
       fake,
     )
-    expect(failure(deleted.err)).toMatchObject({ code: "permission_error", reason: "api.scope-missing" })
+    expect(failure(deleted.err)).toMatchObject({ code: "permission_error", reason: "oauth.scope-missing" })
     expect(failure(deleted.err).message).toContain("session start --grant write")
     const called = await gcal(
       [
@@ -486,7 +486,7 @@ describe("writes", () => {
       ],
       fake,
     )
-    expect(failure(called.err).reason).toBe("api.scope-missing")
+    expect(failure(called.err).reason).toBe("oauth.scope-missing")
     expect(toCalendar(fake.requests)).toEqual([])
   })
 
@@ -840,7 +840,7 @@ describe("the calendar keys hold on api writes", () => {
   it("names the missing write sign-in before looking at the event", async () => {
     const { gcal } = harness()
     const fake = writes(SERIES)
-    expect(failure((await gcal([...remove, "--yes", "--json"], fake)).err).reason).toBe("api.scope-missing")
+    expect(failure((await gcal([...remove, "--yes", "--json"], fake)).err).reason).toBe("oauth.scope-missing")
     expect(fake.fetch).not.toHaveBeenCalled()
   })
 
