@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**224 ✅ · 344 ⛔ · 0 ❌** — 98 commands, 470 options.
+**225 ✅ · 344 ⛔ · 0 ❌** — 98 commands, 471 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -15,6 +15,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `commands info` |  | ✅ |  |
 | `session start` |  | ✅ |  |
 | `session start` | `--client-file` | ✅ |  |
+| `session start` | `--client-id` | ✅ |  |
 | `session start` | `--no-browser` | ✅ |  |
 | `session start` | `--credential-storage` | ✅ |  |
 | `session start` | `--grant` | ✅ |  |
