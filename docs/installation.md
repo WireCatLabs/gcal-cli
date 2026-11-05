@@ -31,11 +31,9 @@ gcal personal session start
 Google has not verified WireCat's app yet, so Google may show an "unverified app" page first. To go on, use the link
 on that page that goes on to the app, then allow read access to Calendar. Google limits an unverified app to 100 new
 users in total, and WireCat's other Google tools, such as drive, share those 100. When WireCat's app reaches that limit,
-or a sign-in with it does not work, use your own app below. See
-[Google's page on unverified apps](https://support.google.com/cloud/answer/7454865). If a command after sign-in fails
-with `api.disabled`, the Calendar API is off in WireCat's project, which you cannot turn on: use your own app.
+use your own app below. See [Google's page on unverified apps](https://support.google.com/cloud/answer/7454865).
 
-**Your own app.** Use one when you would rather not sign in through WireCat's app, or when it does not work for you.
+**Your own app.** Use one when WireCat's app has reached its limit, or when you would rather not sign in through it.
 [Make your own Google app](#make-your-own-google-app) once, in about ten minutes, then pass its file:
 
 ```sh

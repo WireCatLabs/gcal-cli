@@ -26,6 +26,6 @@ Calendar API method by name. Every command is in the [command reference](command
 - **Google's review of WireCat's app.** `gcal` already signs in through WireCat's shared Google app with no client of
   your own. Google has not verified that app for Calendar yet, so it may show an "unverified app" page and allows 100
   users in total, shared with drive. After the review, the page and the limit go away. Until then, if WireCat's app
-  does not work for you, [make your own Google app](installation.md#make-your-own-google-app).
+  has reached that limit, [make your own Google app](installation.md#make-your-own-google-app).
 
 What each released version changed is in the [changelog](../CHANGELOG.md).

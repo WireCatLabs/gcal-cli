@@ -20,7 +20,7 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **The guides say every package carries WireCat's Google app.** Installation, troubleshooting, the roadmap and
   `session start --help` said releases might not carry it. They now say Google has not verified it yet: Google may
   show an "unverified app" page, and the app allows 100 users in total, shared with drive. Your own app always wins
-  and is the way out, including when a command fails with `api.disabled`.
+  and is the way out when that limit is reached.
 
 ## 0.20.0 — 05.11.2026
 
