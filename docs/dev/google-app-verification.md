@@ -1,8 +1,7 @@
 # WireCat's Google app for gcal: the owner's steps
 
-Only the owner of WireCat's Google Cloud project can do these steps. Agents did the rest: `gcal` reads WireCat's client
-from `google-client.json` in the package, the release workflow writes that file from the repository secret
-`GCAL_GOOGLE_CLIENT_JSON`, and wirecat.dev's privacy policy has a gcal section.
+Only the owner of WireCat's Google Cloud project can do these steps. Agents did the rest: `gcal` reads WireCat's app
+from cli-core's `constants.json`, and wirecat.dev's privacy policy has a gcal section.
 
 The owner chose one shared Google app for drive and gcal (NEED-1689, answer A). So these steps add Calendar to the
 project that already holds drive's Desktop client, whose branding Google has approved.
@@ -47,22 +46,12 @@ that list; Google gives "reading events stored in Google Calendar" as an example
 
 `openid` and `email` are asked for too; they are not sensitive. Keep drive's four scopes as they are.
 
-## 4. Make gcal's Desktop client and store it
+## 4. The Desktop client gcal signs in with
 
-1. Open **Clients → Create client**, choose **Desktop app**, and name it `WireCat gcal CLI`. A client of its own lets
-   gcal's secret change without signing out drive's users.
-2. Download its JSON file. Keep it outside every repository.
-3. From a gcal checkout, store it as the repository secret. The script checks the file's shape, prints none of its
-   values, and runs `gh secret set GCAL_GOOGLE_CLIENT_JSON --repo WireCatLabs/gcal-cli`:
-
-   ```sh
-   bin/set-google-client ~/Downloads/client_secret_XXXX.json
-   ```
-
-4. Delete the downloaded file. The next `bin/release` carries the client; until then, packages carry none.
-
-Changing this client's secret later signs out every gcal user who signed in with the old one: each sign-in keeps the
-secret it was made with, and Google refuses the old one when the sign-in is refreshed.
+gcal signs in with WireCat's Desktop client in cli-core's `constants.json`, the one drive uses, stored obscured
+([cli-core's Constants page](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/CONSTANTS.md)). A new client,
+or a new secret, reaches gcal through a cli-core release and gcal's bump. A sign-in keeps WireCat's client with it, so
+one made before the change still refreshes until Google stops accepting the old client.
 
 ## 5. Submit the data-access review
 

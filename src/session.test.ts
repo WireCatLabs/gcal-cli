@@ -5,7 +5,7 @@ import { brokenKeyring, type KeyringStore, memoryKeyring, systemKeyring } from "
 import { openStore, storePath } from "@wirecat/cli-core/store"
 import type { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
-import { bundledClient, CALENDAR_READ_SCOPE, googleClient, sessionStorage } from "./google.js"
+import { CALENDAR_READ_SCOPE, googleClient, sessionStorage } from "./google.js"
 import { ACLS_SCOPE, EVENTS_SCOPE } from "./grants.js"
 import { run } from "./program.js"
 
@@ -345,7 +345,7 @@ describe("the account lookup", () => {
     env.GCAL_GOOGLE_CLIENT_ID = "fixture-public-client"
     expect((await gcal(["personal", "session", "start"])).code).toBe(0)
     const saved = sessionStorage(env, "personal", keyring).read()
-    expect(saved?.client).toEqual({ clientId: "fixture-public-client" })
+    expect(saved?.client).toEqual({ clientId: "fixture-public-client", source: "env" })
   })
 })
 
@@ -553,65 +553,47 @@ describe("session list", () => {
   })
 })
 
-const NO_BUNDLE = join(tmpdir(), "gcal-no-bundled-client.json")
+describe("the Google client", () => {
+  it("is WireCat's app from cli-core's constants when neither a client file nor the environment names one", () => {
+    const client = googleClient({})
+    expect(client.clientId).toMatch(/\.apps\.googleusercontent\.com$/)
+    expect(client.clientSecret).toBeTruthy()
+    expect(client.source).toBe("constants")
+  })
 
-const bundle = (contents: unknown) => {
-  const file = join(mkdtempSync(join(tmpdir(), "bundle-")), "google-client.json")
-  writeFileSync(file, typeof contents === "string" ? contents : JSON.stringify(contents))
-  chmodSync(file, 0o644)
-  return file
-}
-const WIRECAT = {
-  installed: { client_id: "wirecat.apps.googleusercontent.com", client_secret: "fixture-wirecat-9Rt2" },
-}
+  it("signs in with WireCat's app and no client file or environment, and doctor says so", async () => {
+    const { gcal, env } = harness()
+    delete env.GCAL_GOOGLE_CLIENT_ID
+    delete env.GCAL_GOOGLE_CLIENT_SECRET
+    const wirecat = googleClient({})
+    const fake = google()
 
-describe("WireCat's bundled Google client", () => {
-  it("is used when neither a client file nor the environment names one, though npm leaves it readable", () => {
-    expect(googleClient({}, undefined, process.platform, bundle(WIRECAT))).toEqual({
-      clientId: "wirecat.apps.googleusercontent.com",
-      clientSecret: "fixture-wirecat-9Rt2",
+    expect((await gcal(["personal", "session", "start", "--json"], fake)).code).toBe(0)
+    const exchanged = new URLSearchParams(fake.requests[0]?.body)
+    expect([exchanged.get("client_id"), exchanged.get("client_secret")]).toEqual([
+      wirecat.clientId,
+      wirecat.clientSecret,
+    ])
+    expect(item((await gcal(["doctor", "--json"])).out).oauth_client).toEqual({
+      client: "wirecat",
+      source: "constants",
     })
   })
 
   it("loses to the owner's client file and to GCAL_GOOGLE_CLIENT_ID", () => {
-    const wirecat = bundle(WIRECAT)
-    expect(googleClient({}, clientFile(), process.platform, wirecat).clientId).toBe("fixture-client.apps")
-    expect(googleClient({ GCAL_GOOGLE_CLIENT_ID: "own" }, undefined, process.platform, wirecat)).toEqual({
-      clientId: "own",
-    })
-  })
-
-  it("is absent from a package built without it", () => {
-    expect(bundledClient(NO_BUNDLE)).toBeUndefined()
-  })
-
-  it("refuses a damaged one without quoting it", () => {
-    expect(() => bundledClient(bundle(`{"web":{"client_secret":"${SECRET}"}}`))).toThrow(
-      /^the WireCat Google client in this gcal package cannot be read; reinstall gcal$/,
-    )
-  })
-})
-
-describe("the owner's Google client", () => {
-  it("says how to set one up when none is given; only the command names --client-file", async () => {
-    expect(() => googleClient({}, undefined, process.platform, NO_BUNDLE)).toThrow(
-      /GCAL_GOOGLE_CLIENT_ID and GCAL_GOOGLE_CLIENT_SECRET/,
-    )
-    expect(() => googleClient({}, undefined, process.platform, NO_BUNDLE)).not.toThrow(/--client-file/)
-    const { gcal, env } = harness()
-    delete env.GCAL_GOOGLE_CLIENT_ID
-    delete env.GCAL_GOOGLE_CLIENT_SECRET
-    const refused = failure((await gcal(["personal", "session", "start", "--json"])).err)
-    expect(refused).toMatchObject({ code: "configuration_error", reason: "sign-in.no-client" })
-    expect(refused.message).toMatch(/GCAL_GOOGLE_CLIENT_ID.*--client-file <path>/)
+    expect(googleClient({}, clientFile()).clientId).toBe("fixture-client.apps")
+    expect(googleClient({ GCAL_GOOGLE_CLIENT_ID: "own" })).toEqual({ clientId: "own", source: "env" })
   })
 
   it("reads the environment, and refuses a secret without an id", () => {
     expect(googleClient({ GCAL_GOOGLE_CLIENT_ID: "id", GCAL_GOOGLE_CLIENT_SECRET: SECRET })).toEqual({
       clientId: "id",
       clientSecret: SECRET,
+      source: "env",
     })
-    expect(() => googleClient({ GCAL_GOOGLE_CLIENT_SECRET: SECRET })).toThrow(/requires GCAL_GOOGLE_CLIENT_ID/)
+    expect(() => googleClient({ GCAL_GOOGLE_CLIENT_SECRET: SECRET })).toThrow(
+      expect.objectContaining({ details: { reason: "sign-in.secret-without-id" } }),
+    )
   })
 
   it.skipIf(process.platform === "win32")("refuses a client file other users can read", () => {
