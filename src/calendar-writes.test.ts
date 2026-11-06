@@ -417,6 +417,35 @@ describe("event writes over Google", () => {
     expect(both.content[0]?.text).toContain("no_notify")
   })
 
+  it.each([
+    ["api.calendar.events.insert=deny", "events create"],
+    ["api=deny", "events create"],
+    ["api.calendar.events.patch=deny", "events update"],
+    ["api.calendar.events.delete=deny", "events delete"],
+  ])("mcp serve --permission %s refuses %s before Google is asked", async (level, command) => {
+    const { gcal, google, env, keyring, fetch } = harness()
+    const event = await eventRef(gcal)
+    const { client } = await mcpClient({ env, keyring, fetch }, ["--permission", level])
+    clients.push(client)
+    const typed: Record<string, Record<string, unknown>> = {
+      "events create": {
+        calendar: "owner@example.com",
+        title: "Example planning",
+        start_time: "2026-11-02T10:00+01:00",
+        end_time: "2026-11-02T11:00+01:00",
+      },
+      "events update": { event, location: "Room 2", notify: false },
+      "events delete": { event, notify: false },
+    }
+    const refused = (await client.callTool({
+      name: "gcal_write",
+      arguments: { command, arguments: typed[command] },
+    })) as { isError?: boolean; content: { text: string }[] }
+    expect(refused.isError).toBe(true)
+    expect(refused.content[0]?.text).toContain("permission_error")
+    expect(posts(google)).toEqual([])
+  })
+
   it("every field and choice of the write commands reaches Google in its own words", async () => {
     const { gcal, google } = harness()
     const event = await eventRef(gcal)

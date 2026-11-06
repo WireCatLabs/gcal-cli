@@ -14,6 +14,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- **`mcp serve --permission api.<method>=deny` now stops the event writes that call that method.** `events create`,
+  `update`, `delete`, `respond`, `move` and `import` checked their `api.calendar.events.*` keys, and the shared
+  calendar keys such as `events.notify`, at the profile's saved levels and ignored the levels the agent's server
+  entry set, so an agent could still write. They now use the levels of the run.
 - **The Google sign-in notes no longer describe WireCat's review status.** They say that making a shared Google app
   public for Calendar is complex, so Google may refuse the sign-in, and point to your own Google app. No behaviour
   changes.

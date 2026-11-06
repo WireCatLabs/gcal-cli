@@ -2,7 +2,7 @@ import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { timezoneOf } from "@wirecat/cli-base/query"
 import { addCalendarCommands, type CalendarRun } from "@wirecat/cli-core/calendar/cli"
-import { environmentOf, type GlobalFlags, NO_EFFECTS } from "@wirecat/cli-core/cli"
+import { baseContext, environmentOf, type GlobalFlags, NO_EFFECTS } from "@wirecat/cli-core/cli"
 import { levelFor } from "@wirecat/cli-core/sends"
 import type { MessageStore } from "@wirecat/cli-core/store"
 import { Command } from "commander"
@@ -115,7 +115,8 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
       googleApi(apiAccess({ env, profile, signInCommand: signInWords(profile), keyring, fetch, signal })),
       profile,
     ))
-  const settings = () => configuration.resolveSettings(command.optsWithGlobals<GlobalFlags>(), { env })
+  // The run's settings, not resolveSettings: they carry the levels `mcp serve --permission` tightened.
+  const settings = () => baseContext(command, configuration.resolveSettings).settings
   let source: ReturnType<typeof googleCalendarSource> | undefined
   let writer: ReturnType<typeof googleCalendarWriter> | undefined
   let feeds: ReturnType<typeof icsFeeds> | undefined

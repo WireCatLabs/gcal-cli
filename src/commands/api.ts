@@ -71,12 +71,7 @@ const API_METHOD_QUERY = {
  * key of its own, and the shared check never sees its method. A write's `deny`, `readonly` and `ask` are the guard's.
  */
 const permittedSettings = (command: Command, method: ApiMethod) => {
-  const { flags, common } = contextOf(command)
-  const overrides = environmentOf(command).agent?.overrides ?? []
-  const settings = configuration.resolveSettings(
-    overrides.length > 0 ? { ...flags, permission: [...overrides, ...(flags.permission ?? [])] } : flags,
-    { env: common.env },
-  )
+  const { settings } = baseContext(command, configuration.resolveSettings)
   refuseUnknownPermissionKeys(command, settings, IDENTITY.command, permissions)
   const key = apiKey(method.name)
   const { level, key: named } = levelFor(settings.permissions, key, permissions.defaults)
