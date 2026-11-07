@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**225 ✅ · 344 ⛔ · 0 ❌** — 98 commands, 471 options.
+**225 ✅ · 350 ⛔ · 0 ❌** — 98 commands, 477 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -550,11 +550,17 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `schedule command` | `--every` | ✅ |  |
 | `schedule command` | `--at` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule command` | `--at-time` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
+| `schedule command` | `--notify-on` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
+| `schedule command` | `--deliver-to` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` |  | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
+| `schedule agent` | `--model` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` | `--max-cost` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
+| `schedule agent` | `--max-cost-per-day` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` | `--every` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` | `--at` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` | `--at-time` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
+| `schedule agent` | `--notify-on` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
+| `schedule agent` | `--deliver-to` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule list` |  | ✅ |  |
 | `schedule run` |  | ✅ |  |
 | `schedule remove` |  | ✅ |  |
