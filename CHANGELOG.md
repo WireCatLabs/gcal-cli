@@ -21,6 +21,13 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   have carried it out, and a caller told "cancelled" could make the change twice. This covers a stop while the
   request was out and a stop while gcal read the answer. A read keeps `cancelled`.
 
+### Security
+
+- **The `api` commands now also answer to the permission of the `events` command that does the same work.** A call
+  through `gcal api` checked only its own `api.*` key, so it could still do what a denied `events` command could not.
+  Each events method, reads included, now checks that command's key too, on every path: `--dry-run`, `api show` and
+  MCP. An events import through `api` now asks, as `events import` does.
+
 ### Fixed
 
 - **A Google call no longer keeps the finished command in memory for 30 seconds.** Its time limit was a timer that
