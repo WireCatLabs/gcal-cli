@@ -21,4 +21,9 @@ calendar published as an `.ics` address, read-only. `search all` searches stored
 `gcal api` reaches every Google
 Calendar API method by name. Every command is in the [command reference](commands.md).
 
+## Next
+
+- **Nothing new is planned yet.** Everything this page listed has shipped. Ask for what you miss in an
+  [issue on GitHub](https://github.com/WireCatLabs/gcal-cli/issues).
+
 What each released version changed is in the [changelog](../CHANGELOG.md).
