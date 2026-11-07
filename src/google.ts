@@ -177,34 +177,41 @@ export const accountEmail = async (
   events?: EventSink,
 ) => {
   const answered = providerRequest("GET /v1/userinfo", events)
-  const timeout = AbortSignal.timeout(30_000)
-  let response: Response
+  // Not AbortSignal.timeout: its timer holds the run's async context until the deadline (tg-cli #827).
+  const deadline = new AbortController()
+  const timer = setTimeout(() => deadline.abort(new DOMException("timed out", "TimeoutError")), 30_000)
+  timer.unref()
   try {
-    response = await fetcher(USERINFO_URL, {
-      headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
-      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
-      redirect: "error",
-    })
-  } catch (error) {
-    answered({ error, errorCode: "provider_unavailable" })
-    throw new CliError("provider_unavailable", "Google did not answer the account lookup; try again", {
-      reason: "sign-in.lookup-unavailable",
-      retryable: true,
-    })
+    let response: Response
+    try {
+      response = await fetcher(USERINFO_URL, {
+        headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
+        signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
+        redirect: "error",
+      })
+    } catch (error) {
+      answered({ error, errorCode: "provider_unavailable" })
+      throw new CliError("provider_unavailable", "Google did not answer the account lookup; try again", {
+        reason: "sign-in.lookup-unavailable",
+        retryable: true,
+      })
+    }
+    answered(response.ok ? { status: response.status } : { status: response.status, errorCode: "provider_error" })
+    if (!response.ok)
+      throw new CliError("authentication_error", `Google refused the account lookup (HTTP ${response.status})`, {
+        reason: "sign-in.lookup-refused",
+        status: response.status,
+      })
+    const info = v.safeParse(UserInfo, await response.json().catch(() => undefined))
+    const email = info.success ? info.output.email : undefined
+    if (!email || (info.success && info.output.email_verified === false))
+      throw new CliError(
+        "authentication_error",
+        "Google did not share a verified email address for this account; sign in again and allow it",
+        { reason: "sign-in.no-email" },
+      )
+    return email.toLowerCase()
+  } finally {
+    clearTimeout(timer)
   }
-  answered(response.ok ? { status: response.status } : { status: response.status, errorCode: "provider_error" })
-  if (!response.ok)
-    throw new CliError("authentication_error", `Google refused the account lookup (HTTP ${response.status})`, {
-      reason: "sign-in.lookup-refused",
-      status: response.status,
-    })
-  const info = v.safeParse(UserInfo, await response.json().catch(() => undefined))
-  const email = info.success ? info.output.email : undefined
-  if (!email || (info.success && info.output.email_verified === false))
-    throw new CliError(
-      "authentication_error",
-      "Google did not share a verified email address for this account; sign in again and allow it",
-      { reason: "sign-in.no-email" },
-    )
-  return email.toLowerCase()
 }

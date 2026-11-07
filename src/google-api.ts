@@ -121,6 +121,11 @@ export const answerOf = <T>(schema: v.GenericSchema<unknown, T>, data: unknown):
   return parsed.output
 }
 
+const unknownOutcome = () =>
+  new CliError("outcome_unknown", "Google write has no certain outcome; check Google before repeating it", {
+    retryable: false,
+  })
+
 /** Google Calendar over plain fetch: the token goes in the Authorization header only, never into an address. */
 export const googleApi = (options: GoogleApiOptions): GoogleApi => ({
   call: async (name, params = {}, body, { headers = {} } = {}) => {
@@ -132,56 +137,66 @@ export const googleApi = (options: GoogleApiOptions): GoogleApi => ({
     refuseMissingScope(name, options.scopes())
     const request = requestUrl(name, params)
     const token = await options.accessToken()
-    const timeout = AbortSignal.timeout(TIMEOUT_MS)
-    const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout
+    // Not AbortSignal.timeout: its timer holds the run's async context until the deadline (tg-cli #827).
+    const deadline = new AbortController()
+    const timer = setTimeout(() => deadline.abort(new DOMException("timed out", "TimeoutError")), TIMEOUT_MS)
+    timer.unref()
+    const signal = options.signal ? AbortSignal.any([options.signal, deadline.signal]) : deadline.signal
     const answered = providerRequest(request.operation, options.events)
-    let response: Response
     try {
-      response = await options.fetch(request.url, {
-        method: request.method,
-        headers: {
-          ...headers,
-          authorization: `Bearer ${token}`,
-          accept: "application/json",
-          ...(body === undefined ? {} : { "content-type": "application/json" }),
-        },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-        signal,
-        redirect: "error",
-      })
-    } catch (error) {
-      answered({ error, errorCode: mutates ? "outcome_unknown" : "provider_unavailable" })
-      if (options.signal?.aborted) throw new CliError("cancelled", "the Google Calendar request was stopped")
-      if (mutates)
-        throw new CliError("outcome_unknown", "Google write has no certain outcome; check Google before repeating it", {
-          retryable: false,
+      let response: Response
+      try {
+        response = await options.fetch(request.url, {
+          method: request.method,
+          headers: {
+            ...headers,
+            authorization: `Bearer ${token}`,
+            accept: "application/json",
+            ...(body === undefined ? {} : { "content-type": "application/json" }),
+          },
+          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+          signal,
+          redirect: "error",
         })
-      throw new CliError("provider_unavailable", "Google Calendar did not answer; no request details were logged", {
-        retryable: true,
-      })
+      } catch (error) {
+        // A cut write may have reached Google, and a caller told "cancelled" would send it again (WC-LIFE-9).
+        if (mutates) {
+          answered({ error, errorCode: "outcome_unknown" })
+          throw unknownOutcome()
+        }
+        const stopped = options.signal?.aborted
+        answered({ error, errorCode: stopped ? "cancelled" : "provider_unavailable" })
+        if (stopped) throw new CliError("cancelled", "the Google Calendar request was stopped")
+        throw new CliError("provider_unavailable", "Google Calendar did not answer; no request details were logged", {
+          retryable: true,
+        })
+      }
+      if (!response.ok) {
+        answered({ status: response.status, errorCode: "provider_error" })
+        const failure = await readJsonResponse(response, { maxBytes: 64 * 1024, signal }).catch(() => undefined)
+        throw googleError({
+          status: response.status,
+          body: failure,
+          mutates,
+          retryAfterMs: providerWaitMs(response.headers, options.now ?? (() => new Date())),
+        })
+      }
+      answered({ status: response.status })
+      if (response.status === 204 || response.headers.get("content-length") === "0") return null
+      let data: unknown
+      try {
+        data = await readJsonResponse(response, { maxBytes: MAX_BYTES, signal })
+      } catch (error) {
+        if (mutates && signal.aborted) throw unknownOutcome()
+        if (isCliError(error) && error.code !== "invalid_response") throw error
+        throw new CliError("invalid_response", "Google Calendar answered with something other than bounded JSON")
+      }
+      const schema = request.response ? SCHEMAS.get(request.response) : undefined
+      if (schema && !v.safeParse(schema, data).success)
+        throw new CliError("invalid_response", "Google Calendar's answer does not match the API contract")
+      return data
+    } finally {
+      clearTimeout(timer)
     }
-    if (!response.ok) {
-      answered({ status: response.status, errorCode: "provider_error" })
-      const failure = await readJsonResponse(response, { maxBytes: 64 * 1024, signal }).catch(() => undefined)
-      throw googleError({
-        status: response.status,
-        body: failure,
-        mutates,
-        retryAfterMs: providerWaitMs(response.headers, options.now ?? (() => new Date())),
-      })
-    }
-    answered({ status: response.status })
-    if (response.status === 204 || response.headers.get("content-length") === "0") return null
-    let data: unknown
-    try {
-      data = await readJsonResponse(response, { maxBytes: MAX_BYTES, signal })
-    } catch (error) {
-      if (isCliError(error) && error.code !== "invalid_response") throw error
-      throw new CliError("invalid_response", "Google Calendar answered with something other than bounded JSON")
-    }
-    const schema = request.response ? SCHEMAS.get(request.response) : undefined
-    if (schema && !v.safeParse(schema, data).success)
-      throw new CliError("invalid_response", "Google Calendar's answer does not match the API contract")
-    return data
   },
 })
