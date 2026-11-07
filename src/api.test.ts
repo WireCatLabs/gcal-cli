@@ -887,6 +887,7 @@ describe("the calendar keys hold on api writes", () => {
     )
     expect(answerOf(called.out).item.permissions).toEqual([
       { key: "api.calendar.events.delete", level: "ask" },
+      { key: "events.delete", level: "ask" },
       { key: "events.delete.series", level: "deny", when: "the event repeats" },
     ])
     expect(answerOf(called.out).item.permission).toEqual({ key: "api.calendar.events.delete", level: "ask" })
@@ -898,6 +899,7 @@ describe("the calendar keys hold on api writes", () => {
     const mailing = await gcal([...insert, "--send-updates", "all", "--dry-run", "--json"], fake)
     expect(answerOf(mailing.out).item.permissions).toEqual([
       { key: "api.calendar.events.insert", level: "allow" },
+      { key: "events.create", level: "allow" },
       { key: "events.notify", level: "ask" },
     ])
     expect(fake.fetch).not.toHaveBeenCalled()
@@ -925,6 +927,97 @@ describe("the calendar keys hold on api writes", () => {
       expect(deleted.isError).toBe(true)
       expect(deleted.content[0]?.text).toContain("events.delete.series")
       expect(methods(fake)).toEqual(["GET"])
+    } finally {
+      await client.close()
+    }
+  })
+})
+
+describe("the events command keys hold on api calls", () => {
+  const WRITER = ["openid", "email", CALENDAR_READ_SCOPE, EVENTS_SCOPE]
+  const event = { calendarId: "primary", eventId: "evtsingle1" }
+  const called = (method: string, params: Record<string, unknown>, body?: Record<string, unknown>) => [
+    ...["personal", "api", "call", method, "--params", JSON.stringify(params)],
+    ...(body ? ["--body", JSON.stringify(body)] : []),
+  ]
+  const CASES: [string, string[]][] = [
+    ["events.list", called("calendar.events.list", { calendarId: "primary" })],
+    ["events.list", called("calendar.events.instances", event)],
+    ["events.show", called("calendar.events.get", event)],
+    ["events.create", called("calendar.events.insert", { calendarId: "primary" }, {})],
+    ["events.create", called("calendar.events.quickAdd", { calendarId: "primary", text: "Example lunch" })],
+    ["events.import", called("calendar.events.import", { calendarId: "primary" }, { iCalUID: "uid@example.com" })],
+    ["events.update", called("calendar.events.patch", event, {})],
+    ["events.update", called("calendar.events.update", event, {})],
+    ["events.delete", called("calendar.events.patch", event, { status: "cancelled" })],
+    ["events.delete", called("calendar.events.delete", event)],
+    ["events.move", called("calendar.events.move", { ...event, destination: "team" })],
+    ["events.list", ["personal", "api", "calendar-events-list", "--calendar-id", "primary"]],
+    ["events.delete", ["personal", "api", "calendar-events-delete", "--calendar-id", "primary", "--event-id", "e1"]],
+  ]
+
+  it.each(CASES)("while %s is deny, refuses %j and sends nothing", async (key, words) => {
+    const { gcal } = harness(WRITER)
+    const fake = google(() => json(SINGLE))
+    expect((await gcal(["personal", "config", "set", `permissions.${key}`, "deny"])).code).toBe(0)
+    const refused = failure((await gcal([...words, "--yes", "--json"], fake)).err)
+    expect(refused).toMatchObject({ code: "permission_error", details: { permission: key } })
+    const preview = failure((await gcal(["--dry-run", ...words, "--json"], fake)).err)
+    expect(preview).toMatchObject({ code: "permission_error", details: { permission: key } })
+    expect(fake.fetch).not.toHaveBeenCalled()
+  })
+
+  it("previews the command key with its level, and api show names it", async () => {
+    const { gcal } = harness(WRITER)
+    const fake = google()
+    const previewed = await gcal(["--dry-run", ...called("calendar.events.patch", event, { status: "cancelled" })])
+    expect(answerOf(previewed.out).item.permissions).toEqual([
+      { key: "api.calendar.events.patch", level: "allow" },
+      { key: "events.update", level: "allow" },
+      { key: "events.delete", level: "ask" },
+      { key: "events.delete.series", level: "deny", when: "the event repeats" },
+    ])
+    const shown = answerOf((await gcal(["api", "show", "calendar.events.patch", "--json"])).out).item
+    expect(shown.permission).toBe("api.calendar.events.patch")
+    expect(shown.also_checks).toEqual([
+      "events.update",
+      { key: "events.delete", when: "the body sets status cancelled" },
+    ])
+    const listed = answerOf((await gcal(["api", "show", "calendar.events.list", "--json"])).out).item
+    expect(listed.also_checks).toEqual(["events.list"])
+    expect(fake.fetch).not.toHaveBeenCalled()
+  })
+
+  it("asks before an import, as events import does", async () => {
+    const { gcal } = harness(WRITER)
+    const fake = google(() => json(SINGLE))
+    const words = called("calendar.events.import", { calendarId: "primary" }, { iCalUID: "uid@example.com" })
+    expect(failure((await gcal([...words, "--json"], fake)).err)).toMatchObject({
+      code: "confirmation_required",
+      details: { permission: "events.import" },
+    })
+    expect(fake.fetch).not.toHaveBeenCalled()
+  })
+
+  it("holds over MCP under mcp serve --permission", async () => {
+    const { env, keyring } = harness(WRITER)
+    const fake = google(() => json(SINGLE))
+    const { client } = await mcpClient({ env, keyring, fetch: fake.fetch }, [
+      ...["--permission", "events.delete=deny", "--permission", "events.list=deny"],
+    ])
+    try {
+      const tool = async (name: string, command: string, args: Record<string, unknown>) =>
+        (await client.callTool({ name, arguments: { command, arguments: args } })) as {
+          isError?: boolean
+          content: { text: string }[]
+        }
+      const deleted = await tool("gcal_write", "api calendar-events-delete", { calendar_id: "primary", event_id: "e1" })
+      expect(deleted.isError).toBe(true)
+      expect(JSON.parse(deleted.content[0]?.text ?? "").error.details).toEqual({ permission: "events.delete" })
+      const listed = await tool("gcal_read", "api calendar-events-list", { calendar_id: "primary" })
+      expect(listed.isError).toBe(true)
+      expect(JSON.parse(listed.content[0]?.text ?? "").error.details).toEqual({ permission: "events.list" })
+      expect(fake.fetch).not.toHaveBeenCalled()
     } finally {
       await client.close()
     }

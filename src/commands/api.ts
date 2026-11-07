@@ -41,6 +41,8 @@ import * as v from "valibot"
 import { jsonObject, operationOf, operations, schemas, validateRequest } from "../api-contract.js"
 import {
   cancels,
+  commandKeysOf,
+  describedKeysOf,
   EVENTS_DELETE_SERIES_KEY,
   EVENTS_NOTIFY_KEY,
   isSeries,
@@ -83,6 +85,28 @@ const permittedSettings = (command: Command, method: ApiMethod) => {
       { permission: key },
     )
   return settings
+}
+
+/** A read's command keys hold as the command's own: `deny` refuses, `ask` asks the owner at the terminal. */
+const checkRead = async (
+  command: Command,
+  settings: ReturnType<typeof configuration.resolveSettings>,
+  keys: string[],
+) => {
+  const levels = keys.map((key) => {
+    const { level, key: named } = levelFor(settings.permissions, key, permissions.defaults)
+    return { key, level, named: named ?? key }
+  })
+  const denied = levels.find(({ level }) => level === "deny")
+  if (denied)
+    throw new CliError(
+      "permission_error",
+      `profile ${settings.profile} denies ${denied.key} (permissions.${denied.named} is deny, from the ` +
+        `${settings.permissionSources[denied.named] ?? "default"})`,
+      { permission: denied.key },
+    )
+  const asked = levels.find(({ level }) => level === "ask")
+  if (asked) await terminalAsker(command)(asked.key, { chatId: null, kind: "read", key: asked.key })
 }
 
 const writeGuard = (
@@ -183,8 +207,10 @@ const callGoogle = async (
   // gcal's rule: the shared calendar keys hold on every path, so `api` cannot mail attendees or delete a series
   // that `events` would refuse.
   const sharingMail = method.mutates && notifiesSharing(name, params)
+  const commandKeys = commandKeysOf(name, body)
   const keys = [
     apiKey(name),
+    ...commandKeys,
     ...(method.mutates && notifies(name, params) ? [EVENTS_NOTIFY_KEY] : []),
     ...(sharingMail ? [SHARING_NOTIFY_KEY] : []),
   ]
@@ -218,7 +244,10 @@ const callGoogle = async (
       if (isSeries(event)) keys.push(EVENTS_DELETE_SERIES_KEY)
     }
     result = await guardedWrite(guarded(keys.slice(1)), request, act)
-  } else result = await act()
+  } else {
+    await checkRead(command, settings, commandKeys)
+    result = await act()
+  }
   // gcal's rule: a meeting's passcode never leaves Google through gcal, whichever method returned the event.
   const { value, untrusted } = safeAnswer(result, operationOf(name).response?.schema)
   const shown = value === null || typeof value !== "object" || Array.isArray(value) ? { data: value } : value
@@ -270,6 +299,8 @@ const showCommand = () =>
         outputFor(this),
         itemOf({
           operation,
+          permission: apiKey(method),
+          also_checks: describedKeysOf(method),
           request_schema: requestSchema(method),
           ...(EVENT_ANSWERS.has(operation.response?.schema ?? "") ? { answer: CONFERENCE_SECRETS_NOTE } : {}),
         }),
