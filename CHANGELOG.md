@@ -14,6 +14,12 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Fixed
 
+- **A write that Ctrl-C cut short ends as `outcome_unknown`, never `cancelled`.** Google may have carried it out,
+  and a caller told "cancelled" could make the change twice. This covers a stop while the request was out and a stop
+  while gcal read the answer. A read keeps `cancelled`.
+- **A Google call no longer keeps the finished command in memory for 30 seconds.** Its time limit was a timer that
+  ran to the end even after Google answered, as tg-cli found. `gcal mcp serve` and `gcal schedule`, which make many
+  calls in one process, grew with each call.
 - **`mcp serve --permission api.<method>=deny` now stops the event writes that call that method.** `events create`,
   `update`, `delete`, `respond`, `move` and `import` checked their `api.calendar.events.*` keys, and the shared
   calendar keys such as `events.notify`, at the profile's saved levels and ignored the levels the agent's server

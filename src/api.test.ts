@@ -537,6 +537,37 @@ describe("writes", () => {
       expect(isCliError(error) && error.details.retryable).toBe(false)
     }
   })
+
+  it("calls a write a cancel cut outcome_unknown, sent once, and a cut read cancelled", async () => {
+    const params = { calendarId: "primary", eventId: "evtfixture1" }
+    const codeOf = async (method: string, reply: (stop: AbortController) => Promise<Response>) => {
+      const stop = new AbortController()
+      let sent = 0
+      const api = googleApi({
+        fetch: async () => {
+          sent++
+          return reply(stop)
+        },
+        scopes: () => ["https://www.googleapis.com/auth/calendar"],
+        accessToken: async () => ACCESS,
+        signal: stop.signal,
+      })
+      const error = await api.call(method, params).catch((caught: unknown) => caught)
+      return { code: isCliError(error) && error.code, sent }
+    }
+    const cutInFlight = async (stop: AbortController) => {
+      stop.abort()
+      throw new DOMException("aborted", "AbortError")
+    }
+    const cutWhileReading = async (stop: AbortController) => {
+      const body = new ReadableStream({ pull: () => stop.abort() })
+      return new Response(body, { status: 200, headers: { "content-type": "application/json" } })
+    }
+
+    expect(await codeOf("calendar.events.delete", cutInFlight)).toEqual({ code: "outcome_unknown", sent: 1 })
+    expect(await codeOf("calendar.events.patch", cutWhileReading)).toEqual({ code: "outcome_unknown", sent: 1 })
+    expect(await codeOf("calendar.events.get", cutInFlight)).toEqual({ code: "cancelled", sent: 1 })
+  })
 })
 
 // Shapes from the Calendar API reference (Event.conferenceData, ConferenceData.entryPoints[]); every value is made up.
