@@ -28,7 +28,8 @@ How the tests run, and what they never touch. The rules are the handbook's
 - `pnpm audit:commands` audits the command tree beside the latest published WireCat CLIs.
 - `bin/gcal-write-check <profile> <calendar-id>` is the owner's live check of the event writes against real Google: a
   create, an update and a delete on a test calendar, printing only ids and status. It refuses the account's primary
-  calendar. It is in the repository, not in the npm package.
+  calendar. A pass appends the release's line to `docs/dev/live-checks.txt`, which `bin/release` requires
+  (WC-REL-17); commit it in the release pull request. It is in the repository, not in the npm package.
 
 ## The bundle a user installs
 
