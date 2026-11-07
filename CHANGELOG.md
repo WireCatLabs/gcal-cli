@@ -6,6 +6,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Added
 
+- **`schedule command` and `schedule agent` take `--notify-on always|failures|never` and `--deliver-to <route>`**,
+  and `schedule agent` takes `--model` and `--max-cost-per-day`. `schedule list` shows each schedule's `notify` and
+  `deliver_to`. From cli-core 0.600.0 (was 0.566.0) and cli-base 0.80.8 (was 0.77.1).
 - **`session start --client-id <id>` and the `google_client_id` setting choose your own Google app**:
   `--client-file` or `--client-id`, then `GCAL_GOOGLE_CLIENT_ID`, then the profile's or the defaults'
   `google_client_id`, then WireCat's app. The secret comes from `GCAL_GOOGLE_CLIENT_SECRET`, never the settings file,

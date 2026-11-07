@@ -135,7 +135,9 @@ describe("gcal schedule", () => {
     const { gcal, env, file } = harness("linux")
     await gcal("personal", "schedule", "command", "reminders", "--every", "5m", "--", ...REMIND)
     const listed = JSON.parse((await gcal("personal", "schedule", "list", "--json")).out)
-    expect(listed.items).toEqual([{ name: "reminders", kind: "command", when: "every 5m", last: null }])
+    expect(listed.items).toEqual([
+      { name: "reminders", kind: "command", when: "every 5m", notify: "always", last: null },
+    ])
     const removed = await gcal("personal", "schedule", "remove", "reminders", "--json")
     expect(removed.code, removed.err).toBe(0)
     expect(existsSync(file)).toBe(false)
