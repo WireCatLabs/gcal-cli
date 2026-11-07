@@ -2,7 +2,7 @@ import { CALENDAR_WRITE_DEFAULTS, CALENDAR_WRITE_KEYS, type CalendarWrite } from
 import { type Configuration, commandPathKey, commandPermissions, settingsFor } from "@wirecat/cli-core/cli"
 import type { Level } from "@wirecat/cli-core/sends"
 import * as v from "valibot"
-import { SHARING_NOTIFY_KEY } from "./api-keys.js"
+import { describedKeysOf, SHARING_NOTIFY_KEY } from "./api-keys.js"
 import { operations } from "./generated/manifest.js"
 import { IDENTITY } from "./identity.js"
 
@@ -61,7 +61,9 @@ export const permissions = commandPermissions({
   // A preview shows the api.* keys the write checks too; `create --text` checks quickAdd's, which a path cannot tell.
   alsoChecks: (path) => {
     const write = WRITE_COMMANDS[path.join(" ")]
-    return write ? writeKeys(write) : []
+    if (write) return writeKeys(write)
+    const operation = path[0] === "api" ? operations.find((one) => one.command === path[1]) : undefined
+    return operation ? describedKeysOf(operation.id) : []
   },
   extra: [...operations.map((operation) => apiKey(operation.id)), ...CALENDAR_WRITE_KEYS, SHARING_NOTIFY_KEY],
   defaults: {

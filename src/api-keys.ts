@@ -47,3 +47,34 @@ export const isSeries = (event: unknown): boolean => {
   if (typeof event !== "object" || event === null || !("recurrence" in event)) return false
   return Array.isArray(event.recurrence) && event.recurrence.length > 0
 }
+
+/** The events command each method does the work of, reads too, so `api` cannot get round `events.delete: deny`. */
+const COMMAND_KEYS: Record<string, string> = {
+  "calendar.events.list": "events.list",
+  "calendar.events.instances": "events.list",
+  "calendar.events.get": "events.show",
+  "calendar.events.insert": "events.create",
+  "calendar.events.quickAdd": "events.create",
+  "calendar.events.import": "events.import",
+  "calendar.events.patch": "events.update",
+  "calendar.events.update": "events.update",
+  "calendar.events.delete": "events.delete",
+  "calendar.events.move": "events.move",
+}
+
+const CANCELLED = "the body sets status cancelled"
+
+/** The command keys a call checks besides its own; a body that cancels the event is a delete. */
+export const commandKeysOf = (method: string, body?: Record<string, unknown>): string[] => {
+  const key = COMMAND_KEYS[method]
+  if (!key) return []
+  return key !== "events.delete" && cancels(method, body) ? [key, "events.delete"] : [key]
+}
+
+/** What `api show` names: the keys every call checks, and the delete a cancelling body adds. */
+export const describedKeysOf = (method: string): (string | { key: string; when: string })[] => {
+  const keys: (string | { key: string; when: string })[] = commandKeysOf(method)
+  return cancels(method, { status: "cancelled" }) && method !== "calendar.events.delete"
+    ? [...keys, { key: "events.delete", when: CANCELLED }]
+    : keys
+}

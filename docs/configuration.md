@@ -74,7 +74,11 @@ for `update` (a switch between timed and all-day sends the whole event), `api.ca
 `api.calendar.events.delete` holds for the `api` commands only: `events delete` asks under its own key. One question
 covers every key of one write.
 
-The `api` commands answer to the same keys. A method that has Google mail the attendees (`--send-updates` other than
+The `api` commands answer to the same keys. An events method also needs the key of the `events` command that does
+the same work, reads too: `events.list` for `calendar.events.list` and `instances`, `events.show` for `get`,
+`events.create` for `insert` and `quickAdd`, `events.import` for `import` (so it asks, as `events import` does),
+`events.update` for `patch` and `update`, `events.delete` for `delete` and for a patch to `cancelled`, `events.move`
+for `move`. `gcal api show <method>` lists them under `also_checks`. A method that has Google mail the attendees (`--send-updates` other than
 `none`, or `--send-notifications true`) also needs `events.notify`. Deleting an event, or patching it to `cancelled`,
 also needs `events.delete.series` when the event repeats: `gcal` reads the event from Google first to find out.
 Sharing a calendar (`calendar.acl.insert`, `patch`, `update`) also needs `sharing.notify` unless the call passes
