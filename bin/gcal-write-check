@@ -97,4 +97,5 @@ echo "respond: n/a, an event with no attendees has no invitation to answer"
 
 run gcal "$profile" events delete "$event" --no-notify --yes --json || stop delete "$failed"
 echo "delete: $event, $(summary '`${a.item.removed} removed`' <<<"$answer")"
-echo "all steps passed"
+(cd "$root" && pnpm exec cli-dev live record --script bin/gcal-write-check)
+echo "all steps passed: commit docs/dev/live-checks.txt in the release pull request"
