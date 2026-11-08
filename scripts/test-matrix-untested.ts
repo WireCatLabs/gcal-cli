@@ -45,6 +45,28 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
     option: "--accept-terms",
     reason: "downloads a model from the network; cli-core's model-downloads tests drive the terms check",
   },
+  {
+    command: "models set",
+    reason:
+      "the shared model catalogue command from cli-core 0.609.0; cli-core's src/cli/model-catalogue-command.test.ts drives it offline",
+  },
+  {
+    command: "models add",
+    reason:
+      "the shared model catalogue command from cli-core 0.609.0; cli-core's src/cli/model-catalogue-command.test.ts drives it offline",
+  },
+  {
+    command: "models add",
+    option: "--payload",
+    reason:
+      "the shared model catalogue command from cli-core 0.609.0; cli-core's src/cli/model-catalogue-command.test.ts drives it offline",
+  },
+  {
+    command: "models add",
+    option: "--offline",
+    reason:
+      "the shared model catalogue command from cli-core 0.609.0; cli-core's src/cli/model-catalogue-command.test.ts drives it offline",
+  },
   ...[undefined, "--allow-writes", "--permission"].map((option) => ({
     command: "mcp add",
     ...(option ? { option } : {}),

@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**225 ✅ · 350 ⛔ · 0 ❌** — 98 commands, 477 options.
+**225 ✅ · 354 ⛔ · 0 ❌** — 100 commands, 479 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -494,6 +494,10 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `models download` |  | ✅ |  |
 | `models download` | `--offline` | ✅ |  |
 | `models download` | `--accept-terms` | ⛔ | downloads a model from the network; cli-core's model-downloads tests drive the terms check |
+| `models set` |  | ⛔ | the shared model catalogue command from cli-core 0.609.0; cli-core's src/cli/model-catalogue-command.test.ts drives it offline |
+| `models add` |  | ⛔ | the shared model catalogue command from cli-core 0.609.0; cli-core's src/cli/model-catalogue-command.test.ts drives it offline |
+| `models add` | `--payload` | ⛔ | the shared model catalogue command from cli-core 0.609.0; cli-core's src/cli/model-catalogue-command.test.ts drives it offline |
+| `models add` | `--offline` | ⛔ | the shared model catalogue command from cli-core 0.609.0; cli-core's src/cli/model-catalogue-command.test.ts drives it offline |
 | `guide` |  | ✅ |  |
 | `skill show` |  | ✅ |  |
 | `skill show` | `--for` | ✅ |  |
