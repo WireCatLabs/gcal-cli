@@ -62,6 +62,8 @@
   "doctor": "read",
   "models list": "read",
   "models download": "write",
+  "models set": "write",
+  "models add": "write",
   "guide": "read",
   "skill show": "read",
   "skill install": "write",
