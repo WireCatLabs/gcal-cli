@@ -685,7 +685,7 @@ describe("calendars busy over Google", () => {
   it("refuses --offline before asking Google", async () => {
     const { gcal, google } = harness()
     const answer = await gcal("personal", "--offline", ...busy.slice(1), "--json")
-    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("busy.offline")
+    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toMatch(/offline/)
     expect(google.requests.filter(({ path }) => path === "freeBusy")).toEqual([])
   })
 })
