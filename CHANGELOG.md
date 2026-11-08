@@ -13,6 +13,23 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **`gcal models set` and `gcal models add`** from cli-core 0.609.0: choose the local embedding model every WireCat
   CLI uses, and add one of your own from Hugging Face. A question with a time in it (`HH:MM`, `10:30`) is searched by
   its words again.
+- **gcal ships `contracts/wirecat.json`, which says which hosts it talks to.** WireCat Desktop reads it to show you,
+  before you install, what gcal touches: `accounts.google.com`, `oauth2.googleapis.com`,
+  `openidconnect.googleapis.com` and `www.googleapis.com`, plus the calendar feed (ICS) addresses you add.
+
+### Changed — may break callers
+
+- **gcal now writes the shared store at version 59, and an older WireCat CLI refuses it until it is upgraded.** Run
+  `<cli> upgrade` for each WireCat CLI on the same store. From cli-core 0.615.0, whose message templates live in the
+  store.
+
+### Security
+
+- **gcal's requests to Google reach only the hosts it declares.** Sign-in, token refresh, the account check and every
+  Calendar API call go through cli-base's `hostFetch`. It refuses any other host before a byte is sent, checks each
+  redirect, drops the `Authorization` header on a redirect to another site, and gives up after 30 seconds. Calendar
+  feeds (ICS) are still read by cli-core, from whatever address you added. From cli-base 0.87.0 (was 0.80.8)
+  and cli-core 0.615.0 (was 0.614.0).
 
 ## 0.22.0 — 08.11.2026
 

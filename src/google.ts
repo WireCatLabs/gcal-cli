@@ -1,5 +1,6 @@
 import { join } from "node:path"
 import { CliError, Credentials, isMovedRun, type KeyringStore, resolvePaths, systemKeyring } from "@wirecat/cli-base"
+import { type FetchLike, hostFetch } from "@wirecat/cli-base/http"
 import { type EventSink, providerRequest } from "@wirecat/cli-core/cli"
 import { googleApp } from "@wirecat/cli-core/constants"
 import {
@@ -14,7 +15,10 @@ import {
   tokenKeeper,
 } from "@wirecat/cli-core/oauth"
 import * as v from "valibot"
-import { IDENTITY } from "./identity.js"
+import { DESKTOP, IDENTITY } from "./identity.js"
+
+// Made per call: hostFetch takes the global fetch when it is made, and a test that stubs fetch stubs it later.
+export const googleFetch: FetchLike = (input, init) => hostFetch({ hosts: DESKTOP.hosts })(input, init)
 
 export const CALENDAR_READ_SCOPE = "https://www.googleapis.com/auth/calendar.readonly"
 export const SIGN_IN_SCOPES = ["openid", "email", CALENDAR_READ_SCOPE] as const
@@ -143,7 +147,7 @@ export const sessionKeeper = (options: KeeperOptions): TokenKeeper =>
     provider: googleProvider(options.client),
     storage: sessionStorage(options.env, options.profile, options.keyring, options.storage),
     lockDir: paths(options.env).config,
-    fetch: options.fetch ?? globalThis.fetch,
+    fetch: options.fetch ?? googleFetch,
     signInCommand: options.signInCommand,
     ...(options.signal ? { signal: options.signal } : {}),
   })

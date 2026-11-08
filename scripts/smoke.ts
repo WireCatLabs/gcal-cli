@@ -12,7 +12,16 @@ const isPackage = (value: unknown): value is { name: string; version: string } =
   isRecord(value) && typeof value.name === "string" && typeof value.version === "string"
 
 // A fixed list, not package.json's own `files`: a path added there by mistake must fail here.
-const PACKED = ["dist/", "scenarios/", "skills/", "package.json", "README.md", "CHANGELOG.md", "LICENSE"]
+const PACKED = [
+  "dist/",
+  "scenarios/",
+  "skills/",
+  "contracts/wirecat.json",
+  "package.json",
+  "README.md",
+  "CHANGELOG.md",
+  "LICENSE",
+]
 
 const root = resolve(import.meta.dirname, "..")
 const pkg: unknown = JSON.parse(readFileSync(join(root, "package.json"), "utf8"))
