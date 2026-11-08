@@ -1,3 +1,4 @@
 # version commit date script tree — one line per passed live check
 0.21.0 6dfe0deb47b4a388b8eceb009da0a985914351f8 2026-11-07 bin/gcal-write-check 0afe68188df64c1aefd4227d6c8756ccd2b600c3d8cc33d746f8fdaa4b479072
 0.22.0 6941617ef7062ed51c08bce29a6896cf885db34c 2026-11-08 bin/gcal-write-check 14a9ebcc84667eaa3b7bebc2728bb79586de3211049e94733e419d1d42e12434
+0.23.0 e96fe78647b3e7f87bd865bcee4048add6558984 2026-11-08 bin/gcal-write-check 29d2385269ea01ddecf7406327ff55cbbf99b9df471c378299fbef6d0d0e40f1
