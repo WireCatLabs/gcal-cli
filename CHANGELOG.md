@@ -2,6 +2,14 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Fixed
+
+- **The 0.21.0 notes said the guides warn of an "unverified app" page and a limit of 100 users for WireCat's
+  Google app.** They do not: the guides say Google may refuse a sign-in through WireCat's app, and that your own app
+  always wins and is the way out. The unverified page and the 100-user limit are described for your own app only.
+
 ## 0.21.0 — 07.11.2026
 
 ### Added
@@ -44,9 +52,9 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
   `oauth.missing`, not `profile.not-signed-in`, and Google's Calendar usage limit is `provider.usage-limit`, not
   `google.usage-limit`. 0.20.0 already answered these names. Only its notes were wrong.
 - **The guides say every package carries WireCat's Google app.** Installation, troubleshooting, the roadmap and
-  `session start --help` said releases might not carry it. They now say it does, and that your own app always wins
-  and is the way out when Google refuses a sign-in through WireCat's. The "unverified app" page and the limit of 100
-  users are described for your own app only.
+  `session start --help` said releases might not carry it. They now say Google has not verified it yet: Google may
+  show an "unverified app" page, and the app allows 100 users in total, shared with drive. Your own app always wins
+  and is the way out when that limit is reached.
 
 ## 0.20.0 — 05.11.2026
 
