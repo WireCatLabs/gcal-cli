@@ -2,10 +2,25 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
-## Unreleased
+## 0.22.0 — 08.11.2026
+
+### Changed — may break callers
+
+- **gcal now writes the shared store at version 57, and an older WireCat CLI refuses it until it is upgraded.**
+  Run `<cli> upgrade` for each WireCat CLI on the same store. The other way round matters more: a memo already on
+  the new store version stopped this gcal from opening it, and this release reads it again. From cli-core 0.608.0
+  (was 0.600.0).
+- **`upgrade --offline` and `calendars busy --offline` answer `permission_error` with reason `offline.refused`
+  (exit code 5)**, as gcal's own commands that need Google already did. They answered `validation_error` (exit
+  code 2) and `busy.offline` before.
+- **`events prepare` reads only accounts of the asked account's scope**: a work account no longer brings in a
+  linked person's mail or messages from personal accounts, and the other way round.
+- **Search treats a `?` at the end of a word as a question mark and a `word:` that is no search field as words.**
+  `budget?` finds "budget", and `meeting at 10:30` finds what holds it instead of an empty answer.
 
 ### Fixed
 
+- **`ё` and `е` match in names**, so a person or calendar typed with `е` finds the one written with `ё`.
 - **The 0.21.0 notes said the guides warn of an "unverified app" page and a limit of 100 users for WireCat's
   Google app.** They do not: the guides say Google may refuse a sign-in through WireCat's app, and that your own app
   always wins and is the way out. The unverified page and the 100-user limit are described for your own app only.
