@@ -6,6 +6,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
 ### Added
 
+- **`gcal <profile> account remove --keep-data|--delete-data`** removes a profile from this computer: it revokes the
+  Google sign-in at Google, deletes the saved sign-in and the saved calendar feeds, forgets the profile and its sync
+  checkpoints and, with `--delete-data`, deletes the account's calendars and events from the store. `--keep-data`
+  leaves them searchable. Other profiles stay as they are, and a running `events remind` stops the removal.
 - **`gcal models set` and `gcal models add`** from cli-core 0.609.0: choose the local embedding model every WireCat
   CLI uses, and add one of your own from Hugging Face. A question with a time in it (`HH:MM`, `10:30`) is searched by
   its words again.
