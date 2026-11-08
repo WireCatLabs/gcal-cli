@@ -1,0 +1,1485 @@
+{
+  "wcat_manifest": 2,
+  "name": "gcal",
+  "description": "Google Calendar for the terminal, scripts and AI agents: sync, search and change events",
+  "docs_url": "https://github.com/WireCatLabs/gcal-cli#readme",
+  "package": "@wirecat/gcal-cli",
+  "bin": "wcat-gcal",
+  "commands": [
+    {
+      "path": [
+        "commands"
+      ],
+      "summary": "every command by section; --json prints its contract, one path per call",
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    },
+    {
+      "path": [
+        "commands",
+        "info"
+      ],
+      "summary": "one command contract, or all schemas, error reasons and explicit overrides",
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    },
+    {
+      "path": [
+        "session",
+        "start"
+      ],
+      "summary": "sign in to Google in the browser; read-only unless you pass --grant write",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "session",
+        "status"
+      ],
+      "summary": "show this profile's saved Google sign-in; tokens are never printed",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "session",
+        "end"
+      ],
+      "summary": "sign this profile out of Google on this computer; stored calendar data stays",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "session",
+        "list"
+      ],
+      "summary": "list the profiles here and whether each is signed in",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "account",
+        "remove"
+      ],
+      "summary": "sign this profile out and forget it, keeping or deleting its data",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "account.remove",
+      "entity": "account_removal"
+    },
+    {
+      "path": [
+        "calendars",
+        "list"
+      ],
+      "summary": "list the account's calendars from the provider, and which of them sync",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "calendars.list",
+      "entity": "calendar"
+    },
+    {
+      "path": [
+        "calendars",
+        "sync"
+      ],
+      "summary": "sync this calendar from now on",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "calendars.sync",
+      "entity": "calendar"
+    },
+    {
+      "path": [
+        "calendars",
+        "unsync"
+      ],
+      "summary": "stop syncing this calendar; what is stored stays",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "calendars.unsync",
+      "entity": "calendar"
+    },
+    {
+      "path": [
+        "calendars",
+        "add"
+      ],
+      "summary": "follow an iCalendar feed as a read-only calendar",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "calendars.add",
+      "entity": "calendar_feed"
+    },
+    {
+      "path": [
+        "calendars",
+        "remove"
+      ],
+      "summary": "stop following a feed calendars add added: its address is forgotten and its…",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "calendars.remove",
+      "entity": "calendar_feed_removal"
+    },
+    {
+      "path": [
+        "calendars",
+        "busy"
+      ],
+      "summary": "when calendars and people are taken, asked of the provider and not stored;…",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "calendars.busy",
+      "entity": "calendar_busy"
+    },
+    {
+      "path": [
+        "sync"
+      ],
+      "summary": "bring the synced calendars up to date: what changed since the last sync, or…",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "sync",
+      "entity": "calendar_sync"
+    },
+    {
+      "path": [
+        "store",
+        "status"
+      ],
+      "summary": "how far each synced calendar's sync is: entries done, partial or complete,…",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "store.status",
+      "entity": "calendar_sync_progress"
+    },
+    {
+      "path": [
+        "events",
+        "list"
+      ],
+      "summary": "list stored events, earliest first; --source reads several accounts as one list",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "events.list",
+      "entity": "event"
+    },
+    {
+      "path": [
+        "events",
+        "export"
+      ],
+      "summary": "write stored events as iCalendar (.ics), at most 1000: one with id:<id>, or…",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "events.export",
+      "entity": "calendar_export"
+    },
+    {
+      "path": [
+        "events",
+        "show"
+      ],
+      "summary": "one event: its calendar copies, attendees with their person, Drive files and…",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "events.show",
+      "entity": "calendar_event"
+    },
+    {
+      "path": [
+        "events",
+        "prepare"
+      ],
+      "summary": "what the store holds for one meeting and the people in it",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "events.prepare",
+      "entity": "calendar_event_preparation"
+    },
+    {
+      "path": [
+        "events",
+        "remind"
+      ],
+      "summary": "tell once about each event that starts soon, for a timer to run",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "events.remind",
+      "entity": "calendar_reminder"
+    },
+    {
+      "path": [
+        "events",
+        "create"
+      ],
+      "summary": "add an event to a calendar; with --repeat, one that repeats; with --text,…",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "events.create",
+      "entity": "calendar_event_write"
+    },
+    {
+      "path": [
+        "events",
+        "update"
+      ],
+      "summary": "change an event; with --series every occurrence of the repeating event, with…",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "events.update",
+      "entity": "calendar_event_write"
+    },
+    {
+      "path": [
+        "events",
+        "delete"
+      ],
+      "summary": "delete an event; a whole repeating event, or every later occurrence, needs…",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "events.delete",
+      "entity": "calendar_event_write"
+    },
+    {
+      "path": [
+        "events",
+        "import"
+      ],
+      "summary": "add the events of an iCalendar (.ics) file to a calendar, at most 500, each…",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "events.import",
+      "entity": "calendar_import"
+    },
+    {
+      "path": [
+        "events",
+        "move"
+      ],
+      "summary": "move an event, with its id, to another calendar of the account; a repeating…",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "events.move",
+      "entity": "calendar_event_write"
+    },
+    {
+      "path": [
+        "events",
+        "respond"
+      ],
+      "summary": "answer an invitation; the organiser is told only with --notify",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "events.respond",
+      "entity": "calendar_event_write"
+    },
+    {
+      "path": [
+        "search",
+        "all"
+      ],
+      "summary": "search stored messages, notes, calendar events and selected meeting transcripts",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "search.all",
+      "entity": "hit"
+    },
+    {
+      "path": [
+        "search",
+        "events"
+      ],
+      "summary": "find stored events by words, and by meaning when its model is downloaded;…",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "search.events",
+      "entity": "calendar_search_hit"
+    },
+    {
+      "path": [
+        "people",
+        "list"
+      ],
+      "summary": "one event's attendees, or everyone attending this week's events",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "people.list",
+      "entity": "calendar_attendee"
+    },
+    {
+      "path": [
+        "people",
+        "link"
+      ],
+      "summary": "join an attendee to a person the owner knows elsewhere",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "people.link",
+      "entity": "calendar_linked_person"
+    },
+    {
+      "path": [
+        "links",
+        "review"
+      ],
+      "summary": "copies that fit two or more events equally well, waiting for the owner's choice",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "links.review",
+      "entity": "calendar_link_review"
+    },
+    {
+      "path": [
+        "links",
+        "resolve"
+      ],
+      "summary": "join a copy to the event you choose, or keep it apart",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "links.resolve",
+      "entity": "calendar_link_resolution"
+    },
+    {
+      "path": [
+        "api",
+        "list"
+      ],
+      "summary": "list the Google Calendar API methods gcal can call",
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      },
+      "entity": "api_method"
+    },
+    {
+      "path": [
+        "api",
+        "show"
+      ],
+      "summary": "show one method's request schema and contract, without calling Google",
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    },
+    {
+      "path": [
+        "api",
+        "call"
+      ],
+      "summary": "call one Google Calendar API method by name with JSON parameters",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "api",
+        "calendar-acl-delete"
+      ],
+      "summary": "Deletes an access control rule. — destructive (DELETE…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.acl.delete"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-acl-get"
+      ],
+      "summary": "Returns an access control rule. — read (GET calendars/{calendarId}/acl/{ruleId})",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.acl.get"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-acl-insert"
+      ],
+      "summary": "Creates an access control rule. — write (POST calendars/{calendarId}/acl)",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.acl.insert"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-acl-list"
+      ],
+      "summary": "Returns the rules in the access control list for the calendar. — read (GET…",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.acl.list"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-acl-patch"
+      ],
+      "summary": "Updates an access control rule. This method supports patch semantics. —…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.acl.patch"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-acl-update"
+      ],
+      "summary": "Updates an access control rule. — write (PUT…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.acl.update"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendar-list-delete"
+      ],
+      "summary": "Removes a calendar from the user's calendar list. — destructive (DELETE…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendarList.delete"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendar-list-get"
+      ],
+      "summary": "Returns a calendar from the user's calendar list. — read (GET…",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendarList.get"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendar-list-insert"
+      ],
+      "summary": "Inserts an existing calendar into the user's calendar list. — write (POST…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendarList.insert"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendar-list-list"
+      ],
+      "summary": "Returns the calendars on the user's calendar list. — read (GET…",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendarList.list"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendar-list-patch"
+      ],
+      "summary": "Updates an existing calendar on the user's calendar list. This method…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendarList.patch"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendar-list-update"
+      ],
+      "summary": "Updates an existing calendar on the user's calendar list. — write (PUT…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendarList.update"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendars-clear"
+      ],
+      "summary": "Clears a primary calendar. This operation deletes all events associated with…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendars.clear"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendars-delete"
+      ],
+      "summary": "Deletes a secondary calendar. Use calendars.clear for clearing all events on…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendars.delete"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendars-get"
+      ],
+      "summary": "Returns metadata for a calendar. — read (GET calendars/{calendarId})",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendars.get"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendars-insert"
+      ],
+      "summary": "Creates a secondary calendar. — write (POST calendars)",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendars.insert"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendars-patch"
+      ],
+      "summary": "Updates metadata for a calendar. This method supports patch semantics. —…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendars.patch"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendars-transfer-ownership"
+      ],
+      "summary": "Transfers a secondary calendar between users within a Google Workspace…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendars.transferOwnership"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-calendars-update"
+      ],
+      "summary": "Updates metadata for a calendar. — write (PUT calendars/{calendarId})",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.calendars.update"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-colors-get"
+      ],
+      "summary": "Returns the color definitions for calendars and events. — read (GET colors)",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.colors.get"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-events-delete"
+      ],
+      "summary": "Deletes an event. — destructive (DELETE calendars/{calendarId}/events/{eventId})",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.events.delete"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-events-get"
+      ],
+      "summary": "Returns an event based on its Google Calendar ID. To retrieve an event using…",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.events.get"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-events-import"
+      ],
+      "summary": "Imports an event. This operation is used to add a private copy of an…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.events.import"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-events-insert"
+      ],
+      "summary": "Creates an event. — write (POST calendars/{calendarId}/events)",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.events.insert"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-events-instances"
+      ],
+      "summary": "Returns instances of the specified recurring event. — read (GET…",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.events.instances"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-events-list"
+      ],
+      "summary": "Returns events on the specified calendar. — read (GET…",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.events.list"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-events-move"
+      ],
+      "summary": "Moves an event to another calendar, i.e. changes an event's organizer. Note…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.events.move"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-events-patch"
+      ],
+      "summary": "Updates an event. This method supports patch semantics. — write (PATCH…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.events.patch"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-events-quick-add"
+      ],
+      "summary": "Creates an event based on a simple text string. — write (POST…",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.events.quickAdd"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-events-update"
+      ],
+      "summary": "Updates an event. — write (PUT calendars/{calendarId}/events/{eventId})",
+      "effects": {
+        "remote": "write",
+        "local": "none"
+      },
+      "permission": "api.calendar.events.update"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-freebusy-query"
+      ],
+      "summary": "Returns free/busy information for a set of calendars. — read (POST freeBusy)",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.freebusy.query"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-settings-get"
+      ],
+      "summary": "Returns a single user setting. — read (GET users/me/settings/{setting})",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.settings.get"
+    },
+    {
+      "path": [
+        "api",
+        "calendar-settings-list"
+      ],
+      "summary": "Returns all user settings for the authenticated user. — read (GET…",
+      "effects": {
+        "remote": "read",
+        "local": "none"
+      },
+      "permission": "api.calendar.settings.list"
+    },
+    {
+      "path": [
+        "doctor"
+      ],
+      "summary": "the state this installation is in, without connecting unless --online",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "models",
+        "list"
+      ],
+      "summary": "speech and embedding models, their download status and the default of each kind",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "models.list",
+      "entity": "model"
+    },
+    {
+      "path": [
+        "models",
+        "download"
+      ],
+      "summary": "download and verify one speech or embedding model",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "models.download",
+      "entity": "model"
+    },
+    {
+      "path": [
+        "models",
+        "set"
+      ],
+      "summary": "use this text model for every embed and search by meaning, in every CLI",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "models.set",
+      "entity": "model"
+    },
+    {
+      "path": [
+        "models",
+        "add"
+      ],
+      "summary": "add an ONNX embedding model from Hugging Face, pinned and checked by sha256",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "models.add",
+      "entity": "model"
+    },
+    {
+      "path": [
+        "guide"
+      ],
+      "summary": "scenarios: the commands for a common task, in order, and why each",
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    },
+    {
+      "path": [
+        "skill",
+        "show"
+      ],
+      "summary": "print the tool's instructions for AI agents",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "skill",
+        "install"
+      ],
+      "summary": "install the tool's instructions for AI agents",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "skill",
+        "status"
+      ],
+      "summary": "whether the installed instructions for AI agents match this version",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "serve"
+      ],
+      "summary": "serve this profile's commands to an AI agent",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "revoke"
+      ],
+      "summary": "forget every login given to a browser app",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "server",
+        "start"
+      ],
+      "summary": "start the HTTP MCP server in the background",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "server",
+        "stop"
+      ],
+      "summary": "stop the background HTTP MCP server",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "server",
+        "status"
+      ],
+      "summary": "whether the HTTP MCP server runs, its login code and the apps logged in",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "config"
+      ],
+      "summary": "print the local MCP configuration of this profile, or of those --profiles names",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "add"
+      ],
+      "summary": "add this profile's local MCP server to Codex or Claude Code",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "check"
+      ],
+      "summary": "check this profile's local MCP handshake and tool list",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "upgrade"
+      ],
+      "summary": "upgrade gcal with the package manager that installed it; --check only looks",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "config",
+        "show"
+      ],
+      "summary": "the profile, the profiles that exist, and each setting with where it came from",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "config",
+        "set"
+      ],
+      "summary": "save a setting to the configuration file",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "config",
+        "unset"
+      ],
+      "summary": "remove a setting from the configuration file",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "config",
+        "migrate"
+      ],
+      "summary": "write each setting the file lacks at its default, keeping yours",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "config",
+        "repair"
+      ],
+      "summary": "fix the settings file's JSON syntax, keeping every value",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "runs",
+        "list"
+      ],
+      "summary": "recorded runs, newest first",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "entity": "run"
+    },
+    {
+      "path": [
+        "runs",
+        "show"
+      ],
+      "summary": "one run: what it was, how it ended, and every event it logged",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "entity": "run"
+    },
+    {
+      "path": [
+        "runs",
+        "path"
+      ],
+      "summary": "the directory holding one run",
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      },
+      "entity": "run_location"
+    },
+    {
+      "path": [
+        "schedule",
+        "command"
+      ],
+      "summary": "run gcal <args…> on a timer — reads save what they read, so this is how a…",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "schedule.command"
+    },
+    {
+      "path": [
+        "schedule",
+        "agent"
+      ],
+      "summary": "start an agent (claude or codex) with a prompt on a timer; it runs with…",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "schedule.agent"
+    },
+    {
+      "path": [
+        "schedule",
+        "list"
+      ],
+      "summary": "the schedules, when they run and how their last run went",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "schedule.list",
+      "entity": "scheduled_job"
+    },
+    {
+      "path": [
+        "schedule",
+        "run"
+      ],
+      "summary": "run a schedule now, as its timer would, and wait for it",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "schedule.run"
+    },
+    {
+      "path": [
+        "schedule",
+        "remove"
+      ],
+      "summary": "stop a schedule and remove its timer; its past output stays",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "schedule.remove"
+    },
+    {
+      "path": [
+        "schedule",
+        "exec"
+      ],
+      "summary": "what a timer runs, given the schedule's file; to run one by hand, use run",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "schedule.exec"
+    }
+  ],
+  "entities": {
+    "calendar": {
+      "fields": [
+        "id",
+        "external_id",
+        "title",
+        "timezone",
+        "access_role",
+        "primary",
+        "synced",
+        "seen_at"
+      ]
+    },
+    "calendar_busy": {
+      "fields": [
+        "starts_at",
+        "ends_at",
+        "timezone",
+        "unknown"
+      ]
+    },
+    "event": {
+      "fields": [
+        "id",
+        "event_series_id",
+        "title",
+        "description",
+        "location",
+        "starts_at",
+        "ends_at",
+        "timezone",
+        "origin",
+        "status",
+        "all_day",
+        "source_deleted_at",
+        "deleted_at",
+        "created_at",
+        "updated_at",
+        "untrusted",
+        "change",
+        "changed_at",
+        "overlapping",
+        "overlaps"
+      ]
+    },
+    "calendar_attendee": {
+      "fields": [
+        "email",
+        "name",
+        "response",
+        "organizer",
+        "optional",
+        "resource",
+        "self",
+        "person",
+        "events",
+        "untrusted"
+      ]
+    },
+    "api_method": {
+      "fields": [
+        "service"
+      ]
+    },
+    "model": {
+      "fields": [
+        "kind",
+        "id",
+        "downloaded"
+      ]
+    },
+    "run": {
+      "fields": [
+        "run_id",
+        "command",
+        "profile",
+        "started_at",
+        "completed_at",
+        "status",
+        "requests",
+        "duration_ms",
+        "cli_version",
+        "runtime",
+        "platform",
+        "arch",
+        "error_code",
+        "provider_error",
+        "kept_because_failed",
+        "operations",
+        "codes",
+        "trace_id",
+        "cli_command",
+        "argv",
+        "unknown_command",
+        "via",
+        "events_dropped",
+        "directory",
+        "event_count",
+        "events_truncated"
+      ]
+    },
+    "scheduled_job": {
+      "fields": [
+        "name",
+        "kind",
+        "when",
+        "notify",
+        "deliver_to",
+        "spent_today_usd",
+        "max_cost_usd",
+        "max_cost_per_day_usd"
+      ]
+    }
+  },
+  "network": {
+    "hosts": [
+      "accounts.google.com",
+      "oauth2.googleapis.com",
+      "openidconnect.googleapis.com",
+      "www.googleapis.com"
+    ],
+    "user_hosts": "the calendar feed (ICS) addresses you add"
+  },
+  "desktop": {
+    "tagline": "Google Calendar events, searchable on your computer",
+    "profiles": {
+      "args": [
+        "session",
+        "list",
+        "--no-record",
+        "--json"
+      ],
+      "shape": "items"
+    },
+    "doctor": [
+      "{profile}",
+      "doctor",
+      "--record",
+      "--json"
+    ],
+    "runs": {
+      "list": [
+        "runs",
+        "list",
+        "{query}",
+        "--limit",
+        "{limit}",
+        "--page",
+        "{page}",
+        "--no-record",
+        "--json"
+      ],
+      "show": [
+        "runs",
+        "show",
+        "{run}",
+        "--no-record",
+        "--json"
+      ]
+    },
+    "search": null,
+    "setup": [
+      "{profile}",
+      "session",
+      "start"
+    ],
+    "signIn": {
+      "gives": "Lets your agent read your Google calendars, and change events when you allow it.",
+      "asks": "Google asks you to sign in and allow read-only access to your calendars."
+    },
+    "skill": {
+      "status": [
+        "skill",
+        "status",
+        "--no-record",
+        "--json"
+      ],
+      "install": [
+        "skill",
+        "install",
+        "--for",
+        "{target}",
+        "--json"
+      ],
+      "show": [
+        "skill",
+        "show",
+        "--no-record",
+        "--json"
+      ]
+    },
+    "mcpServer": {
+      "start": [
+        "mcp",
+        "server",
+        "start",
+        "--port",
+        "{port}",
+        "--public-url",
+        "{url}",
+        "--profiles",
+        "all",
+        "--json"
+      ],
+      "stop": [
+        "mcp",
+        "server",
+        "stop",
+        "--profiles",
+        "all",
+        "--json"
+      ],
+      "status": [
+        "mcp",
+        "server",
+        "status",
+        "--profiles",
+        "all",
+        "--no-record",
+        "--json"
+      ],
+      "revoke": [
+        "mcp",
+        "revoke",
+        "--profiles",
+        "all",
+        "--json"
+      ],
+      "config": [
+        "mcp",
+        "config",
+        "--profiles",
+        "all",
+        "--no-record",
+        "--json"
+      ]
+    },
+    "tasks": null,
+    "sync": {
+      "run": [
+        "{profile}",
+        "sync",
+        "--record",
+        "--json"
+      ],
+      "last": [
+        "runs",
+        "list",
+        "command:sync",
+        "status:success",
+        "--limit",
+        "50",
+        "--no-record",
+        "--json"
+      ],
+      "lastShape": "runs",
+      "what": "calendars and their events",
+      "note": null
+    },
+    "storeInfo": null,
+    "storeTables": null,
+    "storeTableSizes": null,
+    "storeCheck": null,
+    "storeBackup": null,
+    "storeBackupEncrypted": null,
+    "storeResetPreview": null,
+    "storeReset": null,
+    "storage": {
+      "app": "gcal-cli",
+      "env": "GCAL"
+    },
+    "settings": null
+  }
+}

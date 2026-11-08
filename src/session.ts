@@ -7,6 +7,7 @@ import {
   CALENDAR_READ_SCOPE,
   type CredentialStorage,
   forgetKeyringCopy,
+  googleFetch,
   holdsSignIn,
   SIGN_IN_SCOPES,
   sessionKeeper,
@@ -78,12 +79,7 @@ export const signIn = async (options: SignInOptions) => {
       const missing = (options.grants ?? []).find((grant) => !tokens.scopes.includes(GRANT_SCOPES[grant]))
       if (missing) throw grantMissing(missing)
       if (!tokens.accessToken) throw new CliError("authentication_error", "Google returned no access token")
-      account = await accountEmail(
-        tokens.accessToken,
-        options.fetch ?? globalThis.fetch,
-        options.signal,
-        options.events,
-      )
+      account = await accountEmail(tokens.accessToken, options.fetch ?? googleFetch, options.signal, options.events)
       const previous = savedAccount(env, profile)
       if (previous && previous !== account)
         throw new CliError("authentication_error", "this profile belongs to another account; use a new profile", {
@@ -131,7 +127,7 @@ export const savedSession = (options: Common) => {
 export const apiAccess = (options: Common) => {
   const session = savedSession(options)
   return {
-    fetch: options.fetch ?? globalThis.fetch,
+    fetch: options.fetch ?? googleFetch,
     signal: options.signal,
     scopes: () => session?.saved.tokens.scopes,
     accessToken: async () => {
@@ -163,7 +159,7 @@ export const sessionStatus = async (options: Common & { check: boolean }) => {
   if (!tokens.scopes.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
   const live = await accountEmail(
     tokens.accessToken ?? "",
-    options.fetch ?? globalThis.fetch,
+    options.fetch ?? googleFetch,
     options.signal,
     options.events,
   )
