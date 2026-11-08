@@ -1941,7 +1941,7 @@ gcal config set <setting> <value> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, google_client_id, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, google_client_id, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types. |
 | `value` | required | a number, true or false; for a group tg:work,max:Alice,email:me@x. |
 
 | Option | What it does |
@@ -1964,7 +1964,7 @@ gcal config unset <setting> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, google_client_id, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, google_client_id, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types. |
 
 | Option | What it does |
 |---|---|
