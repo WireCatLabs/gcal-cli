@@ -600,7 +600,7 @@ gcal search all <query> [options]
 | `--exact` | bare words and quotes match their exact form only, as exact:word does. |
 | `--timezone <zone>` | the IANA timezone for calendar date boundaries. |
 
-**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 13 more; every field: gcal commands info search all
+**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 15 more; every field: gcal commands info search all
 
 **Example:** `gcal personal search all roadmap`, `gcal personal search all "quarterly review" --source telegram,gcal --json`
 
