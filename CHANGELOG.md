@@ -2,6 +2,14 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- **`gcal models set` and `gcal models add`** from cli-core 0.609.0: choose the local embedding model every WireCat
+  CLI uses, and add one of your own from Hugging Face. A question with a time in it (`HH:MM`, `10:30`) is searched by
+  its words again.
+
 ## 0.22.0 — 08.11.2026
 
 ### Changed — may break callers
