@@ -2,6 +2,14 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Fixed
+
+- **The 0.21.0 notes said the guides warn of an "unverified app" page and a limit of 100 users for WireCat's
+  Google app.** They do not: the guides say Google may refuse a sign-in through WireCat's app, and that your own app
+  always wins and is the way out. The unverified page and the 100-user limit are described for your own app only.
+
 ## 0.21.0 — 07.11.2026
 
 ### Added
