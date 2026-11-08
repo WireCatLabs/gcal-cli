@@ -121,6 +121,30 @@ gcal session list
 
 **Example:** `gcal session list`, `gcal session list --json`
 
+## `gcal account`
+
+remove this profile from this computer
+
+### `gcal account remove`
+
+sign the profile out, then forget it on this computer: its settings, its saved sign-in and its files; --keep-data leaves its messages in the store, where search still finds them, --delete-data deletes them; asks first, or --yes
+
+**Changes something in the service.**
+
+```sh
+gcal account remove [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--keep-data` | leave what the store holds of this account, still searchable. |
+| `--delete-data` | delete what the store and the tool's own files hold of this account. |
+| `--dry-run` | list what it would remove and keep, and change nothing. |
+
+**Returns:** account removal — profile, data, dry_run, account, revoked, config_file, removed, kept; every field: gcal commands info account remove
+
+**Example:** `gcal personal account remove --keep-data --dry-run`, `gcal personal account remove --delete-data --yes`
+
 ## `gcal calendars`
 
 the account's calendars
@@ -576,7 +600,7 @@ gcal search all <query> [options]
 | `--exact` | bare words and quotes match their exact form only, as exact:word does. |
 | `--timezone <zone>` | the IANA timezone for calendar date boundaries. |
 
-**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 13 more; every field: gcal commands info search all
+**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 15 more; every field: gcal commands info search all
 
 **Example:** `gcal personal search all roadmap`, `gcal personal search all "quarterly review" --source telegram,gcal --json`
 
