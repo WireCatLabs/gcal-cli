@@ -23,6 +23,15 @@ const SHARED_SCHEDULE =
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
+  ...[
+    { command: "schedule pause" },
+    { command: "schedule resume" },
+    { command: "schedule run", option: "--no-notify" },
+    { command: "schedule run", option: "--deliver-to" },
+  ].map((entry) => ({
+    ...entry,
+    reason: "cli-core src/cli/schedule/schedule.test.ts drives it through the shared schedule commands the CLI mounts",
+  })),
   {
     command: "people link",
     option: "--reason",

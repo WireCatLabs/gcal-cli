@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**228 ✅ · 355 ⛔ · 0 ❌** — 101 commands, 482 options.
+**228 ✅ · 359 ⛔ · 0 ❌** — 103 commands, 484 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -571,7 +571,11 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `schedule agent` | `--deliver-to` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule list` |  | ✅ |  |
 | `schedule run` |  | ✅ |  |
+| `schedule run` | `--no-notify` | ⛔ | cli-core src/cli/schedule/schedule.test.ts drives it through the shared schedule commands the CLI mounts |
+| `schedule run` | `--deliver-to` | ⛔ | cli-core src/cli/schedule/schedule.test.ts drives it through the shared schedule commands the CLI mounts |
 | `schedule remove` |  | ✅ |  |
+| `schedule pause` |  | ⛔ | cli-core src/cli/schedule/schedule.test.ts drives it through the shared schedule commands the CLI mounts |
+| `schedule resume` |  | ⛔ | cli-core src/cli/schedule/schedule.test.ts drives it through the shared schedule commands the CLI mounts |
 | `schedule exec` |  | ✅ |  |
 | `help` |  | ✅ |  |
 | *global* | `--version` | ⛔ | Commander answers before any command runs, so the trace never sees it; `pnpm version:check` checks it |
