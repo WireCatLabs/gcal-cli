@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**229 ✅ · 354 ⛔ · 0 ❌** — 101 commands, 482 options.
+**228 ✅ · 355 ⛔ · 0 ❌** — 101 commands, 482 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -104,7 +104,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `search all` |  | ✅ |  |
 | `search all` | `--only` | ✅ |  |
 | `search all` | `--source` | ✅ |  |
-| `search all` | `--max-meetings` | ✅ |  |
 | `search all` | `--limit` | ✅ |  |
 | `search all` | `--page` | ✅ |  |
 | `search all` | `--exact` | ✅ |  |
@@ -117,6 +116,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `search events` | `--backend` | ✅ |  |
 | `people list` |  | ✅ |  |
 | `people link` |  | ✅ |  |
+| `people link` | `--reason` | ⛔ | cli-core src/cli/messenger/messenger.test.ts: an agent's people link proposes the link and needs --reason |
 | `links review` |  | ✅ |  |
 | `links resolve` |  | ✅ |  |
 | `api list` |  | ✅ |  |
