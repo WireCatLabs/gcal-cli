@@ -580,7 +580,7 @@ find stored things by text: events, or all of messages, notes and events
 
 ### `gcal search all`
 
-search calendar events, messages from the other WireCat tools and notes in the local store, and a meeting account's transcripts when --source names one — best match first; not mail (the separate memo CLI searches it: memo search mail). Use it when you do not know where something was written; search events reads the calendar with all its fields
+search calendar events, messages from the other WireCat tools, notes and meeting transcripts, chat and summaries in the local store — best match first; not mail (the separate memo CLI searches it: memo search mail). Use it when you do not know where something was written; search events reads the calendar with all its fields
 
 ```sh
 gcal search all <query> [options]
@@ -592,15 +592,14 @@ gcal search all <query> [options]
 
 | Option | What it does |
 |---|---|
-| `--only <resources>` | only these resources, separated by commas: messages, notes, events; meetings when --source names a meeting account. |
-| `--source <accounts>` | only these accounts, separated by commas: provider:account as a hit shows it, a provider, a kind or group:<name>; each resource reads the ones of its kind, and meetings only when it names one. |
-| `--max-meetings <n>` | how many of the meeting account's meetings to look through, newest first, or all for every one (default 100). |
+| `--only <resources>` | only these resources, separated by commas: messages, notes, events, meetings. |
+| `--source <accounts>` | only these accounts, separated by commas: provider:account as a hit shows it, a provider, a kind or group:<name>; each resource reads the ones of its kind. |
 | `--limit <n>` | how many. |
 | `--page <n>` | which page, starting at 1. |
 | `--exact` | bare words and quotes match their exact form only, as exact:word does. |
 | `--timezone <zone>` | the IANA timezone for calendar date boundaries. |
 
-**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 15 more; every field: gcal commands info search all
+**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 17 more; every field: gcal commands info search all
 
 **Example:** `gcal personal search all roadmap`, `gcal personal search all "quarterly review" --source telegram,gcal --json`
 
@@ -655,7 +654,7 @@ join an attendee to a person the owner knows elsewhere
 **Changes something on this computer only.**
 
 ```sh
-gcal people link <person> <other>
+gcal people link <person> <other> [options]
 ```
 
 | Argument | | What it is |
@@ -663,7 +662,11 @@ gcal people link <person> <other>
 | `person` | required | an attendee's address as email:<address>, or a person:<id>. |
 | `other` | required | the same person in another tool, as <provider>:<person>, or me. |
 
-**Returns:** calendar linked person — person, name, identities; every field: gcal commands info people link
+| Option | What it does |
+|---|---|
+| `--reason <text>` | why they are one person; an agent's link is a proposal and needs it. |
+
+**Returns:** calendar linked person — person, name, identities, proposal; every field: gcal commands info people link
 
 **Example:** `gcal personal people link email:ana@example.com telegram:12345`
 
@@ -1688,13 +1691,13 @@ gcal models download <model> [options]
 | Option | What it does |
 |---|---|
 | `--offline` | refuse a download that needs the network. |
-| `--accept-terms` | accept the model's licence terms, for a model that has its own. |
+| `--accept-terms` | no longer needed; kept so older scripts still run. |
 
 **Returns:** model — id, kind, title, languages, size_bytes, downloaded, default, path, and 6 more; every field: gcal commands info models download
 
 **Next usually:** `gcal models set <model>`
 
-**Example:** `gcal models download e5-small`
+**Example:** `gcal models download embeddinggemma`
 
 ### `gcal models set`
 
@@ -2012,7 +2015,7 @@ gcal config set <setting> <value> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, google_client_id, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, google_client_id, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self. |
 | `value` | required | a number, true or false; for a group tg:work,max:Alice,email:me@x. |
 
 | Option | What it does |
@@ -2035,7 +2038,7 @@ gcal config unset <setting> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, google_client_id, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, google_client_id, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self. |
 
 | Option | What it does |
 |---|---|
