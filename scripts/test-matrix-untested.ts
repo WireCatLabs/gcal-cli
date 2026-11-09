@@ -23,6 +23,11 @@ const SHARED_SCHEDULE =
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
+  {
+    command: "people link",
+    option: "--reason",
+    reason: "cli-core src/cli/messenger/messenger.test.ts: an agent's people link proposes the link and needs --reason",
+  },
   ...[
     ...["--at", "--at-time", "--notify-on", "--deliver-to"].map((option) => ({ command: "schedule command", option })),
     { command: "schedule agent" },
