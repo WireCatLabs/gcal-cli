@@ -94,7 +94,7 @@ it("search all finds a stored message and the synced meeting, and names the acco
     untrusted: expect.arrayContaining(["excerpt", "sender_name"]),
   })
   expect(meta.accounts).toEqual(expect.arrayContaining(["telegram:500", "google-calendar:owner@example.com"]))
-  expect(meta.issues).toContainEqual({ code: "validation_error", source: "meetings" })
+  expect(meta.issues).toBeUndefined()
   expect(google.requests.length).toBe(reads)
 
   const text = await gcal("--tty", "personal", "search", "all", "planning")
@@ -115,7 +115,7 @@ it("search all finds a stored message and the synced meeting, and names the acco
   expect(zoned.code).toBe(0)
   const meetings = await gcal("personal", "search", "all", "planning", "--max-meetings", "5", "--json")
   expect(meetings.code).toBe(2)
-  expect(meetings.err).toContain("--source names a meeting account")
+  expect(meetings.err).toContain("unknown option '--max-meetings'")
 })
 
 it("search all refuses mail, which memo searches, and keeps a locked profile to its own calendar", async () => {
