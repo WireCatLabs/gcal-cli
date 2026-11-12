@@ -65,6 +65,21 @@ const lists = (requests: ReturnType<typeof fakeGoogleCalendar>["requests"]) =>
   requests.filter(({ path }) => path.endsWith("/events"))
 
 describe("calendar commands over Google", () => {
+  it("GCAL_READ_ONLY with no store reads an empty one and creates no wirecat.db", async () => {
+    const { env, keyring, google } = harness()
+    const out: string[] = []
+    const code = await run(["personal", "events", "list", "--json"], {
+      streams: { data: (text) => out.push(text), diagnostic: () => {} },
+      tty: false,
+      env: { ...env, GCAL_READ_ONLY: "1" },
+      keyring,
+      fetch: google.fetch as typeof fetch,
+    })
+    expect(code).toBe(0)
+    expect(JSON.parse(out.join("\n")).items).toEqual([])
+    expect(existsSync(env.MESSAGING_STORE ?? "")).toBe(false)
+  })
+
   it("sync stores the owner's calendars only, then events list, show and people read them", async () => {
     const { json, google } = harness()
     const report = (await json("personal", "sync")).item

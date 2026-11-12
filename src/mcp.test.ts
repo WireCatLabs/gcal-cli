@@ -34,7 +34,7 @@ it("serves search, read and write, names the untrusted text, and runs a command 
   }
 })
 
-it("pins the commands an agent can find, and offers neither api call, clearing a calendar nor a schedule", async () => {
+it("pins what an agent can find: no api call or calendar clearing, schedule as cli-core offers it", async () => {
   const program = createProgram()
   const tools = toolsFromCommands(describeProgram(program), {
     includeUnavailable: true,
@@ -47,7 +47,7 @@ it("pins the commands an agent can find, and offers neither api call, clearing a
   await expect(`${JSON.stringify(catalogue, null, 2)}\n`).toMatchFileSnapshot("../contracts/mcp-catalogue.json")
   expect(Object.keys(catalogue)).not.toContain("api call")
   expect(Object.keys(catalogue)).not.toContain("api calendar-calendars-clear")
-  expect(Object.keys(catalogue).filter((command) => command.startsWith("schedule"))).toEqual([])
+  expect(catalogue["schedule run"]).toBe("write")
   expect(catalogue["api calendar-acl-insert"]).toBe("write")
 })
 

@@ -26,7 +26,9 @@ too. Its environment is that of the `gcal` run, plus `GCAL_EVENT` and `GCAL_PROF
 `schedule command` installs a timer (systemd, launchd or Task Scheduler) that runs `gcal` on its own, with no
 terminal. The timer runs `gcal schedule exec <file>`, and the schedule file in the state folder holds the words, the
 profile and your `PATH`, never a credential. Installing a timer does not lift `events.remind.hook`: each run checks it
-again. `GCAL_READ_ONLY` refuses `schedule command`, `remove`, `run` and `exec`, and no MCP tool offers `schedule`.
+again. `GCAL_READ_ONLY` refuses `schedule command`, `remove`, `run` and `exec`. Over MCP, as in every WireCat tool,
+an agent can list schedules and run one under the keys `schedule.run` and `schedule.exec` (`ask` by default);
+`mcp.authority` (`deny` by default) keeps it from installing, removing, pausing or resuming one.
 
 A feed `calendars add` follows is kept by its address, and a published calendar's address often holds a private
 token. `gcal` keeps the profile's feeds in the system keyring, under the service `gcal-cli` and the account
@@ -47,7 +49,7 @@ A run with moved folders (`GCAL_CONFIG_DIR`, `GCAL_STATE_DIR` or another `HOME`)
 it: its own sign-in goes to a separate entry, `gcal-cli:<config folder>`, and its `session end` removes only that one.
 
 When the keyring fails, or with `session start --credential-storage file`, the same entry goes to `credentials.json` in
-`gcal`'s state folder instead, mode 600: anyone who can read your files as you can read the sign-in. `gcal` says so
+`gcal`'s config folder instead, mode 600: anyone who can read your files as you can read the sign-in. `gcal` says so
 once on stderr and never asks. Choose the file only where no keyring works.
 
 `gcal` refuses an OAuth client file that other users of the computer can read. The account's email address is saved in

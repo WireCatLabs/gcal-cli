@@ -1,3 +1,4 @@
+import { chmodSync, constants, copyFileSync, existsSync, mkdirSync, renameSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { CliError, Credentials, isMovedRun, type KeyringStore, resolvePaths, systemKeyring } from "@wirecat/cli-base"
 import { type FetchLike, hostFetch } from "@wirecat/cli-base/http"
@@ -71,28 +72,48 @@ export const sessionCodec: TokenCodec = {
   },
 }
 
+const SIGN_IN_FILE = "credentials.json"
+
 const paths = (env: NodeJS.ProcessEnv) => resolvePaths({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env })
 
 export type CredentialStorage = "keyring" | "file"
+
+/** Up to 0.23.0 the sign-in file was in the state folder; it moves once to the config folder, as in the other CLIs. */
+const moveOldSignInFile = (env: NodeJS.ProcessEnv) => {
+  const { config, state } = paths(env)
+  const old = join(state, SIGN_IN_FILE)
+  const current = join(config, SIGN_IN_FILE)
+  if (!existsSync(old) || existsSync(current)) return
+  mkdirSync(config, { recursive: true, mode: 0o700 })
+  try {
+    renameSync(old, current)
+  } catch {
+    copyFileSync(old, current, constants.COPYFILE_EXCL)
+    chmodSync(current, 0o600)
+    rmSync(old)
+  }
+}
 
 export const credentialsOptions = (
   env: NodeJS.ProcessEnv,
   storage: CredentialStorage | "auto",
   keyring?: KeyringStore,
-) => ({
-  // A sign-in kept in a file is state this computer holds, not configuration to copy elsewhere; cli-base writes it 600.
-  // The keyring falls back to that same file (WC-SECR-4), so `storageOf` finds it either way.
-  configDir: paths(env).state,
-  service: IDENTITY.appName,
-  storage,
-  env,
-  isolated: isMovedRun({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
-  keyring: keyring ?? systemKeyring,
-})
+) => {
+  moveOldSignInFile(env)
+  return {
+    // cli-base writes the file 600. The keyring falls back to it (WC-SECR-4), so `storageOf` finds it either way.
+    configDir: paths(env).config,
+    service: IDENTITY.appName,
+    storage,
+    env,
+    isolated: isMovedRun({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
+    keyring: keyring ?? systemKeyring,
+  }
+}
 
 const signInFile = (env: NodeJS.ProcessEnv) => new Credentials(credentialsOptions(env, "file"))
 
-export const signInFilePath = (env: NodeJS.ProcessEnv): string => join(paths(env).state, "credentials.json")
+export const signInFilePath = (env: NodeJS.ProcessEnv): string => join(paths(env).config, SIGN_IN_FILE)
 
 /**
  * The file when it holds this profile's sign-in, the keyring otherwise. cli-base reads the file first and drops its

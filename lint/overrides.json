@@ -1,26 +1,5 @@
 [
   {
-    "rule": "option-role",
-    "target": "session start --client-file",
-    "reason": "Names the owner's own Google OAuth client file. The release can bundle a WireCat client, but none ships (the owner chose no WireCat Google app), so the owner's file is the way in; drive-cli has the same option in its baseline. Review when the vocabulary names an app-credential file: https://github.com/WireCatLabs/cli-base/issues/424",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-01-27"
-  },
-  {
-    "rule": "option-role",
-    "target": "session start --client-id",
-    "reason": "Names the owner's own Google OAuth client by its ID, the first step of the app order in WC-SECR-25 (cli-base docs/standards/security.md), beside --client-file; no shared flag names an app credential. Review when the vocabulary names one: https://github.com/WireCatLabs/cli-base/issues/424",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-02-01"
-  },
-  {
-    "rule": "unknown-verb",
-    "target": "api call",
-    "reason": "Calls one generated Google method by its API name, the same command drive-cli has (in its baseline); no shared verb names a raw API call. Review when the vocabulary names it: https://github.com/WireCatLabs/cli-base/issues/425",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-01-27"
-  },
-  {
     "rule": "wcat-bin-name",
     "target": "package.json \"bin\" gcal",
     "reason": "Keeps the short gcal command beside wcat-gcal, as mail does: dropping it would break every script and agent setup that types gcal. Owner decision of 2026-11-02 (docs/dev/DESIGN.md, Command names).",

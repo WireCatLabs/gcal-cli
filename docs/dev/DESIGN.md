@@ -46,7 +46,7 @@ for events and meetings in the store.
   `people link`; an event joins a Zoom meeting by join key and its other copies by iCalUID; an attached Drive file
   links the event to the stored document. Ambiguous links go to `links review`. Never by name or time alone.
 - **Secrets:** tokens in the system keyring through `@wirecat/cli-core/oauth` (WC-SECR), or with
-  `--credential-storage file` in a mode-600 file in the state folder where no keyring works. Passcodes, PINs and the
+  `--credential-storage file` in a mode-600 file in the config folder where no keyring works. Passcodes, PINs and the
   query string of a join link are never stored.
 - **Writes:** creating, changing, moving and deleting events (one occurrence, the series or `--following`), and
   answering an invitation, behind `session start --grant write` and a permission per write (`events.*`). Create,

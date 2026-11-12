@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { delimiter, isAbsolute, join } from "node:path"
 import { memoryKeyring } from "@wirecat/cli-base"
 import { describe, expect, it } from "vitest"
 import { remindNotices } from "./commands/schedule.js"
@@ -30,6 +30,8 @@ const harness = (platform: NodeJS.Platform = "linux", entry?: string[]) => {
   const root = mkdtempSync(join(tmpdir(), "schedule-"))
   const env: NodeJS.ProcessEnv = {
     ...process.env,
+    // pnpm puts a relative ./node_modules/.bin on PATH; a schedule that saved a relative PATH entry refuses to run.
+    PATH: (process.env.PATH ?? "").split(delimiter).filter(isAbsolute).join(delimiter),
     HOME: join(root, "home"),
     XDG_CONFIG_HOME: join(root, "home", ".config"),
     GCAL_CONFIG_DIR: join(root, "config"),

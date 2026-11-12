@@ -55,7 +55,7 @@ it lists the profiles named in the settings or signed in once, each with `signed
 
 On a computer where the keyring does not work, such as a server without a desktop, `session start` keeps the sign-in
 in a file by itself, says so once on stderr, and answers `credential_storage: "file"`. It never asks. The file is
-`credentials.json` in `gcal`'s state folder, readable by you only. `gcal doctor` shows its path and the profiles in it.
+`credentials.json` in `gcal`'s config folder, readable by you only. `gcal doctor` shows its path and the profiles in it.
 You can also choose the file outright, though the keyring is safer and we do not recommend it:
 
 ```sh
@@ -381,7 +381,9 @@ feed fails, `sync` answers with a `sync.partial` issue for it and the other cale
 
 Installing the timer does not allow your program. If `events.remind.hook` is not `allow` yet, the command says so and
 gives the `config set` line; until you run it, each run refuses to start the program. `GCAL_READ_ONLY` refuses
-`schedule command` and `schedule remove`, and no MCP tool offers `schedule`.
+`schedule command` and `schedule remove`. Over MCP, as in every WireCat tool, an agent can list schedules and run one
+(`schedule.run`, `ask` by default); `mcp.authority` (`deny` by default) keeps it from installing, removing, pausing or
+resuming one.
 
 On Linux with no systemd user session (some containers, WSL without systemd), `schedule command` fails at
 `systemctl`; use cron as below.

@@ -1,8 +1,11 @@
-import { CliError } from "@wirecat/cli-base"
+import { mkdtempSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { CliError, isCliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { timezoneOf } from "@wirecat/cli-base/query"
 import { addCalendarCommands, type CalendarRun } from "@wirecat/cli-core/calendar/cli"
-import { baseContext, environmentOf, type GlobalFlags, NO_EFFECTS } from "@wirecat/cli-core/cli"
+import { baseContext, environmentOf, type GlobalFlags, NO_EFFECTS, readOnlyLockOf } from "@wirecat/cli-core/cli"
 import { levelFor } from "@wirecat/cli-core/sends"
 import type { MessageStore } from "@wirecat/cli-core/store"
 import { Command } from "commander"
@@ -29,6 +32,9 @@ const storedId = async (store: MessageStore, rows: [ProfileRow, ...ProfileRow[]]
  * A command that only reads opens the store read-only, so parallel MCP reads take no write lock. The first read of a
  * profile, a store that is missing or needs a migration, and every command that writes open it for writing and save
  * the account and profile rows. The own profile's row comes first.
+ *
+ * Under `GCAL_READ_ONLY` such a read gets an empty store in a temporary folder instead, as cli-core's `openCrmStore`
+ * does, so the lock creates no `wirecat.db`; the folder goes when the store closes.
  */
 const storeFor = async (
   env: NodeJS.ProcessEnv,
@@ -36,15 +42,38 @@ const storeFor = async (
   rows: [ProfileRow, ...ProfileRow[]],
   open: OpenStore,
 ) => {
+  const locked = readOnly && readOnlyLockOf(IDENTITY, env) !== undefined
   if (readOnly) {
-    // A failed read-only open is never the answer: the writable open below says what is wrong, or fixes it.
-    const store = await open(env, { readOnly: true }).catch(() => undefined)
+    // Unlocked, a failed read-only open is never the answer: the writable open below says what is wrong, or fixes it.
+    const store = await open(env, { readOnly: true }).catch((error) => {
+      if (locked && !(isCliError(error) && error.code === "not_found")) throw error
+      return undefined
+    })
     if (store) {
       const accountId = await storedId(store, rows).catch(() => undefined)
       if (accountId !== undefined) return { store, accountId }
       await store.close()
     }
   }
+  if (locked) return emptyStoreFor(env, rows, open)
+  return savedStoreFor(env, rows, open)
+}
+
+const emptyStoreFor = async (env: NodeJS.ProcessEnv, rows: [ProfileRow, ...ProfileRow[]], open: OpenStore) => {
+  const folder = mkdtempSync(join(tmpdir(), `${IDENTITY.command}-empty-`))
+  const removing = () => rmSync(folder, { recursive: true, force: true })
+  try {
+    const empty = await savedStoreFor({ ...env, MESSAGING_STORE: join(folder, "wirecat.db") }, rows, open)
+    const close = empty.store.close.bind(empty.store)
+    empty.store.close = () => close().finally(removing)
+    return empty
+  } catch (error) {
+    removing()
+    throw error
+  }
+}
+
+const savedStoreFor = async (env: NodeJS.ProcessEnv, rows: [ProfileRow, ...ProfileRow[]], open: OpenStore) => {
   const store = await open(env)
   try {
     const save = async ([name, key]: ProfileRow) => {

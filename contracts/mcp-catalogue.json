@@ -78,5 +78,14 @@
   "config repair": "write",
   "runs list": "read",
   "runs show": "read",
-  "runs path": "read"
+  "runs path": "read",
+  "schedule command": "write",
+  "schedule agent": "write",
+  "schedule list": "read",
+  "schedule agents list": "read",
+  "schedule run": "write",
+  "schedule remove": "write",
+  "schedule pause": "write",
+  "schedule resume": "write",
+  "schedule exec": "write"
 }
