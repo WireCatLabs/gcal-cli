@@ -850,6 +850,30 @@
     },
     {
       "path": [
+        "doctor",
+        "reports",
+        "show"
+      ],
+      "summary": "what a problem report holds; writes nothing",
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    },
+    {
+      "path": [
+        "doctor",
+        "reports",
+        "create"
+      ],
+      "summary": "write a problem report to a file, and say where to send it",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
         "models",
         "list"
       ],
