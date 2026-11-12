@@ -1,4 +1,4 @@
-import { chmodSync, constants, copyFileSync, existsSync, mkdirSync, renameSync, rmSync } from "node:fs"
+import { chmodSync, constants, copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { CliError, Credentials, isMovedRun, type KeyringStore, resolvePaths, systemKeyring } from "@wirecat/cli-base"
 import { type FetchLike, hostFetch } from "@wirecat/cli-base/http"
@@ -79,19 +79,27 @@ const paths = (env: NodeJS.ProcessEnv) => resolvePaths({ appName: IDENTITY.appNa
 export type CredentialStorage = "keyring" | "file"
 
 /** Up to 0.23.0 the sign-in file was in the state folder; it moves once to the config folder, as in the other CLIs. */
-const moveOldSignInFile = (env: NodeJS.ProcessEnv) => {
+export const moveOldSignInFile = (
+  env: NodeJS.ProcessEnv,
+  moved = isMovedRun({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
+) => {
+  // One moved folder can leave the other at the owner's own, and the owner's file must never move into a test's.
+  if (moved) return
   const { config, state } = paths(env)
   const old = join(state, SIGN_IN_FILE)
   const current = join(config, SIGN_IN_FILE)
   if (!existsSync(old) || existsSync(current)) return
   mkdirSync(config, { recursive: true, mode: 0o700 })
   try {
-    renameSync(old, current)
-  } catch {
+    // A copy, not a rename: the two folders may be on different disks.
     copyFileSync(old, current, constants.COPYFILE_EXCL)
-    chmodSync(current, 0o600)
-    rmSync(old)
+  } catch (error) {
+    // Another gcal moved it first.
+    if (["ENOENT", "EEXIST"].includes((error as NodeJS.ErrnoException).code ?? "")) return
+    throw error
   }
+  chmodSync(current, 0o600)
+  rmSync(old, { force: true })
 }
 
 export const credentialsOptions = (

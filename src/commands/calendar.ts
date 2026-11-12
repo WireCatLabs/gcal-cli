@@ -33,8 +33,8 @@ const storedId = async (store: MessageStore, rows: [ProfileRow, ...ProfileRow[]]
  * profile, a store that is missing or needs a migration, and every command that writes open it for writing and save
  * the account and profile rows. The own profile's row comes first.
  *
- * Under `GCAL_READ_ONLY` such a read gets an empty store in a temporary folder instead, as cli-core's `openCrmStore`
- * does, so the lock creates no `wirecat.db`; the folder goes when the store closes.
+ * Under `GCAL_READ_ONLY` a read whose own profile has no row gets an empty store in a temporary folder instead, as
+ * cli-core's `openCrmStore` does, so the lock creates no `wirecat.db`; the folder goes when the store closes.
  */
 const storeFor = async (
   env: NodeJS.ProcessEnv,
@@ -50,7 +50,9 @@ const storeFor = async (
       return undefined
     })
     if (store) {
-      const accountId = await storedId(store, rows).catch(() => undefined)
+      const saved = (some: [ProfileRow, ...ProfileRow[]]) => storedId(store, some).catch(() => undefined)
+      // The lock writes no rows, so a profile never opened stays out of `--source` rather than hiding the own events.
+      const accountId = (await saved(rows)) ?? (locked ? await saved([rows[0]]) : undefined)
       if (accountId !== undefined) return { store, accountId }
       await store.close()
     }

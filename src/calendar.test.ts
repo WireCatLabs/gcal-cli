@@ -214,6 +214,34 @@ describe("calendar commands over Google", () => {
     expect(JSON.parse(refused.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("profile.locked")
   })
 
+  it("GCAL_READ_ONLY with --source still reads the own synced events when another profile was never opened", async () => {
+    const { gcal, json, env, keyring } = harness()
+    sessionStorage(env, "work", keyring).write({
+      tokens: {
+        accessToken: ACCESS,
+        refreshToken: "fixture-refresh",
+        expiresAt: Date.now() + 3_600_000,
+        scopes: [CALENDAR_READ_SCOPE],
+      },
+      client: { clientId: "fixture-client.apps" },
+    })
+    rememberAccount(IDENTITY, "work", "work@example.com", env)
+    await json("personal", "sync")
+    env.GCAL_READ_ONLY = "1"
+    const listed = await gcal(
+      "personal",
+      "events",
+      "list",
+      "ends_at>=2026-11-03",
+      "starts_at<2026-11-04",
+      "--source",
+      "all",
+      "--json",
+    )
+    expect(listed.code, listed.err).toBe(0)
+    expect(JSON.parse(listed.out).items.length).toBeGreaterThan(0)
+  })
+
   it("a second sync sends the token alone", async () => {
     const { json, google } = harness()
     await json("personal", "sync")
