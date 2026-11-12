@@ -12,6 +12,7 @@
 ### Fixed
 
 - **`GCAL_READ_ONLY` no longer creates `wirecat.db`.** A read with no store, or with no saved row for the profile,
-  now reads an empty store in a temporary folder, as cli-core's CRM commands do, and answers with no events.
+  now reads an empty store in a temporary folder, as cli-core's CRM commands do, and answers with no events. Under
+  the lock, `--source` leaves out a profile that was never opened, since saving its row would be a write.
 - **The README said you need a Google app of your own.** Every package carries WireCat's Google app. The quick start
   now signs in with it and points to your own app for when Google refuses it.
