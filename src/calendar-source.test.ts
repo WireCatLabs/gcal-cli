@@ -31,10 +31,10 @@ const MADRID = {
 const fullList = async () => {
   const { source, requests } = adapter()
   const first = await source.changes(MADRID, { cursor: null, window: WINDOW })
-  if ("reset" in first || !first.nextPage) throw new Error("expected a first page")
-  const second = await source.changes(MADRID, { cursor: null, page: first.nextPage, window: WINDOW })
+  if ("reset" in first || !first.nextCursor) throw new Error("expected a first page")
+  const second = await source.changes(MADRID, { cursor: null, page: first.nextCursor, window: WINDOW })
   if ("reset" in second) throw new Error("expected a second page")
-  return { source, requests, first, second, entries: [...first.entries, ...second.entries] }
+  return { source, requests, first, second, entries: [...first.items, ...second.items] }
 }
 
 describe("calendarSourceContract over hand-written Google answers", () => {
@@ -131,7 +131,7 @@ describe("Google words to neutral ones", () => {
   it("a deleted event is a removal by id; a cancelled slot stays an occurrence of its series", async () => {
     const { second } = await fullList()
     expect(second.removed).toEqual(["gone1"])
-    expect(second.entries.find(({ externalId }) => externalId === "weekly1_20261123T090000Z")).toMatchObject({
+    expect(second.items.find(({ externalId }) => externalId === "weekly1_20261123T090000Z")).toMatchObject({
       kind: "occurrence",
       status: "cancelled",
       seriesExternalId: "weekly1",
