@@ -19,6 +19,7 @@ const SHARED_MCP =
 const SHARED_SCHEDULE =
   "cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, " +
   "lists, removes and runs gcal's reminder timer"
+const SHARED_REPORTS = "cli-core's appDoctorCommand; its app-mcp-command test creates and shows a report"
 
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
@@ -42,7 +43,12 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
     { command: "schedule agent" },
     ...["--max-cost", "--every", "--at", "--at-time"].map((option) => ({ command: "schedule agent", option })),
     { command: "schedule run" },
+    { command: "schedule agents list" },
   ].map((one) => ({ ...one, reason: SHARED_SCHEDULE })),
+  { command: "doctor reports show", reason: SHARED_REPORTS },
+  { command: "doctor reports create", reason: SHARED_REPORTS },
+  { command: "doctor reports create", option: "--run", reason: SHARED_REPORTS },
+  { command: "doctor reports create", option: "--output", reason: SHARED_REPORTS },
   ...["--http", "--port", "--public-url"].map((option) => ({ command: "mcp serve", option, reason: LONG_RUNNING })),
   ...[undefined, "--port", "--public-url", "--permission", "--profiles"].map((option) => ({
     command: "mcp server start",

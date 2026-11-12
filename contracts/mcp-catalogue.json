@@ -60,6 +60,8 @@
   "api calendar-settings-get": "read",
   "api calendar-settings-list": "read",
   "doctor": "read",
+  "doctor reports show": "read",
+  "doctor reports create": "write",
   "models list": "read",
   "models download": "write",
   "models set": "write",

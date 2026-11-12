@@ -272,9 +272,10 @@ export const googleCalendarSource = (api: GoogleApi): CalendarSource => {
       }
       const items = answer.items ?? []
       return {
-        entries: items.filter((event) => event.id && !isRemoval(event)).map((event) => entryOf(event, calendar)),
+        items: items.filter((event) => event.id && !isRemoval(event)).map((event) => entryOf(event, calendar)),
+        hasMore: Boolean(answer.nextPageToken),
         removed: items.flatMap((event) => (event.id && isRemoval(event) ? [event.id] : [])),
-        ...(answer.nextPageToken ? { nextPage: answer.nextPageToken } : { cursor: answer.nextSyncToken ?? null }),
+        ...(answer.nextPageToken ? { nextCursor: answer.nextPageToken } : { cursor: answer.nextSyncToken ?? null }),
       }
     },
 

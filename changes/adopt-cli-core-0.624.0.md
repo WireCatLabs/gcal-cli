@@ -1,7 +1,8 @@
 ### Changed — may break callers
 
-- **Built on cli-core 0.624.0** (was 0.615.0). The store moves to version 61 on first open (people ties, additive).
-  What changed in between is in [cli-core's changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
+- **Built on cli-core 0.646.0** (was 0.615.0). The store moves to version 66 on first open (people ties, person kinds
+  and name order; additive). `doctor reports show` and `doctor reports create` write a problem report to send. What
+  changed in between is in [cli-core's changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
 - **`search all` no longer lists meetings as an issue when no meeting account is connected**, and `--max-meetings` is
   gone from it.
 - **`schedule pause <name>` and `schedule resume <name>`** take a schedule off its timer and keep it; `schedule run`

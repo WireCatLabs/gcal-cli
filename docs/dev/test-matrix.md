@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**228 ✅ · 359 ⛔ · 0 ❌** — 103 commands, 484 options.
+**228 ✅ · 365 ⛔ · 0 ❌** — 106 commands, 487 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -494,6 +494,10 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-settings-list` | `--max-results` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `doctor` |  | ✅ |  |
 | `doctor` | `--online` | ✅ |  |
+| `doctor reports show` |  | ⛔ | cli-core's appDoctorCommand; its app-mcp-command test creates and shows a report |
+| `doctor reports create` |  | ⛔ | cli-core's appDoctorCommand; its app-mcp-command test creates and shows a report |
+| `doctor reports create` | `--run` | ⛔ | cli-core's appDoctorCommand; its app-mcp-command test creates and shows a report |
+| `doctor reports create` | `--output` | ⛔ | cli-core's appDoctorCommand; its app-mcp-command test creates and shows a report |
 | `models list` |  | ✅ |  |
 | `models download` |  | ✅ |  |
 | `models download` | `--offline` | ✅ |  |
@@ -563,6 +567,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `schedule agent` |  | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` | `--model` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` | `--max-cost` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
+| `schedule agent` | `--allow-dangerous` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` | `--max-cost-per-day` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` | `--every` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` | `--at` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
@@ -570,6 +575,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `schedule agent` | `--notify-on` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule agent` | `--deliver-to` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule list` |  | ✅ |  |
+| `schedule agents list` |  | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists, removes and runs gcal's reminder timer |
 | `schedule run` |  | ✅ |  |
 | `schedule run` | `--no-notify` | ⛔ | cli-core src/cli/schedule/schedule.test.ts drives it through the shared schedule commands the CLI mounts |
 | `schedule run` | `--deliver-to` | ⛔ | cli-core src/cli/schedule/schedule.test.ts drives it through the shared schedule commands the CLI mounts |
