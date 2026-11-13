@@ -98,7 +98,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   const environment = environmentOf<GcalEnvironment>(command)
   const env = environment.env ?? process.env
   const flags = command.optsWithGlobals<GlobalFlags>()
-  const { profile, configuredProfiles, profilesHere } = configuration.resolveSettings(flags, { env })
+  const { profile, configuredProfiles } = configuration.resolveSettings(flags, { env })
   const [
     { apiAccess, savedAccount, signedInAccounts },
     { openGcalStore, PROVIDER },
@@ -118,15 +118,10 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   ])
   const account = savedAccount(env, profile)
   if (!account) {
-    const signIn = `run ${IDENTITY.command} ${profile} session start`
-    // A name no config and no sign-in knows is most likely a typo: the choices come before the sign-in hint.
-    const others = profilesHere.includes(profile) ? [] : profilesHere
     throw new CliError(
       "authentication_error",
-      others.length
-        ? `no profile named "${profile}" — profiles here: ${others.join(", ")}; to add it, ${signIn}`
-        : `profile ${profile} has no Google account yet; ${signIn}`,
-      { reason: "session.missing", ...(others.length ? { profiles: others } : {}) },
+      `profile ${profile} has no Google account yet; run ${IDENTITY.command} ${profile} session start`,
+      { reason: "session.missing" },
     )
   }
   const key = { provider: PROVIDER.name, account }

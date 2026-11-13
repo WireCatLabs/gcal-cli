@@ -656,7 +656,16 @@ describe("calendar commands over Google", () => {
     expect(error).toMatchObject({ reason: "profile.unknown", details: { profiles: ["personal"] } })
     expect(error.message).toContain("no profile named persnal on this computer — profiles here: personal")
     expect(error.message).toContain("gcal persnal session start")
+    expect(error.message.match(/no profile named/g)).toHaveLength(1)
     expect(google.requests).toEqual([])
+  })
+
+  it("a misspelled GCAL_PROFILE lists the profiles here too", async () => {
+    const { gcal, env } = harness()
+    env.GCAL_PROFILE = "persnal"
+    const answer = await gcal("events", "list", "--json")
+    const error = JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
+    expect(error).toMatchObject({ reason: "profile.unknown", details: { profiles: ["personal"] } })
   })
 
   it("never puts the token into output", async () => {
