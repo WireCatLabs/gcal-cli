@@ -131,7 +131,7 @@ export const apiAccess = (options: Common) => {
     signal: options.signal,
     scopes: () => session?.saved.tokens.scopes,
     accessToken: async () => {
-      if (!session) throw new CliError("authentication_error", "not signed in to Google", { reason: "oauth.missing" })
+      if (!session) throw new CliError("authentication_error", "not signed in to Google", { reason: "session.missing" })
       const { accessToken } = await session.keeper.tokens()
       if (!accessToken) throw new CliError("authentication_error", "Google returned no access token")
       return accessToken

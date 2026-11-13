@@ -2,6 +2,46 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## 0.24.0 — 13.11.2026
+
+### Added
+
+- **A pull request adds its changelog entries as a fragment, `changes/<branch>.md`.** Open pull requests no longer
+  conflict under `## Unreleased`. `pnpm docs:check` checks each fragment, and `bin/release` collects them into the
+  version's section. An entry under `## Unreleased` still works during the move.
+
+### Changed — may break callers
+
+- **Built on cli-core 0.650.0** (was 0.615.0). The store moves to version 66 on first open (people ties, person kinds
+  and name order; additive). Remote embeddings for meaning search follow memo's "local only" switch (`models
+  local-only set on`), send to a plain `http` address only on this computer, and reach only their own host. A profile
+  that is not signed in fails with `session.missing` (was `oauth.missing`). A profile name typed as the first word
+  that this computer does not know fails with `profile.unknown` and exit code 6, before the command runs, and lists the
+  profiles here. `doctor reports show` and `doctor reports create` write a problem report to send; `doctor --help`
+  shows its Returns and Example again. `store reset` is no longer offered over MCP. gcal's Google sign-in and store
+  opener are now cli-core's. What changed is in
+  [cli-core's changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
+- **`search all` no longer lists meetings as an issue when no meeting account is connected**, and `--max-meetings` is
+  gone from it.
+- **`schedule pause <name>` and `schedule resume <name>`** take a schedule off its timer and keep it; `schedule run`
+  still runs it. `--at` repeats: `--at 08:30 --at 18:00` runs twice a day.
+- **The sign-in file moves from the state folder to the config folder**, where the other WireCat CLIs keep it. It is
+  `credentials.json`, used only where no keyring works or with `--credential-storage file`. The first run that reads
+  a sign-in moves the old file, so nobody signs in again. `gcal doctor` shows the new path. A run with moved folders
+  now keeps its own sign-in in the keyring entry `gcal-cli:<config folder>`, as
+  [security](docs/security.md) always said, not under the state folder.
+- **An MCP agent now finds `schedule`, as in every WireCat CLI.** It can list schedules and run one, under the keys
+  `schedule.run` and `schedule.exec` (`ask` by default). `mcp.authority` (`deny` by default) still keeps it from
+  installing, removing, pausing or resuming one. Before, gcal hid the whole group.
+
+### Fixed
+
+- **`GCAL_READ_ONLY` no longer creates `wirecat.db`.** A read with no store, or with no saved row for the profile,
+  now reads an empty store in a temporary folder, as cli-core's CRM commands do, and answers with no events. Under
+  the lock, `--source` leaves out a profile that was never opened, since saving its row would be a write.
+- **The README said you need a Google app of your own.** Every package carries WireCat's Google app. The quick start
+  now signs in with it and points to your own app for when Google refuses it.
+
 ## 0.23.0 — 08.11.2026
 
 ### Added
