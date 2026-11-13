@@ -126,7 +126,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
       others.length
         ? `no profile named "${profile}" — profiles here: ${others.join(", ")}; to add it, ${signIn}`
         : `profile ${profile} has no Google account yet; ${signIn}`,
-      { reason: "oauth.missing", ...(others.length ? { profiles: others } : {}) },
+      { reason: "session.missing", ...(others.length ? { profiles: others } : {}) },
     )
   }
   const key = { provider: PROVIDER.name, account }

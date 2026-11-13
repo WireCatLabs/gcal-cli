@@ -9,7 +9,7 @@ const fixFor = (error: CliError, start: string): string | undefined => {
   switch (reason) {
     case "oauth.expired":
       return `run ${start} again`
-    case "oauth.missing":
+    case "session.missing":
       return `run ${start}`
     // At sign-in the same reason means "use a new profile": signing in again there is what was just refused.
     case "profile.wrong-account":
