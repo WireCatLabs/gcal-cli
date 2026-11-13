@@ -1406,7 +1406,13 @@
       "accounts.google.com",
       "oauth2.googleapis.com",
       "openidconnect.googleapis.com",
-      "www.googleapis.com"
+      "www.googleapis.com",
+      "registry.npmjs.org",
+      "huggingface.co",
+      "*.huggingface.co",
+      "*.hf.co",
+      "github.com",
+      "*.githubusercontent.com"
     ],
     "user_hosts": "the calendar feed (ICS) addresses you add"
   },

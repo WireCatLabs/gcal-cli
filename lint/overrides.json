@@ -12,12 +12,5 @@
     "reason": "A link to Google's Calendar API error guide that a refusal shows the reader (src/errors.ts); gcal never sends a request there. hostFetch would refuse one.",
     "owner": "@WireCatLabs",
     "review_after": "2027-05-08"
-  },
-  {
-    "rule": "undeclared-host",
-    "target": "meet.google.com",
-    "reason": "Words in Google's own API description, copied into src/generated/definitions.ts by scripts/generate.ts; gcal never sends a request there. hostFetch would refuse one.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-05-08"
   }
 ]
