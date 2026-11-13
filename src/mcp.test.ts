@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url"
 import { describeProgram } from "@wirecat/cli-base/commands"
 import { changesAuthorityAt, checkGuide, readsOverMcpAt } from "@wirecat/cli-core/cli"
 import { toolsFromCommands } from "@wirecat/cli-core/mcp"
+import { ownCatalogue } from "@wirecat/cli-core/testing"
 import { expect, it } from "vitest"
 import { permissions } from "./config.js"
 import { createProgram, run } from "./program.js"
@@ -34,21 +35,24 @@ it("serves search, read and write, names the untrusted text, and runs a command 
   }
 })
 
-it("pins what an agent can find: no api call or calendar clearing, schedule as cli-core offers it", async () => {
+it("pins gcal's own MCP commands, and offers neither api call nor clearing a calendar", async () => {
   const program = createProgram()
-  const tools = toolsFromCommands(describeProgram(program), {
+  const options = {
     includeUnavailable: true,
     exclude: [["mcp"]],
     authority: changesAuthorityAt(program),
     fetchOnly: readsOverMcpAt(program),
     permissions,
-  })
-  const catalogue = Object.fromEntries(tools.map((tool) => [tool.command, tool.writes ? "write" : "read"]))
-  await expect(`${JSON.stringify(catalogue, null, 2)}\n`).toMatchFileSnapshot("../contracts/mcp-catalogue.json")
-  expect(Object.keys(catalogue)).not.toContain("api call")
-  expect(Object.keys(catalogue)).not.toContain("api calendar-calendars-clear")
-  expect(catalogue["schedule run"]).toBe("write")
-  expect(catalogue["api calendar-acl-insert"]).toBe("write")
+  }
+  await expect(`${JSON.stringify(ownCatalogue(program, options), null, 2)}\n`).toMatchFileSnapshot(
+    "../contracts/mcp-catalogue.json",
+  )
+  const offered = Object.fromEntries(
+    toolsFromCommands(describeProgram(program), options).map((tool) => [tool.command, tool.writes]),
+  )
+  expect(Object.keys(offered)).not.toContain("api call")
+  expect(Object.keys(offered)).not.toContain("api calendar-calendars-clear")
+  expect(offered["api calendar-acl-insert"]).toBe(true)
 })
 
 it("mcp serve refuses a --permission that names no command", async () => {

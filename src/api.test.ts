@@ -225,7 +225,7 @@ describe("reading through the API", () => {
   it("says to sign in when the profile has none", async () => {
     const { gcal } = harness()
     const refused = await gcal(["other", "api", "calendar-colors-get", "--json"])
-    expect(failure(refused.err)).toMatchObject({ code: "authentication_error" })
+    expect(failure(refused.err)).toMatchObject({ code: "not_found", reason: "profile.unknown" })
     expect(failure(refused.err).message).toContain("gcal other session start")
   })
 

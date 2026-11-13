@@ -1,5 +1,9 @@
 ### Changed — may break callers
 
+- **Built on cli-core 0.648.0** (was 0.647.0). A profile name typed as the first word that this computer does not
+  know now fails with `profile.unknown` and exit code 6, before the command runs, and lists the profiles here.
+  `store reset` is no longer offered over MCP. gcal's Google sign-in and store opener are now cli-core's. What
+  changed is in [cli-core's changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
 - **The sign-in file moves from the state folder to the config folder**, where the other WireCat CLIs keep it. It is
   `credentials.json`, used only where no keyring works or with `--credential-storage file`. The first run that reads
   a sign-in moves the old file, so nobody signs in again. `gcal doctor` shows the new path. A run with moved folders

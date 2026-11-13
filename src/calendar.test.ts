@@ -644,7 +644,8 @@ describe("calendar commands over Google", () => {
     const answer = await gcal("personal", "events", "list", "--json")
     expect(answer.code).not.toBe(0)
     expect(answer.err).toContain("session start")
-    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("oauth.missing")
+    expect(answer.code).toBe(6)
+    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("profile.unknown")
     expect(google.requests).toEqual([])
   })
 
@@ -652,8 +653,8 @@ describe("calendar commands over Google", () => {
     const { gcal, google } = harness()
     const answer = await gcal("persnal", "events", "list", "--json")
     const error = JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
-    expect(error).toMatchObject({ reason: "oauth.missing", details: { profiles: ["personal"] } })
-    expect(error.message).toContain('no profile named "persnal" — profiles here: personal')
+    expect(error).toMatchObject({ reason: "profile.unknown", details: { profiles: ["personal"] } })
+    expect(error.message).toContain("no profile named persnal on this computer — profiles here: personal")
     expect(error.message).toContain("gcal persnal session start")
     expect(google.requests).toEqual([])
   })

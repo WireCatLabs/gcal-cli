@@ -6,11 +6,10 @@ import { type EventSink, providerRequest } from "@wirecat/cli-core/cli"
 import { googleApp } from "@wirecat/cli-core/constants"
 import {
   credentialStorage,
+  googleProvider,
+  googleTokenCodec,
   type OAuthClient,
-  type OAuthProvider,
   oauthAccount,
-  standardCodec,
-  type TokenCodec,
   type TokenKeeper,
   type TokenStorage,
   tokenKeeper,
@@ -25,52 +24,6 @@ export const CALENDAR_READ_SCOPE = "https://www.googleapis.com/auth/calendar.rea
 export const SIGN_IN_SCOPES = ["openid", "email", CALENDAR_READ_SCOPE] as const
 // https://accounts.google.com/.well-known/openid-configuration
 const USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
-
-export const googleProvider = (client: OAuthClient): OAuthProvider => ({
-  id: "google",
-  name: "Google",
-  authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
-  tokenUrl: "https://oauth2.googleapis.com/token",
-  revokeUrl: "https://oauth2.googleapis.com/revoke",
-  client,
-  redirect: { kind: "loopback" },
-  // Without offline access Google returns no refresh token; without consent it does not return one again.
-  authorizeParams: { access_type: "offline", prompt: "select_account consent" },
-})
-
-const standard = standardCodec("google")
-// The standard codec reads and writes only a JSON object, so this never throws on text it has handled.
-const entryObject = (text: string): Record<string, unknown> => {
-  const value: unknown = JSON.parse(text)
-  if (typeof value !== "object" || value === null || Array.isArray(value))
-    throw new CliError("authentication_error", "the saved sign-in cannot be read; sign in again", {
-      reason: "oauth.invalid",
-    })
-  return { ...value }
-}
-// Called only after the standard codec has parsed the same text.
-const secretOf = (raw: string): string | undefined => {
-  const { clientSecret } = entryObject(raw)
-  return typeof clientSecret === "string" && clientSecret ? clientSecret : undefined
-}
-/**
- * cli-core's standard entry keeps no client secret, and Google's Desktop clients need one to refresh: the client file
- * is read once, at sign-in, so the entry carries the secret the way drive's does.
- */
-export const sessionCodec: TokenCodec = {
-  decode: (raw) => {
-    const stored = standard.decode(raw)
-    const clientSecret = secretOf(raw)
-    return clientSecret ? { ...stored, client: { clientId: stored.client?.clientId ?? "", clientSecret } } : stored
-  },
-  encode: (input) => {
-    const entry = entryObject(standard.encode(input))
-    // A client without a secret must not inherit the secret of the app this profile signed in with before.
-    if (input.client.clientSecret) entry.clientSecret = input.client.clientSecret
-    else delete entry.clientSecret
-    return JSON.stringify(entry)
-  },
-}
 
 const SIGN_IN_FILE = "credentials.json"
 
@@ -149,7 +102,7 @@ export const sessionStorage = (
   credentialStorage({
     credentials: credentialsOptions(env, storage === "file" ? "file" : "auto", keyring),
     account: oauthAccount("google", profile),
-    codec: sessionCodec,
+    codec: googleTokenCodec,
   })
 
 /**
