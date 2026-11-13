@@ -1,11 +1,20 @@
-import { chmodSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs"
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { brokenKeyring, type KeyringStore, memoryKeyring, systemKeyring } from "@wirecat/cli-base"
 import { openStore, storePath } from "@wirecat/cli-core/store"
 import type { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
-import { CALENDAR_READ_SCOPE, googleClient, sessionStorage, signInFilePath } from "./google.js"
+import { CALENDAR_READ_SCOPE, googleClient, moveOldSignInFile, sessionStorage, signInFilePath } from "./google.js"
 import { ACLS_SCOPE, EVENTS_SCOPE } from "./grants.js"
 import { run } from "./program.js"
 
@@ -664,7 +673,7 @@ describe("session start --credential-storage file", () => {
     expect(started.code).toBe(0)
     expect(item(started.out)).toMatchObject({ signed_in: true, credential_storage: "file" })
     expect(warnings).toHaveLength(1)
-    expect(JSON.parse(readFileSync(join(env.GCAL_STATE_DIR ?? "", "credentials.json"), "utf8"))).toHaveProperty([
+    expect(JSON.parse(readFileSync(join(env.GCAL_CONFIG_DIR ?? "", "credentials.json"), "utf8"))).toHaveProperty([
       "oauth:google:personal",
     ])
     expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
@@ -682,14 +691,14 @@ describe("session start --credential-storage file", () => {
     expect(warnings).toHaveLength(1)
   })
 
-  it("keeps the sign-in in a private file under the state folder when asked", async () => {
+  it("keeps the sign-in in a private file under the config folder when asked", async () => {
     const { gcal, env } = harness(noKeyring)
     const fake = google()
     const start = ["personal", "session", "start", "--client-file", clientFile(), "--json"]
     const started = await gcal([...start, "--credential-storage", "file"], fake)
     expect(started.code).toBe(0)
     expect(item(started.out)).toMatchObject({ signed_in: true, credential_storage: "file" })
-    const file = join(env.GCAL_STATE_DIR ?? "", "credentials.json")
+    const file = join(env.GCAL_CONFIG_DIR ?? "", "credentials.json")
     if (process.platform !== "win32") expect(statSync(file).mode & 0o777).toBe(0o600)
     expect(JSON.parse(readFileSync(file, "utf8"))).toHaveProperty(["oauth:google:personal"])
     const status = await gcal(["personal", "session", "status", "--check", "--json"], fake)
@@ -717,7 +726,7 @@ describe("session start --credential-storage file", () => {
       credential_storage: "file",
     })
     expect((await gcal(start, fake)).code).toBe(0)
-    const file = JSON.parse(readFileSync(join(env.GCAL_STATE_DIR ?? "", "credentials.json"), "utf8"))
+    const file = JSON.parse(readFileSync(join(env.GCAL_CONFIG_DIR ?? "", "credentials.json"), "utf8"))
     expect(file["oauth:google:personal"]).toBeUndefined()
     expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
       credential_storage: "keyring",
@@ -728,5 +737,36 @@ describe("session start --credential-storage file", () => {
     const { gcal } = harness()
     const refused = await gcal(["personal", "session", "start", "--credential-storage", "cloud", "--json"])
     expect(failure(refused.err).code).toBe("validation_error")
+  })
+})
+
+describe("the sign-in file an older gcal kept in the state folder", () => {
+  const folders = () => {
+    const root = mkdtempSync(join(tmpdir(), "sign-in-file-"))
+    const env = { GCAL_CONFIG_DIR: join(root, "config"), GCAL_STATE_DIR: join(root, "state") }
+    mkdirSync(env.GCAL_STATE_DIR)
+    const old = join(env.GCAL_STATE_DIR, "credentials.json")
+    writeFileSync(old, "{}", { mode: 0o600 })
+    return { env, old, current: join(env.GCAL_CONFIG_DIR, "credentials.json") }
+  }
+
+  it("moves once to the config folder", () => {
+    const { env, old, current } = folders()
+    moveOldSignInFile(env, false)
+    expect(existsSync(old)).toBe(false)
+    expect(readFileSync(current, "utf8")).toBe("{}")
+    if (process.platform !== "win32") expect(statSync(current).mode & 0o777).toBe(0o600)
+  })
+
+  it("stays where it is in a run with moved folders, and never replaces a file already in the config folder", () => {
+    const { env, old, current } = folders()
+    moveOldSignInFile(env)
+    expect(existsSync(old)).toBe(true)
+    expect(existsSync(current)).toBe(false)
+    mkdirSync(env.GCAL_CONFIG_DIR)
+    writeFileSync(current, "[]")
+    moveOldSignInFile(env, false)
+    expect(readFileSync(current, "utf8")).toBe("[]")
+    expect(existsSync(old)).toBe(true)
   })
 })

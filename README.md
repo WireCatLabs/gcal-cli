@@ -41,13 +41,14 @@ You:    Yes.
 
 ## Quick start
 
-You need a Google sign-in client of your own for now. [Make one](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/installation.md#make-your-own-google-app)
-in Google Cloud Console, as a Desktop app, and save its JSON file as `~/client_secret.json` with `chmod 600`.
+Every `gcal` package carries WireCat's own Google app, so you can sign in with no Google Cloud project of your own.
+Google may refuse the sign-in with it. Then [make your own Google app](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/installation.md#make-your-own-google-app)
+and add `--client-file ~/client_secret.json` to `session start`.
 
 ```sh
 npm install -g @wirecat/gcal-cli
 gcal skill install                                            # the agent skill, for Claude Code, Codex and Gemini CLI
-gcal personal session start --client-file ~/client_secret.json   # sign in to Google in the browser, read-only
+gcal personal session start                                   # sign in to Google in the browser, read-only
 gcal personal sync                                            # copy the calendars you own, then only what changed
 gcal personal events list                                     # your events from today on, earliest first
 ```
@@ -156,7 +157,7 @@ More: [agents](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md#a
 Each profile is one Google account. No command ever picks a profile for you; `gcal session list` lists them.
 
 ```sh
-gcal personal session start --client-file ~/client_secret.json   # read-only
+gcal personal session start                                       # read-only
 gcal personal session start --grant write                         # also create, change and delete events
 gcal personal session start --grant write,sharing                 # also see and change who can see a calendar
 gcal personal session status --check                              # ask Google whether the sign-in still works

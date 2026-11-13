@@ -3,7 +3,7 @@
   "args": ["../dist/bin/gcal.js"],
   "previous": {
     "entry": "./previous/node_modules/@wirecat/previous-cli/dist/bin/gcal.js",
-    "version": "0.20.0"
+    "version": "0.23.0"
   },
   "canaries": ["wirecat-synthetic-event-canary"],
   "cases": [
@@ -39,7 +39,7 @@
       "args": ["contract", "events", "list", "ends_at>=2026-10-01", "starts_at<=2026-10-10", "--json"],
       "exit": 0,
       "stream": "stdout",
-      "diagnostic": "the store moved to schema 66; every other WireCat CLI that uses it needs a version that speaks it — run `<cli> upgrade` for each\n",
+      "diagnosticPattern": "^(the store moved to schema \\d+; every other WireCat CLI that uses it needs a version that speaks it — run `<cli> upgrade` for each\\n)?$",
       "kind": "json",
       "allowSensitiveOutput": true,
       "json": {

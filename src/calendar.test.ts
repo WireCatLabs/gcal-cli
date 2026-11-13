@@ -65,6 +65,21 @@ const lists = (requests: ReturnType<typeof fakeGoogleCalendar>["requests"]) =>
   requests.filter(({ path }) => path.endsWith("/events"))
 
 describe("calendar commands over Google", () => {
+  it("GCAL_READ_ONLY with no store reads an empty one and creates no wirecat.db", async () => {
+    const { env, keyring, google } = harness()
+    const out: string[] = []
+    const code = await run(["personal", "events", "list", "--json"], {
+      streams: { data: (text) => out.push(text), diagnostic: () => {} },
+      tty: false,
+      env: { ...env, GCAL_READ_ONLY: "1" },
+      keyring,
+      fetch: google.fetch as typeof fetch,
+    })
+    expect(code).toBe(0)
+    expect(JSON.parse(out.join("\n")).items).toEqual([])
+    expect(existsSync(env.MESSAGING_STORE ?? "")).toBe(false)
+  })
+
   it("sync stores the owner's calendars only, then events list, show and people read them", async () => {
     const { json, google } = harness()
     const report = (await json("personal", "sync")).item
@@ -197,6 +212,34 @@ describe("calendar commands over Google", () => {
     env.GCAL_PROFILE_LOCK = "personal"
     const refused = await gcal("personal", "events", "list", "--source", "all", "--json")
     expect(JSON.parse(refused.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("profile.locked")
+  })
+
+  it("GCAL_READ_ONLY with --source still reads the own synced events when another profile was never opened", async () => {
+    const { gcal, json, env, keyring } = harness()
+    sessionStorage(env, "work", keyring).write({
+      tokens: {
+        accessToken: ACCESS,
+        refreshToken: "fixture-refresh",
+        expiresAt: Date.now() + 3_600_000,
+        scopes: [CALENDAR_READ_SCOPE],
+      },
+      client: { clientId: "fixture-client.apps" },
+    })
+    rememberAccount(IDENTITY, "work", "work@example.com", env)
+    await json("personal", "sync")
+    env.GCAL_READ_ONLY = "1"
+    const listed = await gcal(
+      "personal",
+      "events",
+      "list",
+      "ends_at>=2026-11-03",
+      "starts_at<2026-11-04",
+      "--source",
+      "all",
+      "--json",
+    )
+    expect(listed.code, listed.err).toBe(0)
+    expect(JSON.parse(listed.out).items.length).toBeGreaterThan(0)
   })
 
   it("a second sync sends the token alone", async () => {
@@ -601,7 +644,8 @@ describe("calendar commands over Google", () => {
     const answer = await gcal("personal", "events", "list", "--json")
     expect(answer.code).not.toBe(0)
     expect(answer.err).toContain("session start")
-    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("oauth.missing")
+    expect(answer.code).toBe(6)
+    expect(JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error.reason).toBe("profile.unknown")
     expect(google.requests).toEqual([])
   })
 
@@ -609,8 +653,8 @@ describe("calendar commands over Google", () => {
     const { gcal, google } = harness()
     const answer = await gcal("persnal", "events", "list", "--json")
     const error = JSON.parse(answer.err.trim().split("\n").at(-1) ?? "{}").error
-    expect(error).toMatchObject({ reason: "oauth.missing", details: { profiles: ["personal"] } })
-    expect(error.message).toContain('no profile named "persnal" — profiles here: personal')
+    expect(error).toMatchObject({ reason: "profile.unknown", details: { profiles: ["personal"] } })
+    expect(error.message).toContain("no profile named persnal on this computer — profiles here: personal")
     expect(error.message).toContain("gcal persnal session start")
     expect(google.requests).toEqual([])
   })

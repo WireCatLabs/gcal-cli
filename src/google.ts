@@ -1,3 +1,4 @@
+import { chmodSync, constants, copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { CliError, Credentials, isMovedRun, type KeyringStore, resolvePaths, systemKeyring } from "@wirecat/cli-base"
 import { type FetchLike, hostFetch } from "@wirecat/cli-base/http"
@@ -5,11 +6,10 @@ import { type EventSink, providerRequest } from "@wirecat/cli-core/cli"
 import { googleApp } from "@wirecat/cli-core/constants"
 import {
   credentialStorage,
+  googleProvider,
+  googleTokenCodec,
   type OAuthClient,
-  type OAuthProvider,
   oauthAccount,
-  standardCodec,
-  type TokenCodec,
   type TokenKeeper,
   type TokenStorage,
   tokenKeeper,
@@ -25,74 +25,56 @@ export const SIGN_IN_SCOPES = ["openid", "email", CALENDAR_READ_SCOPE] as const
 // https://accounts.google.com/.well-known/openid-configuration
 const USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 
-export const googleProvider = (client: OAuthClient): OAuthProvider => ({
-  id: "google",
-  name: "Google",
-  authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
-  tokenUrl: "https://oauth2.googleapis.com/token",
-  revokeUrl: "https://oauth2.googleapis.com/revoke",
-  client,
-  redirect: { kind: "loopback" },
-  // Without offline access Google returns no refresh token; without consent it does not return one again.
-  authorizeParams: { access_type: "offline", prompt: "select_account consent" },
-})
-
-const standard = standardCodec("google")
-// The standard codec reads and writes only a JSON object, so this never throws on text it has handled.
-const entryObject = (text: string): Record<string, unknown> => {
-  const value: unknown = JSON.parse(text)
-  if (typeof value !== "object" || value === null || Array.isArray(value))
-    throw new CliError("authentication_error", "the saved sign-in cannot be read; sign in again", {
-      reason: "oauth.invalid",
-    })
-  return { ...value }
-}
-// Called only after the standard codec has parsed the same text.
-const secretOf = (raw: string): string | undefined => {
-  const { clientSecret } = entryObject(raw)
-  return typeof clientSecret === "string" && clientSecret ? clientSecret : undefined
-}
-/**
- * cli-core's standard entry keeps no client secret, and Google's Desktop clients need one to refresh: the client file
- * is read once, at sign-in, so the entry carries the secret the way drive's does.
- */
-export const sessionCodec: TokenCodec = {
-  decode: (raw) => {
-    const stored = standard.decode(raw)
-    const clientSecret = secretOf(raw)
-    return clientSecret ? { ...stored, client: { clientId: stored.client?.clientId ?? "", clientSecret } } : stored
-  },
-  encode: (input) => {
-    const entry = entryObject(standard.encode(input))
-    // A client without a secret must not inherit the secret of the app this profile signed in with before.
-    if (input.client.clientSecret) entry.clientSecret = input.client.clientSecret
-    else delete entry.clientSecret
-    return JSON.stringify(entry)
-  },
-}
+const SIGN_IN_FILE = "credentials.json"
 
 const paths = (env: NodeJS.ProcessEnv) => resolvePaths({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env })
 
 export type CredentialStorage = "keyring" | "file"
 
+/** Up to 0.23.0 the sign-in file was in the state folder; it moves once to the config folder, as in the other CLIs. */
+export const moveOldSignInFile = (
+  env: NodeJS.ProcessEnv,
+  moved = isMovedRun({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
+) => {
+  // One moved folder can leave the other at the owner's own, and the owner's file must never move into a test's.
+  if (moved) return
+  const { config, state } = paths(env)
+  const old = join(state, SIGN_IN_FILE)
+  const current = join(config, SIGN_IN_FILE)
+  if (!existsSync(old) || existsSync(current)) return
+  mkdirSync(config, { recursive: true, mode: 0o700 })
+  try {
+    // A copy, not a rename: the two folders may be on different disks.
+    copyFileSync(old, current, constants.COPYFILE_EXCL)
+  } catch (error) {
+    // Another gcal moved it first.
+    if (["ENOENT", "EEXIST"].includes((error as NodeJS.ErrnoException).code ?? "")) return
+    throw error
+  }
+  chmodSync(current, 0o600)
+  rmSync(old, { force: true })
+}
+
 export const credentialsOptions = (
   env: NodeJS.ProcessEnv,
   storage: CredentialStorage | "auto",
   keyring?: KeyringStore,
-) => ({
-  // A sign-in kept in a file is state this computer holds, not configuration to copy elsewhere; cli-base writes it 600.
-  // The keyring falls back to that same file (WC-SECR-4), so `storageOf` finds it either way.
-  configDir: paths(env).state,
-  service: IDENTITY.appName,
-  storage,
-  env,
-  isolated: isMovedRun({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
-  keyring: keyring ?? systemKeyring,
-})
+) => {
+  moveOldSignInFile(env)
+  return {
+    // cli-base writes the file 600. The keyring falls back to it (WC-SECR-4), so `storageOf` finds it either way.
+    configDir: paths(env).config,
+    service: IDENTITY.appName,
+    storage,
+    env,
+    isolated: isMovedRun({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }),
+    keyring: keyring ?? systemKeyring,
+  }
+}
 
 const signInFile = (env: NodeJS.ProcessEnv) => new Credentials(credentialsOptions(env, "file"))
 
-export const signInFilePath = (env: NodeJS.ProcessEnv): string => join(paths(env).state, "credentials.json")
+export const signInFilePath = (env: NodeJS.ProcessEnv): string => join(paths(env).config, SIGN_IN_FILE)
 
 /**
  * The file when it holds this profile's sign-in, the keyring otherwise. cli-base reads the file first and drops its
@@ -120,7 +102,7 @@ export const sessionStorage = (
   credentialStorage({
     credentials: credentialsOptions(env, storage === "file" ? "file" : "auto", keyring),
     account: oauthAccount("google", profile),
-    codec: sessionCodec,
+    codec: googleTokenCodec,
   })
 
 /**
