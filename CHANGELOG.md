@@ -2,6 +2,30 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## 0.25.0 — 13.11.2026
+
+### Changed — may break callers
+
+- **Built on cli-core 0.651.0** (was 0.650.0). A stale meeting project fingerprint exits as `conflict` instead of
+  `configuration_error`. A profile name in `GCAL_PROFILE` that this computer does not know fails with
+  `profile.unknown` and lists the profiles here, as a mistyped first word does, and the message says "no profile
+  named" once. The first screen lists `pbx`, the Asterisk tool. What changed is in
+  [cli-core's changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
+- **Built on cli-core 0.656.0** (was 0.651.0). See the
+  [cli-core changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
+
+### Fixed
+
+- **Sync runs on a fresh install.** A shared WireCat config (`~/.config/WireCat/config.json`) that could not be
+  read (a byte-order mark, broken JSON, a folder in its place, an older `setup` shape) made every WireCat tool
+  read-only and refused `sync`. Now only the owner's own "read only" answer limits a tool, and even then a sync runs:
+  it only reads the service into the local store (cli-core 0.656.0).
+
+### Security
+
+- **`contracts/wirecat.json` lists the hosts cli-core reaches for gcal**: npm for `upgrade`, and Hugging Face and
+  GitHub for the model downloads and the hosts they redirect to. WireCat Desktop shows them before you install gcal.
+
 ## 0.24.0 — 13.11.2026
 
 ### Added
