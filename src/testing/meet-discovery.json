@@ -1,0 +1,946 @@
+{
+  "source": "https://meet.googleapis.com/$discovery/rest?version=v2",
+  "fetched": "2026-11-14",
+  "revision": "20261110",
+  "note": "names only: the GET methods and spaces.create, spaces.patch and spaces.endActiveConference, their parameters, scopes and page sizes from the pageSize descriptions, and the fields of their requests and answers, with readOnly where Google marks a field output only",
+  "rootUrl": "https://meet.googleapis.com/",
+  "methods": {
+    "conferenceRecords.get": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+$"
+        }
+      },
+      "response": "ConferenceRecord",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ]
+    },
+    "conferenceRecords.list": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords",
+      "parameters": {
+        "filter": {
+          "location": "query",
+          "type": "string"
+        },
+        "pageSize": {
+          "location": "query",
+          "type": "integer"
+        },
+        "pageToken": {
+          "location": "query",
+          "type": "string"
+        }
+      },
+      "response": "ListConferenceRecordsResponse",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ],
+      "pageSize": {
+        "default": 25,
+        "max": 100
+      }
+    },
+    "conferenceRecords.participants.get": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/participants/{participantsId}",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+/participants/[^/]+$"
+        }
+      },
+      "response": "Participant",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ]
+    },
+    "conferenceRecords.participants.list": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/participants",
+      "parameters": {
+        "filter": {
+          "location": "query",
+          "type": "string"
+        },
+        "pageSize": {
+          "location": "query",
+          "type": "integer"
+        },
+        "pageToken": {
+          "location": "query",
+          "type": "string"
+        },
+        "parent": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+$"
+        }
+      },
+      "response": "ListParticipantsResponse",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ],
+      "pageSize": {
+        "default": 100,
+        "max": 250
+      }
+    },
+    "conferenceRecords.participants.participantSessions.get": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/participants/{participantsId}/participantSessions/{participantSessionsId}",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+/participants/[^/]+/participantSessions/[^/]+$"
+        }
+      },
+      "response": "ParticipantSession",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ]
+    },
+    "conferenceRecords.participants.participantSessions.list": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/participants/{participantsId}/participantSessions",
+      "parameters": {
+        "filter": {
+          "location": "query",
+          "type": "string"
+        },
+        "pageSize": {
+          "location": "query",
+          "type": "integer"
+        },
+        "pageToken": {
+          "location": "query",
+          "type": "string"
+        },
+        "parent": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+/participants/[^/]+$"
+        }
+      },
+      "response": "ListParticipantSessionsResponse",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ],
+      "pageSize": {
+        "default": 100,
+        "max": 250
+      }
+    },
+    "conferenceRecords.recordings.get": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/recordings/{recordingsId}",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+/recordings/[^/]+$"
+        }
+      },
+      "response": "Recording",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ]
+    },
+    "conferenceRecords.recordings.list": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/recordings",
+      "parameters": {
+        "pageSize": {
+          "location": "query",
+          "type": "integer"
+        },
+        "pageToken": {
+          "location": "query",
+          "type": "string"
+        },
+        "parent": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+$"
+        }
+      },
+      "response": "ListRecordingsResponse",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ],
+      "pageSize": {
+        "default": 10,
+        "max": 100
+      }
+    },
+    "conferenceRecords.smartNotes.get": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/smartNotes/{smartNotesId}",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+/smartNotes/[^/]+$"
+        }
+      },
+      "response": "SmartNote",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ]
+    },
+    "conferenceRecords.smartNotes.list": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/smartNotes",
+      "parameters": {
+        "pageSize": {
+          "location": "query",
+          "type": "integer"
+        },
+        "pageToken": {
+          "location": "query",
+          "type": "string"
+        },
+        "parent": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+$"
+        }
+      },
+      "response": "ListSmartNotesResponse",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ],
+      "pageSize": {
+        "default": 10,
+        "max": 100
+      }
+    },
+    "conferenceRecords.transcripts.get": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/transcripts/{transcriptsId}",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+/transcripts/[^/]+$"
+        }
+      },
+      "response": "Transcript",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ]
+    },
+    "conferenceRecords.transcripts.list": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/transcripts",
+      "parameters": {
+        "pageSize": {
+          "location": "query",
+          "type": "integer"
+        },
+        "pageToken": {
+          "location": "query",
+          "type": "string"
+        },
+        "parent": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+$"
+        }
+      },
+      "response": "ListTranscriptsResponse",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ],
+      "pageSize": {
+        "default": 10,
+        "max": 100
+      }
+    },
+    "conferenceRecords.transcripts.entries.get": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/transcripts/{transcriptsId}/entries/{entriesId}",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+/transcripts/[^/]+/entries/[^/]+$"
+        }
+      },
+      "response": "TranscriptEntry",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ]
+    },
+    "conferenceRecords.transcripts.entries.list": {
+      "httpMethod": "GET",
+      "flatPath": "v2/conferenceRecords/{conferenceRecordsId}/transcripts/{transcriptsId}/entries",
+      "parameters": {
+        "pageSize": {
+          "location": "query",
+          "type": "integer"
+        },
+        "pageToken": {
+          "location": "query",
+          "type": "string"
+        },
+        "parent": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^conferenceRecords/[^/]+/transcripts/[^/]+$"
+        }
+      },
+      "response": "ListTranscriptEntriesResponse",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ],
+      "pageSize": {
+        "default": 10,
+        "max": 100
+      }
+    },
+    "spaces.get": {
+      "httpMethod": "GET",
+      "flatPath": "v2/spaces/{spacesId}",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^spaces/[^/]+$"
+        }
+      },
+      "response": "Space",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly",
+        "https://www.googleapis.com/auth/meetings.space.settings"
+      ]
+    },
+    "spaces.members.get": {
+      "httpMethod": "GET",
+      "flatPath": "v2/spaces/{spacesId}/members/{membersId}",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^spaces/[^/]+/members/[^/]+$"
+        }
+      },
+      "response": "Member",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ]
+    },
+    "spaces.members.list": {
+      "httpMethod": "GET",
+      "flatPath": "v2/spaces/{spacesId}/members",
+      "parameters": {
+        "pageSize": {
+          "location": "query",
+          "type": "integer"
+        },
+        "pageToken": {
+          "location": "query",
+          "type": "string"
+        },
+        "parent": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^spaces/[^/]+$"
+        }
+      },
+      "response": "ListMembersResponse",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.readonly"
+      ],
+      "pageSize": {
+        "default": 250,
+        "max": 500
+      }
+    },
+    "spaces.create": {
+      "httpMethod": "POST",
+      "flatPath": "v2/spaces",
+      "parameters": {},
+      "request": "Space",
+      "response": "Space",
+      "scopes": ["https://www.googleapis.com/auth/meetings.space.created"]
+    },
+    "spaces.patch": {
+      "httpMethod": "PATCH",
+      "flatPath": "v2/spaces/{spacesId}",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^spaces/[^/]+$"
+        },
+        "updateMask": {
+          "location": "query",
+          "type": "string",
+          "format": "google-fieldmask"
+        }
+      },
+      "request": "Space",
+      "response": "Space",
+      "scopes": [
+        "https://www.googleapis.com/auth/meetings.space.created",
+        "https://www.googleapis.com/auth/meetings.space.settings"
+      ]
+    },
+    "spaces.endActiveConference": {
+      "httpMethod": "POST",
+      "flatPath": "v2/spaces/{spacesId}:endActiveConference",
+      "parameters": {
+        "name": {
+          "location": "path",
+          "type": "string",
+          "required": true,
+          "pattern": "^spaces/[^/]+$"
+        }
+      },
+      "request": "EndActiveConferenceRequest",
+      "response": "Empty",
+      "scopes": ["https://www.googleapis.com/auth/meetings.space.created"]
+    }
+  },
+  "schemas": {
+    "ActiveConference": {
+      "properties": {
+        "conferenceRecord": {
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
+    "AnonymousUser": {
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
+    "ArtifactConfig": {
+      "properties": {
+        "recordingConfig": {
+          "$ref": "RecordingConfig"
+        },
+        "smartNotesConfig": {
+          "$ref": "SmartNotesConfig"
+        },
+        "transcriptionConfig": {
+          "$ref": "TranscriptionConfig"
+        }
+      }
+    },
+    "ConferenceRecord": {
+      "properties": {
+        "endTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "expireTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string"
+        },
+        "space": {
+          "type": "string",
+          "readOnly": true
+        },
+        "startTime": {
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
+    "DocsDestination": {
+      "properties": {
+        "document": {
+          "type": "string",
+          "readOnly": true
+        },
+        "exportUri": {
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
+    "DriveDestination": {
+      "properties": {
+        "exportUri": {
+          "type": "string",
+          "readOnly": true
+        },
+        "file": {
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
+    "GatewaySipAccess": {
+      "properties": {
+        "sipAccessCode": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        }
+      }
+    },
+    "ListConferenceRecordsResponse": {
+      "properties": {
+        "conferenceRecords": {
+          "type": "array",
+          "items": {
+            "$ref": "ConferenceRecord"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "ListMembersResponse": {
+      "properties": {
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "Member"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "ListParticipantSessionsResponse": {
+      "properties": {
+        "nextPageToken": {
+          "type": "string"
+        },
+        "participantSessions": {
+          "type": "array",
+          "items": {
+            "$ref": "ParticipantSession"
+          }
+        }
+      }
+    },
+    "ListParticipantsResponse": {
+      "properties": {
+        "nextPageToken": {
+          "type": "string"
+        },
+        "participants": {
+          "type": "array",
+          "items": {
+            "$ref": "Participant"
+          }
+        },
+        "totalSize": {
+          "type": "integer"
+        }
+      }
+    },
+    "ListRecordingsResponse": {
+      "properties": {
+        "nextPageToken": {
+          "type": "string"
+        },
+        "recordings": {
+          "type": "array",
+          "items": {
+            "$ref": "Recording"
+          }
+        }
+      }
+    },
+    "ListSmartNotesResponse": {
+      "properties": {
+        "nextPageToken": {
+          "type": "string"
+        },
+        "smartNotes": {
+          "type": "array",
+          "items": {
+            "$ref": "SmartNote"
+          }
+        }
+      }
+    },
+    "ListTranscriptEntriesResponse": {
+      "properties": {
+        "nextPageToken": {
+          "type": "string"
+        },
+        "transcriptEntries": {
+          "type": "array",
+          "items": {
+            "$ref": "TranscriptEntry"
+          }
+        }
+      }
+    },
+    "ListTranscriptsResponse": {
+      "properties": {
+        "nextPageToken": {
+          "type": "string"
+        },
+        "transcripts": {
+          "type": "array",
+          "items": {
+            "$ref": "Transcript"
+          }
+        }
+      }
+    },
+    "Member": {
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["ROLE_UNSPECIFIED", "COHOST"]
+        }
+      }
+    },
+    "ModerationRestrictions": {
+      "properties": {
+        "chatRestriction": {
+          "type": "string",
+          "enum": ["RESTRICTION_TYPE_UNSPECIFIED", "HOSTS_ONLY", "NO_RESTRICTION"]
+        },
+        "defaultJoinAsViewerType": {
+          "type": "string",
+          "enum": ["DEFAULT_JOIN_AS_VIEWER_TYPE_UNSPECIFIED", "ON", "OFF"]
+        },
+        "presentRestriction": {
+          "type": "string",
+          "enum": ["RESTRICTION_TYPE_UNSPECIFIED", "HOSTS_ONLY", "NO_RESTRICTION"]
+        },
+        "reactionRestriction": {
+          "type": "string",
+          "enum": ["RESTRICTION_TYPE_UNSPECIFIED", "HOSTS_ONLY", "NO_RESTRICTION"]
+        }
+      }
+    },
+    "Participant": {
+      "properties": {
+        "anonymousUser": {
+          "$ref": "AnonymousUser"
+        },
+        "earliestStartTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "latestEndTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string",
+          "readOnly": true
+        },
+        "phoneUser": {
+          "$ref": "PhoneUser"
+        },
+        "signedinUser": {
+          "$ref": "SignedinUser"
+        }
+      }
+    },
+    "ParticipantSession": {
+      "properties": {
+        "endTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string"
+        },
+        "startTime": {
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
+    "PhoneAccess": {
+      "properties": {
+        "languageCode": {
+          "type": "string"
+        },
+        "phoneNumber": {
+          "type": "string"
+        },
+        "pin": {
+          "type": "string"
+        },
+        "regionCode": {
+          "type": "string"
+        }
+      }
+    },
+    "PhoneUser": {
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
+    "Recording": {
+      "properties": {
+        "driveDestination": {
+          "$ref": "DriveDestination",
+          "readOnly": true
+        },
+        "endTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string",
+          "readOnly": true
+        },
+        "startTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "state": {
+          "type": "string",
+          "enum": ["STATE_UNSPECIFIED", "STARTED", "ENDED", "FILE_GENERATED"],
+          "readOnly": true
+        }
+      }
+    },
+    "RecordingConfig": {
+      "properties": {
+        "autoRecordingGeneration": {
+          "type": "string",
+          "enum": ["AUTO_GENERATION_TYPE_UNSPECIFIED", "ON", "OFF"]
+        }
+      }
+    },
+    "SignedinUser": {
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "readOnly": true
+        },
+        "user": {
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
+    "SmartNote": {
+      "properties": {
+        "docsDestination": {
+          "$ref": "DocsDestination",
+          "readOnly": true
+        },
+        "endTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string",
+          "readOnly": true
+        },
+        "startTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "state": {
+          "type": "string",
+          "enum": ["STATE_UNSPECIFIED", "STARTED", "ENDED", "FILE_GENERATED"],
+          "readOnly": true
+        }
+      }
+    },
+    "SmartNotesConfig": {
+      "properties": {
+        "autoSmartNotesGeneration": {
+          "type": "string",
+          "enum": ["AUTO_GENERATION_TYPE_UNSPECIFIED", "ON", "OFF"]
+        }
+      }
+    },
+    "Space": {
+      "properties": {
+        "activeConference": {
+          "$ref": "ActiveConference"
+        },
+        "config": {
+          "$ref": "SpaceConfig"
+        },
+        "gatewaySipAccess": {
+          "type": "array",
+          "items": {
+            "$ref": "GatewaySipAccess"
+          },
+          "readOnly": true
+        },
+        "meetingCode": {
+          "type": "string",
+          "readOnly": true
+        },
+        "meetingUri": {
+          "type": "string",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string"
+        },
+        "phoneAccess": {
+          "type": "array",
+          "items": {
+            "$ref": "PhoneAccess"
+          },
+          "readOnly": true
+        }
+      }
+    },
+    "SpaceConfig": {
+      "properties": {
+        "accessType": {
+          "type": "string",
+          "enum": ["ACCESS_TYPE_UNSPECIFIED", "OPEN", "TRUSTED", "RESTRICTED"]
+        },
+        "artifactConfig": {
+          "$ref": "ArtifactConfig"
+        },
+        "attendanceReportGenerationType": {
+          "type": "string",
+          "enum": ["ATTENDANCE_REPORT_GENERATION_TYPE_UNSPECIFIED", "GENERATE_REPORT", "DO_NOT_GENERATE"]
+        },
+        "entryPointAccess": {
+          "type": "string",
+          "enum": ["ENTRY_POINT_ACCESS_UNSPECIFIED", "ALL", "CREATOR_APP_ONLY"]
+        },
+        "moderation": {
+          "type": "string",
+          "enum": ["MODERATION_UNSPECIFIED", "OFF", "ON"]
+        },
+        "moderationRestrictions": {
+          "$ref": "ModerationRestrictions"
+        }
+      }
+    },
+    "Transcript": {
+      "properties": {
+        "docsDestination": {
+          "$ref": "DocsDestination",
+          "readOnly": true
+        },
+        "endTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string",
+          "readOnly": true
+        },
+        "startTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "state": {
+          "type": "string",
+          "enum": ["STATE_UNSPECIFIED", "STARTED", "ENDED", "FILE_GENERATED"],
+          "readOnly": true
+        }
+      }
+    },
+    "TranscriptEntry": {
+      "properties": {
+        "endTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "languageCode": {
+          "type": "string",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string",
+          "readOnly": true
+        },
+        "participant": {
+          "type": "string",
+          "readOnly": true
+        },
+        "startTime": {
+          "type": "string",
+          "readOnly": true
+        },
+        "text": {
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
+    "TranscriptionConfig": {
+      "properties": {
+        "autoTranscriptionGeneration": {
+          "type": "string",
+          "enum": ["AUTO_GENERATION_TYPE_UNSPECIFIED", "ON", "OFF"]
+        }
+      }
+    },
+    "EndActiveConferenceRequest": {
+      "properties": {}
+    },
+    "Empty": {
+      "properties": {}
+    }
+  }
+}

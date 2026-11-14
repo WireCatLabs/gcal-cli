@@ -14,7 +14,7 @@ import {
   sessionStorage,
   storageOf,
 } from "./google.js"
-import { GRANT_SCOPES, type Grant, grantsOf } from "./grants.js"
+import { GRANT_SCOPES, type Grant, grantsOf, MEET_WRITE_SCOPE, scopesFor } from "./grants.js"
 import { IDENTITY } from "./identity.js"
 import { openGcalStore, PROVIDER } from "./store.js"
 
@@ -68,7 +68,7 @@ export const signIn = async (options: SignInOptions) => {
   const keeper = sessionKeeper(options)
   let account = ""
   const { scopes } = await keeper.signIn({
-    scopes: [...SIGN_IN_SCOPES, ...(options.grants ?? []).map((grant) => GRANT_SCOPES[grant])],
+    scopes: [...SIGN_IN_SCOPES, ...scopesFor(options.grants ?? [])],
     openBrowser: options.openBrowser,
     showUrl: options.showUrl,
     ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
@@ -76,8 +76,12 @@ export const signIn = async (options: SignInOptions) => {
     accept: async (tokens) => {
       if (!tokens.scopes.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
       // Google lets the account untick a scope it was asked for, and still signs in.
-      const missing = (options.grants ?? []).find((grant) => !tokens.scopes.includes(GRANT_SCOPES[grant]))
+      const grants = options.grants ?? []
+      const missing = grants.find((grant) => !tokens.scopes.includes(GRANT_SCOPES[grant]))
       if (missing) throw grantMissing(missing)
+      // Meet writes are asked with both words; unticked, the grant that is short is the one the owner can name.
+      if (scopesFor(grants).includes(MEET_WRITE_SCOPE) && !tokens.scopes.includes(MEET_WRITE_SCOPE))
+        throw grantMissing("write")
       if (!tokens.accessToken) throw new CliError("authentication_error", "Google returned no access token")
       account = await accountEmail(tokens.accessToken, options.fetch ?? googleFetch, options.signal, options.events)
       const previous = savedAccount(env, profile)

@@ -15,7 +15,7 @@ import { openStore, storePath } from "@wirecat/cli-core/store"
 import type { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
 import { CALENDAR_READ_SCOPE, googleClient, moveOldSignInFile, sessionStorage, signInFilePath } from "./google.js"
-import { ACLS_SCOPE, EVENTS_SCOPE } from "./grants.js"
+import { ACLS_SCOPE, EVENTS_SCOPE, MEET_READ_SCOPE, MEET_WRITE_SCOPE } from "./grants.js"
 import { run } from "./program.js"
 
 const ACCESS = "fixture-access-token-7Qm2"
@@ -227,6 +227,31 @@ describe("session start", () => {
     )
     expect(item(started.out)).toMatchObject({ grants: ["sharing"] })
     expect(new URL(opened[0] ?? "").searchParams.get("scope")).toBe(`openid email ${CALENDAR_READ_SCOPE} ${ACLS_SCOPE}`)
+  })
+
+  it("--grant meetings asks for Meet read access only; with write it also asks to make Meet rooms", async () => {
+    const { gcal, opened } = harness()
+    const read = await gcal(
+      ["personal", "session", "start", "--client-file", clientFile(), "--grant", "meetings", "--json"],
+      google({ scope: `${GRANTED} ${MEET_READ_SCOPE}` }),
+    )
+    expect(item(read.out)).toMatchObject({ grants: ["meetings"] })
+    expect(new URL(opened[0] ?? "").searchParams.get("scope")).toBe(
+      `openid email ${CALENDAR_READ_SCOPE} ${MEET_READ_SCOPE}`,
+    )
+    const both = await gcal(
+      ["personal", "session", "start", "--client-file", clientFile(), "--grant", "write,meetings", "--json"],
+      google({ scope: `${GRANTED} ${EVENTS_SCOPE} ${MEET_READ_SCOPE} ${MEET_WRITE_SCOPE}` }),
+    )
+    expect(item(both.out)).toMatchObject({ grants: ["write", "meetings"] })
+    expect(new URL(opened[1] ?? "").searchParams.get("scope")).toBe(
+      `openid email ${CALENDAR_READ_SCOPE} ${EVENTS_SCOPE} ${MEET_READ_SCOPE} ${MEET_WRITE_SCOPE}`,
+    )
+    const unticked = await gcal(
+      ["personal", "session", "start", "--client-file", clientFile(), "--grant", "write,meetings", "--json"],
+      google({ scope: `${GRANTED} ${EVENTS_SCOPE} ${MEET_READ_SCOPE}` }),
+    )
+    expect(failure(unticked.err)).toMatchObject({ code: "permission_error", reason: "oauth.scope-missing" })
   })
 
   it("refuses --grant write when the account unticked it, and an unknown grant", async () => {

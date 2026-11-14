@@ -22,6 +22,7 @@ import { accountCommand } from "./commands/account.js"
 import { apiCommand } from "./commands/api.js"
 import { calendarCommands } from "./commands/calendar.js"
 import { doctorCommand } from "./commands/doctor.js"
+import { meetingsMount } from "./commands/meetings.js"
 import { modelsCommand } from "./commands/models.js"
 import { scheduleCommand } from "./commands/schedule.js"
 import { sessionCommand } from "./commands/session.js"
@@ -54,6 +55,7 @@ const mcpCommand = () => {
       "attendee and organizer names",
       "shared calendar names",
       "feed events and feed names",
+      "Google Meet participant names and what they said in a transcript",
       "the messages, sender names and meeting transcripts search all finds",
     ],
     permissionExample: "api.calendar.events.insert=deny",
@@ -81,36 +83,42 @@ const readOnlyFlag = (program: Command) =>
     env[`${IDENTITY.envPrefix}_READ_ONLY`] = "1"
   })
 
-export const definition = (): ProgramDefinition => ({
-  app: IDENTITY,
-  configuration,
-  configure: (program) => {
-    placeInSections(program)
-    readOnlyFlag(program)
-  },
-  firstScreen: FIRST_SCREEN,
-  commands: () => [
-    commandsCommand(IDENTITY),
-    sessionCommand(),
-    accountCommand(),
-    ...calendarCommands(),
-    apiCommand(),
-    doctorCommand(),
-    modelsCommand(),
-    guide(),
-    skillCommand(IDENTITY, SKILL),
-    mcpCommand(),
-    upgradeCommand(IDENTITY, PACKAGE, (command) => ({
-      ...outputFor(command),
-      installer: () => update.installer({}),
-      latest: () => update.latest({}),
-      install: (argv) => update.runUpdate(argv, {}),
-    })),
-    configCommand(IDENTITY, configuration, { ownerOnly: OWNER_ONLY_SETTINGS }),
-    runsCommand(IDENTITY),
-    scheduleCommand(),
-  ],
-})
+export const definition = (): ProgramDefinition => {
+  const meetings = meetingsMount()
+  return {
+    app: IDENTITY,
+    configuration,
+    configure: (program) => {
+      placeInSections(program)
+      readOnlyFlag(program)
+      meetings.configure(program)
+    },
+    prepare: meetings.prepare,
+    firstScreen: FIRST_SCREEN,
+    commands: () => [
+      commandsCommand(IDENTITY),
+      sessionCommand(),
+      accountCommand(),
+      ...calendarCommands(),
+      ...meetings.commands(),
+      apiCommand(),
+      doctorCommand(),
+      modelsCommand(),
+      guide(),
+      skillCommand(IDENTITY, SKILL),
+      mcpCommand(),
+      upgradeCommand(IDENTITY, PACKAGE, (command) => ({
+        ...outputFor(command),
+        installer: () => update.installer({}),
+        latest: () => update.latest({}),
+        install: (argv) => update.runUpdate(argv, {}),
+      })),
+      configCommand(IDENTITY, configuration, { ownerOnly: OWNER_ONLY_SETTINGS }),
+      runsCommand(IDENTITY),
+      scheduleCommand(),
+    ],
+  }
+}
 
 export const createProgram = (options?: ProgramOptions): Command => createSharedProgram(definition(), options)
 

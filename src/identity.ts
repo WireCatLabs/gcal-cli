@@ -31,7 +31,13 @@ export const DESKTOP: ManifestIdentity & { hosts: readonly string[] } = {
     gives: "Lets your agent read your Google calendars, and change events when you allow it.",
     asks: "Google asks you to sign in and allow read-only access to your calendars.",
   },
-  hosts: ["accounts.google.com", "oauth2.googleapis.com", "openidconnect.googleapis.com", "www.googleapis.com"],
+  hosts: [
+    "accounts.google.com",
+    "oauth2.googleapis.com",
+    "openidconnect.googleapis.com",
+    "www.googleapis.com",
+    "meet.googleapis.com",
+  ],
   userHosts: "the calendar feed (ICS) addresses you add",
 }
 
