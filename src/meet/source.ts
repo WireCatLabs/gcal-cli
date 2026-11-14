@@ -20,7 +20,7 @@ import type {
 import { MEET_PROVIDER } from "../store.js"
 import { idOf, type MeetApi, ownId } from "./api.js"
 
-export const DAY_MS = 86_400_000
+const DAY_MS = 86_400_000
 const READY = "FILE_GENERATED"
 /** Spaces looked up at once: a page of a hundred calls would otherwise send a hundred requests together. */
 const AT_ONCE = 4
@@ -43,7 +43,7 @@ const orNull = <T>(read: Promise<T>): Promise<T | null> =>
  * Meet's filter takes RFC 3339 times in double quotes: https://developers.google.com/workspace/meet/api/guides/conferences.
  * Both ends of cli-core's window are inclusive, as `>=` and `<=` are.
  */
-export const filterOf = ({ from, to }: MeetingWindow): string | undefined => {
+const filterOf = ({ from, to }: MeetingWindow): string | undefined => {
   const terms = [
     ...(from === undefined ? [] : [`start_time>="${new Date(from).toISOString()}"`]),
     ...(to === undefined ? [] : [`start_time<="${new Date(to).toISOString()}"`]),

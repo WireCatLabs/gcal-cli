@@ -80,7 +80,6 @@ const newMeet = (requestId: string) => ({
 })
 
 export interface WriterOptions {
-  /** `events create --meet` and `events update --meet`: the write also asks Calendar for a Google Meet link. */
   meet?: boolean
 }
 

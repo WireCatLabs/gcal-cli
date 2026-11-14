@@ -99,7 +99,7 @@ export const CONFERENCES: Conference[] = [
 ]
 
 export const SPACES = [
-  { name: "spaces/space-a", meetingCode: "abc-mnop-xyz", meetingUri: "https://meet.google.com/abc-mnop-xyz" },
+  { name: "spaces/space-a", meetingCode: "abc-defg-hij", meetingUri: "https://meet.google.com/abc-defg-hij" },
   { name: "spaces/space-b", meetingCode: "def-ghij-klm", meetingUri: "https://meet.google.com/def-ghij-klm" },
 ]
 

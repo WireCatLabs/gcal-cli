@@ -1,16 +1,17 @@
-import { existsSync, mkdtempSync, readFileSync } from "node:fs"
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { memoryKeyring } from "@wirecat/cli-base"
-import { rememberAccount } from "@wirecat/cli-core/cli"
+import { rememberAccount, run as runShared } from "@wirecat/cli-core/cli"
+import type { MeetingSearchIndexStore } from "@wirecat/cli-core/meetings"
 import { describe, expect, it } from "vitest"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
-import { MEET_READ_SCOPE } from "./grants.js"
+import { EVENTS_SCOPE, MEET_READ_SCOPE } from "./grants.js"
 import { IDENTITY } from "./identity.js"
 import { googleMeetSource } from "./meet/source.js"
-import { run } from "./program.js"
+import { definition, run } from "./program.js"
 import { MEET_PROVIDER, openGcalStore } from "./store.js"
-import { type FakeMeetOptions, MEET_ACCESS } from "./testing/fake-meet.js"
+import { type FakeMeetOptions, googleFailure, MEET_ACCESS } from "./testing/fake-meet.js"
 import { fakeGoogleCalendar } from "./testing/google-calendar.js"
 import { CONFERENCES, meetOn, RECORD, sampleMeet } from "./testing/meet-sample.js"
 
@@ -71,7 +72,7 @@ const harness = ({
       await store.close()
     }
   }
-  return { gcal, ok, raw, env, meet, meetAccount }
+  return { gcal, ok, raw, env, meet, meetAccount, keyring, fetch }
 }
 
 const records = (meet: ReturnType<typeof sampleMeet>) =>
@@ -91,7 +92,7 @@ describe("meetings over Google Meet", () => {
     const shown = (await ok("personal", "meetings", "show", RECORD, "--offline")).item
     expect(shown).toMatchObject({
       provider_id: RECORD,
-      url: "https://meet.google.com/abc-mnop-xyz",
+      url: "https://meet.google.com/abc-defg-hij",
       found_in: "archive",
     })
     expect(shown.documents).toEqual(
@@ -161,6 +162,155 @@ describe("meetings over Google Meet", () => {
     expect(meet.calls).toEqual([])
   })
 
+  it("a sync refused for the grant leaves no Google Meet account, and the hint keeps the grants held", async () => {
+    const { gcal, env } = harness({ scopes: [CALENDAR_READ_SCOPE, EVENTS_SCOPE] })
+    const synced = await gcal("personal", "meetings", "sync")
+    expect(synced.error.message).toContain("--grant write,meetings again")
+    expect(existsSync(env.MESSAGING_STORE ?? "")).toBe(false)
+  })
+
+  it("a synced call links to its calendar entry by its meet: code, and adds no event of its own", async () => {
+    const { ok } = harness()
+    await ok("personal", "sync")
+    await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
+    const shown = (await ok("personal", "meetings", "show", "rec-1", "--offline")).item
+    const listed = (await ok("personal", "events", "list", "ends_at>=2026-11-02", "starts_at<=2026-11-03")).items
+    const day = listed.filter(({ starts_at }: { starts_at: string }) => starts_at.startsWith("2026-11-02"))
+    expect(day.map(({ title }: { title: string }) => title)).toEqual(["Weekly planning"])
+    expect(shown.event_id).toBe(day[0].id)
+    expect(JSON.stringify((await ok("personal", "events", "show", `event:${day[0].id}`)).item)).toContain(
+      "meet.google.com/abc-defg-hij",
+    )
+  })
+
+  it("search all finds what a Meet transcript said, once the search index holds it", async () => {
+    const { ok, env, meetAccount } = harness()
+    await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
+    const store = await openGcalStore(env)
+    try {
+      await (store.meetings as unknown as MeetingSearchIndexStore).indexSearch({
+        accountId: (await meetAccount()).id,
+        maxReadBytes: 1_000_000,
+      })
+    } finally {
+      await store.close()
+    }
+    const found = await ok("personal", "search", "all", "plan")
+    expect(JSON.stringify(found.items)).toContain("Shall we start with the plan?")
+  })
+
+  it("keeps the token and what a transcript said out of the errors and the run records (WC-TEST-8)", async () => {
+    const { raw, env } = harness()
+    const printed = [
+      await raw(["--record", "personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z", "--json"]),
+      await raw(["--record", "personal", "meetings", "show", "rec-2", "--backend", "server", "--json"]),
+      await raw(["--record", "personal", "meetings", "show", "missing-call", "--backend", "server", "--json"]),
+    ]
+      .map(({ err }) => err.join("\n"))
+      .join("\n")
+    const files = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+        entry.isDirectory() ? files(join(dir, entry.name)) : [join(dir, entry.name)],
+      )
+    const records = files(env.GCAL_STATE_DIR ?? "")
+      .map((path) => readFileSync(path, "latin1"))
+      .join("\n")
+    expect(records).toContain("/v2/conferenceRecords")
+    for (const marker of [MEET_ACCESS, "Shall we start with the plan?", "Test Person A", "doc-t1"]) {
+      expect(printed).not.toContain(marker)
+      expect(records).not.toContain(marker)
+    }
+  })
+
+  it("show keeps no transcript while Google is still making it, and says so", async () => {
+    const conferences = structuredClone(CONFERENCES)
+    const transcript = conferences[1]?.transcripts?.[0]?.transcript as Record<string, unknown>
+    transcript.state = "ENDED"
+    const { ok } = harness({ meet: { conferences } })
+    const shown = await ok("personal", "meetings", "show", RECORD)
+    expect(shown.missing).toEqual([expect.objectContaining({ field: "transcript" })])
+    expect(shown.item.transcripts).toEqual([])
+    expect((await ok("personal", "meetings", "show", RECORD, "--offline")).item.transcripts).toEqual([])
+  })
+
+  it("a smart note Google finished is kept as the call's notes document", async () => {
+    const conferences = structuredClone(CONFERENCES)
+    const note = conferences[1]?.smartNotes?.[0] as Record<string, unknown>
+    Object.assign(note, { state: "FILE_GENERATED", docsDestination: { document: "doc-n1" } })
+    const { ok } = harness({ meet: { conferences } })
+    const shown = (await ok("personal", "meetings", "show", RECORD)).item
+    expect(shown.documents).toEqual(
+      expect.arrayContaining([expect.objectContaining({ file_id: "doc-n1", role: "notes" })]),
+    )
+  })
+
+  it("sync reads every page of calls, past Google's hundred", async () => {
+    const conferences = Array.from({ length: 105 }, (_, at) => ({
+      record: {
+        name: `conferenceRecords/many-${at}`,
+        startTime: new Date(Date.UTC(2026, 10, 3, 0, at)).toISOString(),
+        endTime: new Date(Date.UTC(2026, 10, 3, 0, at, 30)).toISOString(),
+      },
+    }))
+    const { ok, meet } = harness({ meet: { conferences } })
+    const synced = await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
+    expect(synced.item.meetings).toBe(105)
+    expect(records(meet)).toHaveLength(2)
+  })
+
+  it("a call live at one sync is kept by the next one after it ends", async () => {
+    const conferences = structuredClone(CONFERENCES)
+    const { ok, env, meetAccount } = harness({ meet: { conferences } })
+    expect((await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")).item.meetings).toBe(2)
+    const store = await openGcalStore(env)
+    try {
+      await store.meetings.setCursor((await meetAccount()).id, "2026-11-12T00:00:00.000Z", Date.now())
+    } finally {
+      await store.close()
+    }
+    const live = conferences[2]?.record as Record<string, unknown>
+    live.endTime = "2026-11-12T15:45:00Z"
+    await ok("personal", "meetings", "sync")
+    const listed = (await ok("personal", "meetings", "list", "--offline")).items
+    expect(listed.map(({ provider_id }: { provider_id: string }) => provider_id)).toEqual(["rec-3", "rec-2", "rec-1"])
+  })
+
+  it("an MCP server's programs keep their own meetings run, so two calls at once answer each their own", async () => {
+    const { env, keyring, fetch, ok } = harness()
+    await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
+    const shared = definition()
+    const call = async (argv: string[]) => {
+      const out: string[] = []
+      const code = await runShared([...argv, "--json"], shared, {
+        streams: { data: (text) => out.push(text), diagnostic: () => {} },
+        tty: false,
+        env,
+        keyring,
+        fetch,
+      })
+      return { code, answer: JSON.parse(out.join("\n")) }
+    }
+    const [listed, shown] = await Promise.all([
+      call(["personal", "meetings", "list", "--offline"]),
+      call(["personal", "meetings", "show", RECORD]),
+    ])
+    expect(listed.answer.items).toHaveLength(2)
+    expect(shown.answer.item.provider_id).toBe(RECORD)
+  })
+
+  it("GCAL_READ_ONLY with a store that cannot be opened fails, and serves no empty one in its place", async () => {
+    const { raw, env } = harness()
+    const broken = join(mkdtempSync(join(tmpdir(), "store-broken-")), "wirecat.db")
+    writeFileSync(broken, "not a SQLite file")
+    const read = await raw(["personal", "meetings", "list", "--offline", "--json"], {
+      GCAL_READ_ONLY: "1",
+      MESSAGING_STORE: broken,
+    })
+    expect(read.code).not.toBe(0)
+    expect(readFileSync(broken, "utf8")).toBe("not a SQLite file")
+    expect(env.MESSAGING_STORE).not.toBe(broken)
+  })
+
   it("a sync held 25 days by a transcript still pending says so, before Google deletes the call", async () => {
     const conferences = structuredClone(CONFERENCES)
     const { ok, env, meetAccount } = harness({ meet: { conferences } })
@@ -179,6 +329,64 @@ describe("meetings over Google Meet", () => {
     expect(synced.item.hint).toContain(`the sync is held at ${held}`)
     expect(synced.item.hint).toContain("30 days after it ends")
     expect((await meetAccount()).cursor).toBe(held)
+  })
+})
+
+describe("Google Meet's refusals and limits", () => {
+  const failing = (status: number, path: RegExp, headers: Record<string, string> = {}) => ({
+    status,
+    path,
+    headers,
+    body: googleFailure(
+      status,
+      status === 429 ? "RESOURCE_EXHAUSTED" : status === 404 ? "NOT_FOUND" : "PERMISSION_DENIED",
+      "x",
+    ),
+  })
+
+  it("sync: 403 on the list is access denied, 404 is not found, and nothing is saved", async () => {
+    for (const [status, code] of [
+      [403, "permission_error"],
+      [404, "not_found"],
+    ] as const) {
+      const { gcal, ok } = harness({ meet: { failWith: failing(status, /^\/v2\/conferenceRecords$/u) } })
+      const synced = await gcal("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
+      expect(synced.error).toMatchObject({ code })
+      expect(synced.error.message).toContain("Google Meet")
+      expect((await ok("personal", "meetings", "list", "--offline")).items).toEqual([])
+    }
+  })
+
+  it("sync: a 429 stops the run at once, holds the cursor at the call it hit and says when to try again", async () => {
+    const { ok, meet, meetAccount } = harness({
+      meet: { failWith: failing(429, /\/participants$/u, { "retry-after": "30" }) },
+    })
+    const synced = await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
+    expect(synced.meta).toMatchObject({ complete: false, retry_after_ms: 30_000 })
+    expect(synced.item.hint).toContain("rate limit stopped the run; run meetings sync again after 30 s")
+    expect(synced.next[0]).toMatchObject({ command: "meetings sync", why: expect.stringContaining("rate limit") })
+    expect(meet.calls.filter(({ path }) => path.endsWith("/participants"))).toHaveLength(1)
+    expect((await meetAccount()).cursor).toBe("2026-11-02T09:00:00.000Z")
+  })
+
+  it("show: a call never stored that Google hides (403) or lacks (404) is not found; --backend server names a 429", async () => {
+    for (const [status, code] of [
+      [403, "not_found"],
+      [404, "not_found"],
+      [429, "rate_limited"],
+    ] as const) {
+      const { gcal } = harness({ meet: { failWith: failing(status, /^\/v2\/conferenceRecords\/rec-2$/u) } })
+      const shown = await gcal("personal", "meetings", "show", RECORD, "--backend", "server")
+      expect(shown.error).toMatchObject({ code })
+    }
+  })
+
+  it("a sync its budget stops goes on with the same --timeout, and never --since-time", async () => {
+    const { ok } = harness()
+    const first = await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z", "--timeout", "7s")
+    expect(first.item).toMatchObject({ meetings: 1, stopped: "requests", remaining: 1 })
+    expect(first.meta.complete).toBe(false)
+    expect(first.next).toEqual([expect.objectContaining({ command: "meetings sync", args: { timeout: "7s" } })])
   })
 })
 
@@ -235,7 +443,7 @@ describe("the shared meetings commands over stored Meet calls", () => {
 
   it("sync --rescan and --lookback-days read the calls again and keep one row each", async () => {
     const { ok, raw } = await synced()
-    expect((await ok("personal", "meetings", "sync", "--rescan")).item.meetings).toBeGreaterThanOrEqual(0)
+    expect((await ok("personal", "meetings", "sync", "--rescan")).item.meetings).toBe(2)
     expect((await raw(["personal", "meetings", "sync", "--lookback-days", "3", "--jsonl"])).code).toBe(0)
     expect((await ok("personal", "meetings", "list", "--offline")).items).toHaveLength(2)
   })
@@ -245,6 +453,7 @@ describe("the shared meetings commands over stored Meet calls", () => {
     const read = await raw(["personal", "meetings", "transcript", "1", "--json"], { GCAL_READ_ONLY: "1" })
     expect(existsSync(env.MESSAGING_STORE ?? "")).toBe(false)
     expect(read.code).not.toBe(0)
+    expect(JSON.parse(read.err.join("\n").trim().split("\n").at(-1) ?? "{}").error.code).toBe("not_found")
   })
 })
 

@@ -9,7 +9,7 @@
   {
     "rule": "undeclared-host",
     "target": "developers.google.com",
-    "reason": "A link to Google's Calendar API error guide that a refusal shows the reader (src/errors.ts); gcal never sends a request there. hostFetch would refuse one.",
+    "reason": "A link to Google's Calendar API error guide that a refusal shows the reader (src/api-contract.ts); gcal never sends a request there. hostFetch would refuse one.",
     "owner": "@WireCatLabs",
     "review_after": "2027-05-08"
   }

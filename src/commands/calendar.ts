@@ -156,7 +156,7 @@ export const calendarCommands = (): Command[] => {
             // Within the three examples a command may give: the last shared one makes room.
             ...(metaOf(one).examples ?? []).slice(0, 2),
             name === "create"
-              ? `${IDENTITY.command} personal events create primary --title 'Example sync' ` +
+              ? `${IDENTITY.command} personal events create 3 --title 'Example sync' ` +
                 "--start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 --meet"
               : `${IDENTITY.command} personal events update event:42 --title 'Example sync' --meet --no-notify`,
           ],

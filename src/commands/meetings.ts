@@ -111,7 +111,7 @@ const syncAnswer = (command: Command, value: Record<string, unknown>, state: Mee
                 ),
               ),
               why: limited ? "Google Meet's rate limit stopped the run" : SYNC_WHY,
-              safe_to_auto_execute: !limited,
+              safe_to_auto_execute: true,
             },
           ],
         }
@@ -212,7 +212,6 @@ const depsOf = (state: MeetingsRun): MeetingCommandDeps => {
   }
 }
 
-/** The shared `meetings` commands over Google Meet; their store reads and writes are cli-core's. */
 export const meetingsMount = () => {
   const runs = new WeakMap<Command, MeetingsRun>()
   const runOf = (program: Command) => {
