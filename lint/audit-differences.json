@@ -5,5 +5,19 @@
     "target": "reason meeting-project.stale: code",
     "reason": "cli-core 0.651.0 made a stale meeting project fingerprint conflict, not configuration_error; the published CLIs are still on 0.650.0 or older, and the entry goes once they publish on 0.651.0+.",
     "review_after": "2026-11-27"
+  },
+  {
+    "group": "all",
+    "rule": "same-entity-schema",
+    "target": "entity meeting",
+    "reason": "cli-core 0.660.0 adds provider_id and untrusted to meeting items; zm is still on 0.659.0, and the entry goes once zm publishes on 0.660.0+.",
+    "review_after": "2026-11-28"
+  },
+  {
+    "group": "all",
+    "rule": "same-entity-schema",
+    "target": "entity meeting_details",
+    "reason": "cli-core 0.660.0 adds provider_id and untrusted to meeting items; zm is still on 0.659.0, and the entry goes once zm publishes on 0.660.0+.",
+    "review_after": "2026-11-28"
   }
 ]

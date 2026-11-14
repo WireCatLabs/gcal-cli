@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**230 ✅ · 364 ⛔ · 0 ❌** — 106 commands, 488 options.
+**266 ✅ · 366 ⛔ · 0 ❌** — 113 commands, 519 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -68,6 +68,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events create` | `--no-notify` | ✅ |  |
 | `events create` | `--operation-id` | ✅ |  |
 | `events create` | `--text` | ✅ |  |
+| `events create` | `--meet` | ✅ |  |
 | `events update` |  | ✅ |  |
 | `events update` | `--title` | ✅ |  |
 | `events update` | `--start-time` | ✅ |  |
@@ -84,6 +85,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events update` | `--operation-id` | ✅ |  |
 | `events update` | `--notify` | ✅ |  |
 | `events update` | `--no-notify` | ✅ |  |
+| `events update` | `--meet` | ✅ |  |
 | `events delete` |  | ✅ |  |
 | `events delete` | `--calendar` | ✅ |  |
 | `events delete` | `--series` | ✅ |  |
@@ -119,6 +121,43 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `people link` | `--reason` | ⛔ | cli-core src/cli/messenger/messenger.test.ts: an agent's people link proposes the link and needs --reason |
 | `links review` |  | ✅ |  |
 | `links resolve` |  | ✅ |  |
+| `meetings list` |  | ✅ |  |
+| `meetings list` | `--json` | ✅ |  |
+| `meetings list` | `--jsonl` | ✅ |  |
+| `meetings list` | `--backend` | ✅ |  |
+| `meetings list` | `--limit` | ✅ |  |
+| `meetings list` | `--page` | ✅ |  |
+| `meetings show` |  | ✅ |  |
+| `meetings show` | `--json` | ✅ |  |
+| `meetings show` | `--jsonl` | ✅ |  |
+| `meetings show` | `--backend` | ✅ |  |
+| `meetings transcript` |  | ✅ |  |
+| `meetings transcript` | `--history` | ✅ |  |
+| `meetings transcript` | `--json` | ✅ |  |
+| `meetings transcript` | `--jsonl` | ✅ |  |
+| `meetings export` |  | ✅ |  |
+| `meetings export` | `--format` | ✅ |  |
+| `meetings export` | `--transcript-id` | ✅ |  |
+| `meetings export` | `--output` | ✅ |  |
+| `meetings export` | `--json` | ✅ |  |
+| `meetings export` | `--jsonl` | ✅ |  |
+| `meetings people` |  | ✅ |  |
+| `meetings people` | `--json` | ✅ |  |
+| `meetings people` | `--jsonl` | ✅ |  |
+| `meetings people` | `--limit` | ✅ |  |
+| `meetings people` | `--scan-limit` | ✅ |  |
+| `meetings people` | `--max-read-bytes` | ✅ |  |
+| `meetings people` | `--cursor` | ⛔ | cli-core's shared meetings group; its participant-search tests page with the cursor, and src/meetings.test.ts runs meetings people over stored Meet calls |
+| `meetings sync` |  | ✅ |  |
+| `meetings sync` | `--json` | ✅ |  |
+| `meetings sync` | `--jsonl` | ✅ |  |
+| `meetings sync` | `--since-time` | ✅ |  |
+| `meetings sync` | `--lookback-days` | ✅ |  |
+| `meetings sync` | `--rescan` | ✅ |  |
+| `meetings repair` |  | ✅ |  |
+| `meetings repair` | `--json` | ✅ |  |
+| `meetings repair` | `--jsonl` | ✅ |  |
+| `meetings repair` | `--yes` | ✅ |  |
 | `api list` |  | ✅ |  |
 | `api show` |  | ✅ |  |
 | `api call` |  | ✅ |  |
@@ -386,7 +425,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-events-instances` | `--time-max` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-list` |  | ✅ |  |
 | `api calendar-events-list` | `--alt` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-events-list` | `--fields` | ✅ |  |
+| `api calendar-events-list` | `--fields` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-list` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-list` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-list` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
@@ -603,5 +642,4 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | *global* | `--yes` | ✅ |  |
 | *global* | `--record` | ✅ |  |
 | *global* | `--no-record` | ✅ |  |
-| *global* | `--read-only` | ✅ |  |
 | *global* | `--help-all` | ⛔ | Commander answers before any command runs, so the trace never sees it; contracts/help.snap covers help |

@@ -97,6 +97,13 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
     ...(option ? { option } : {}),
     reason: `starts the installed gcal as a child process, as the agent would; ${SHARED_MCP}`,
   })),
+  {
+    command: "meetings people",
+    option: "--cursor",
+    reason:
+      "cli-core's shared meetings group; its participant-search tests page with the cursor, and src/meetings.test.ts " +
+      "runs meetings people over stored Meet calls",
+  },
   { command: "api *", reason: GENERATED },
   { command: "config migrate", reason: "cli-core's shared config command; its config-command tests drive it" },
   ...[undefined, "--dry-run"].map((option) => ({

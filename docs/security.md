@@ -4,8 +4,13 @@ What WireCat CLIs share — the keyring, permissions, MCP and what never reaches
 [shared security page](https://wirecat.dev/en/docs/security). This page keeps only what is particular to `gcal`.
 
 `gcal` keeps its settings in `config.json` and its state in the folders `gcal doctor` shows. It talks only to Google,
-and asks for read access to Calendar and your email address. `session start --grant write` adds the events, and
-`--grant sharing` adds who can see a calendar: nothing more.
+and asks for read access to Calendar and your email address. `session start --grant write` adds the events,
+`--grant sharing` adds who can see a calendar, and `--grant meetings` adds read access to your Google Meet calls. Only
+`--grant write,meetings` adds creating Meet rooms: nothing more. The table is in
+[sign in to Google](usage.md#sign-in-to-google).
+
+Google Meet participant names and transcripts are written by other people. `gcal` marks them untrusted for an agent,
+and keeps the Drive files Google made by their id only: it never downloads them.
 
 An agent connected through `gcal <profile> mcp serve` can change who sees your calendar without asking you. After
 `--grant sharing` it can share a calendar with any address, make it public, or remove someone. It can also call the

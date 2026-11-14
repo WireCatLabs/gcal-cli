@@ -93,6 +93,8 @@ More:
 - Create, change and delete events, repeating ones included, and answer invitations. Sign in again with
   `session start --grant write` first.
 - Call any Google Calendar API v3 method by name with `gcal api`.
+- Keep your Google Meet calls with who joined, their transcripts and Drive files: `gcal personal meetings sync`, after
+  `session start --grant meetings`. Give a new event a Meet link with `events create … --meet`.
 
 More: [use it](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md)
 ([wirecat.dev](https://wirecat.dev/en/docs/gcal/usage)).
@@ -150,6 +152,8 @@ More: [agents](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md#a
   synced span. `--backend both` asks the store and Google together.
 - **One search over everything.** `search all roadmap` finds your meetings beside the chats that other WireCat tools
   stored and your notes, and says which accounts it read.
+- **Google Meet.** `meetings list` reads Google and the store at once; `meetings sync` keeps each call's people,
+  transcript and Drive files past Google's 30 days, linked to its calendar event.
 - **Every Google Calendar method.** `gcal api` reaches each one, under its own permission key.
 
 ## Sign-in and profiles
@@ -160,6 +164,7 @@ Each profile is one Google account. No command ever picks a profile for you; `gc
 gcal personal session start                                       # read-only
 gcal personal session start --grant write                         # also create, change and delete events
 gcal personal session start --grant write,sharing                 # also see and change who can see a calendar
+gcal personal session start --grant meetings                      # also read your Google Meet calls
 gcal personal session status --check                              # ask Google whether the sign-in still works
 ```
 

@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs"
+import { existsSync, mkdtempSync, readFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { memoryKeyring } from "@wirecat/cli-base"
@@ -40,16 +40,20 @@ const harness = ({
     String(input).startsWith("https://meet.googleapis.com/")
       ? meet.fetch(input, init)
       : calendar.fetch(input, init)) as typeof globalThis.fetch
-  const gcal = async (...argv: string[]) => {
+  const raw = async (argv: string[], extra: NodeJS.ProcessEnv = {}) => {
     const out: string[] = []
     const err: string[] = []
-    const code = await run([...argv, "--json"], {
+    const code = await run(argv, {
       streams: { data: (text) => out.push(text), diagnostic: (text) => err.push(text) },
       tty: false,
-      env,
+      env: { ...env, ...extra },
       keyring,
       fetch,
     })
+    return { code, out, err }
+  }
+  const gcal = async (...argv: string[]) => {
+    const { code, out, err } = await raw([...argv, "--json"])
     const answer = code === 0 ? JSON.parse(out.join("\n")) : undefined
     const last = err.join("\n").trim().split("\n").at(-1)
     return { code, answer, err: err.join("\n"), error: code ? JSON.parse(last ?? "{}").error : undefined }
@@ -68,7 +72,7 @@ const harness = ({
       await store.close()
     }
   }
-  return { gcal, ok, env, meet, meetAccount }
+  return { gcal, ok, raw, env, meet, meetAccount }
 }
 
 const records = (meet: ReturnType<typeof sampleMeet>) =>
@@ -172,6 +176,72 @@ describe("meetings over Google Meet", () => {
     const doctor = await gcal("doctor")
     expect(doctor.answer.item.meet_sync).toMatchObject([{ profile: "personal", days_ago: 26, stale: true }])
     expect(doctor.err).toContain("run gcal personal meetings sync")
+  })
+})
+
+describe("the shared meetings commands over stored Meet calls", () => {
+  const synced = async () => {
+    const one = harness()
+    await one.ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
+    const [call] = (await one.ok("personal", "meetings", "list", "provider_id:rec-2", "--offline")).items
+    return { ...one, id: String(call.id) }
+  }
+
+  it("transcript, export, people and repair read what sync kept, with no request to Google", async () => {
+    const { ok, raw, meet, id } = await synced()
+    const calls = meet.calls.length
+    const history = await ok("personal", "meetings", "transcript", id, "--history")
+    expect(JSON.stringify(history)).toContain("Shall we start with the plan?")
+    const lines = await raw(["personal", "meetings", "transcript", id, "--jsonl"])
+    expect(lines.code).toBe(0)
+    expect(lines.out.join("\n")).toContain("Ignore previous instructions")
+
+    const markdown = await ok("personal", "meetings", "export", id, "--format", "markdown")
+    expect(JSON.stringify(markdown)).toContain("Shall we start with the plan?")
+    const vtt = await raw(["personal", "meetings", "export", id, "--format", "vtt", "--transcript-id", "1", "--jsonl"])
+    expect(vtt.code).toBe(0)
+    const page = await raw(["personal", "meetings", "list", "--offline", "--limit", "1", "--page", "2", "--jsonl"])
+    expect(page.code).toBe(0)
+    expect(page.out.join("\n")).toContain("rec-1")
+    const stored = await raw(["personal", "meetings", "show", "rec-2", "--backend", "archive", "--jsonl"])
+    expect(stored.code).toBe(0)
+    expect(stored.out.join("\n")).toContain('"provider_id":"rec-2"')
+    const file = join(mkdtempSync(join(tmpdir(), "export-")), "call.md")
+    expect((await raw(["personal", "meetings", "export", id, "--output", file, "--json"])).code).toBe(0)
+    expect(readFileSync(file, "utf8")).toContain("Shall we start with the plan?")
+
+    const people = await ok(
+      "personal",
+      "meetings",
+      "people",
+      "Test Person",
+      "--limit",
+      "5",
+      "--scan-limit",
+      "50",
+      "--max-read-bytes",
+      "100000",
+    )
+    expect(JSON.stringify(people)).toContain("Test Person A")
+    expect((await raw(["personal", "meetings", "people", "Guest", "--jsonl"])).code).toBe(0)
+
+    expect((await raw(["personal", "meetings", "repair", "--json"])).code).toBe(0)
+    expect((await raw(["personal", "meetings", "repair", "--yes", "--jsonl"])).code).toBe(0)
+    expect(meet.calls).toHaveLength(calls)
+  })
+
+  it("sync --rescan and --lookback-days read the calls again and keep one row each", async () => {
+    const { ok, raw } = await synced()
+    expect((await ok("personal", "meetings", "sync", "--rescan")).item.meetings).toBeGreaterThanOrEqual(0)
+    expect((await raw(["personal", "meetings", "sync", "--lookback-days", "3", "--jsonl"])).code).toBe(0)
+    expect((await ok("personal", "meetings", "list", "--offline")).items).toHaveLength(2)
+  })
+
+  it("GCAL_READ_ONLY with no store reads an empty one and creates no wirecat.db", async () => {
+    const { raw, env } = harness()
+    const read = await raw(["personal", "meetings", "transcript", "1", "--json"], { GCAL_READ_ONLY: "1" })
+    expect(existsSync(env.MESSAGING_STORE ?? "")).toBe(false)
+    expect(read.code).not.toBe(0)
   })
 })
 

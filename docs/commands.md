@@ -74,7 +74,7 @@ gcal session start [options]
 | `--credential-storage <storage>` | where the sign-in is kept: keyring, which falls back to a private file, or file. Default: `keyring`. |
 | `--grant <scopes>` | also ask for these, comma-separated: write, sharing, meetings. |
 
-**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --client-id 1234-abc.apps.googleusercontent.com`, `gcal personal session start --grant write,sharing`, `gcal personal session start --grant meetings`
+**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --grant write,sharing`, `gcal personal session start --grant meetings`
 
 ### `gcal session status`
 
@@ -432,7 +432,7 @@ gcal events create <calendar> [options]
 
 **Returns:** calendar event write — operation_id, event, entry, scope, removed, ended, converted, from_calendar, and 3 more; every field: gcal commands info events create
 
-**Example:** `gcal personal events create Work --text 'Example lunch with Ana tomorrow 1pm at Example Cafe'`, `gcal personal events create 3 --title 'Example review' --start-date 2026-11-03 --end-date 2026-11-03 --attendee ana@example.com --no-notify`, `gcal personal events create 3 --title 'Example standup' --start-time 2026-11-02T09:30 --end-time 2026-11-02T09:45 --repeat 'FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12'`, `gcal personal events create primary --title 'Example sync' --start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 --meet`
+**Example:** `gcal personal events create Work --text 'Example lunch with Ana tomorrow 1pm at Example Cafe'`, `gcal personal events create 3 --title 'Example review' --start-date 2026-11-03 --end-date 2026-11-03 --attendee ana@example.com --no-notify`, `gcal personal events create primary --title 'Example sync' --start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 --meet`
 
 ### `gcal events update`
 
@@ -469,7 +469,7 @@ gcal events update <event> [options]
 
 **Returns:** calendar event write — operation_id, event, entry, scope, removed, ended, converted, from_calendar, and 3 more; every field: gcal commands info events update
 
-**Example:** `gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --notify`, `gcal personal events update event:42 --series --repeat 'FREQ=WEEKLY;BYDAY=TU;UNTIL=20261231T230000Z' --no-notify`, `gcal personal events update event:42 --following --start-time 2026-11-09T10:00 --end-time 2026-11-09T10:30 --no-notify`, `gcal personal events update event:42 --title 'Example sync' --meet --no-notify`
+**Example:** `gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --notify`, `gcal personal events update event:42 --series --repeat 'FREQ=WEEKLY;BYDAY=TU;UNTIL=20261231T230000Z' --no-notify`, `gcal personal events update event:42 --title 'Example sync' --meet --no-notify`
 
 ### `gcal events delete`
 

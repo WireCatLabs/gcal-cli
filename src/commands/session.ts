@@ -93,7 +93,6 @@ const startCommand = () =>
       mcp: false,
       examples: [
         `${IDENTITY.command} personal session start --client-file ~/client_secret.json`,
-        `${IDENTITY.command} personal session start --client-id 1234-abc.apps.googleusercontent.com`,
         `${IDENTITY.command} personal session start --grant write,sharing`,
         `${IDENTITY.command} personal session start --grant meetings`,
       ],

@@ -201,7 +201,8 @@ export const calendarCommands = (): Command[] => {
         )
         annotate(one, {
           examples: [
-            ...(metaOf(one).examples ?? []),
+            // Within the three examples a command may give: the last shared one makes room.
+            ...(metaOf(one).examples ?? []).slice(0, 2),
             name === "create"
               ? `${IDENTITY.command} personal events create primary --title 'Example sync' ` +
                 "--start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 --meet"

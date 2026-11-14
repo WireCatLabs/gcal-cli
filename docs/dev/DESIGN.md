@@ -72,6 +72,50 @@ for events and meetings in the store.
 - **Google app:** `--client-file`, then `GCAL_GOOGLE_CLIENT_ID` (with `GCAL_GOOGLE_CLIENT_SECRET`), then WireCat's
   Desktop app from cli-core's `constants.json`, through cli-core's `googleApp`. `doctor` reports which as
   `oauth_client`. The owner's console steps: [google-app-verification.md](google-app-verification.md).
+- **Google Meet is part of gcal** (owner, 2026-11-14): "every meeting has a time, so it fits the calendar". There is
+  no gmeet CLI; the code came from gmeet-cli's unreleased `feat/remote-meetings` branch. The calls are cli-core's
+  shared `meetings` group over a Google Meet `MeetingSource` (`src/meet/source.ts`); cli-core's `events list` from the
+  same group is left out, since gcal's own `events` lists the same stored events. `summary` and `import` are left out:
+  Meet has no summary of its own and no transcript files to import.
+- **Meet in the store:** provider `google-meet`, account the Google address, as the calendar's account, so both join by
+  address. A conference record is one meeting (`provider_id` the record's id in `sync`, `list` and `show` alike, tested
+  in `src/meetings.test.ts` "sync, list and show give a call one id"); its space is the series; the space's
+  `meetingUri` gives `join_key = meet:<code>`, which links the call to its calendar entry. A signed-in participant is
+  `users/{id}`, the same in every call; a guest or a caller is known by name in one call only. The transcript, the
+  recording and the notes are linked by Drive file id (`MeetingSave.documents`); gcal asks for no Drive scope.
+- **Meet facts, each from Google's pages, checked 2026-11-13:**
+  - `conferenceRecords.list` returns only the calls the account organized
+    ([conferences guide](https://developers.google.com/workspace/meet/api/guides/conferences)); `get` and the child
+    lists work for owners and participants
+    ([artifacts guide](https://developers.google.com/workspace/meet/api/guides/artifacts)).
+  - A record and its transcript entries are deleted 30 days after the call
+    ([ConferenceRecord](https://developers.google.com/workspace/meet/api/reference/rest/v2/conferenceRecords),
+    artifacts guide). `doctor` warns at 25 days from the store's sync cursor (`meet_sync`).
+  - A transcript is `STARTED`, `ENDED` or `FILE_GENERATED`
+    ([Transcript](https://developers.google.com/workspace/meet/api/reference/rest/v2/conferenceRecords.transcripts)); a
+    sync reads entries only once every transcript of the call is `FILE_GENERATED`, and otherwise leaves the call due.
+    Each sync looks two days behind its cursor (`overlapMs`), since the transcript comes after the call.
+  - Transcripts are not offered to personal accounts
+    ([Use transcripts](https://support.google.com/meet/answer/12849897)); inferred from the editions list, not seen live.
+  - `docsDestination.document` is the Docs id, equal to the Drive file id; `driveDestination.file` is the Drive file id
+    (artifacts guide).
+  - The list filter takes `start_time` in RFC 3339 in double quotes; page size at most 100
+    (conferences guide; the discovery document, revision 20261110, kept in `src/testing/meet-discovery.json`).
+  - Every read takes `meetings.space.readonly`; `spaces.create` and `spaces.patch` take `meetings.space.created`, which
+    reaches only the spaces the app made
+    ([scopes](https://developers.google.com/workspace/meet/api/guides/authenticate-authorize); discovery document).
+- **Meet sign-in:** `--grant meetings` adds `meetings.space.readonly`; `--grant write,meetings` also adds
+  `meetings.space.created`. Two words, not a third grant: `write` alone must not reach a second Google service, and a
+  read-only Meet profile stays read-only. The default sign-in stays `calendar.readonly`. A profile without the grant
+  is refused before any Meet request (`oauth.scope-missing`, grant `meetings`).
+- **A Meet link on an event:** `events create|update --meet` sends `conferenceData.createRequest` with
+  `conferenceDataVersion=1` under `calendar.events`
+  ([create events, conferencing](https://developers.google.com/workspace/calendar/api/guides/create-events#conferencing)).
+  The event's id is the `requestId`; Google ignores a `requestId` it has seen, so a retried write makes one link
+  (Discovery `CreateConferenceRequest.requestId`). `update --meet` needs another change: cli-core's update refuses a
+  patch with no field, and its fields have no conference yet.
+- **Meet rooms** (`src/meet/spaces.ts`, `createSpace`/`updateSpace`): ported, tested against the fake, and not yet a
+  command. They wait for cli-core's shared `meetings create|update` with provider settings.
 
 ## Open questions for the owner
 
