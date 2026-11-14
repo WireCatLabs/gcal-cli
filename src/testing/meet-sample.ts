@@ -1,4 +1,6 @@
-import { type Conference, type FakeMeetOptions, fakeMeet } from "./fake-meet.js"
+import { googleApi } from "../google-api.js"
+import { MEET, meetApi } from "../meet/api.js"
+import { type Conference, type FakeMeetOptions, fakeMeet, MEET_ACCESS } from "./fake-meet.js"
 
 // Synthetic people and ids, never a real account's.
 export const RECORD = "rec-2"
@@ -103,3 +105,7 @@ export const SPACES = [
 
 export const sampleMeet = (options: FakeMeetOptions = {}) =>
   fakeMeet({ conferences: CONFERENCES, spaces: SPACES, ...options })
+
+/** gcal's Meet methods over a fake, as the meetings commands build them; Google decides what the token may do. */
+export const meetOn = (meet: { fetch: typeof globalThis.fetch }) =>
+  meetApi(googleApi({ fetch: meet.fetch, accessToken: async () => MEET_ACCESS, scopes: () => undefined }, MEET))

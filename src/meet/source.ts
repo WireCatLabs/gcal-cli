@@ -9,22 +9,21 @@ import type {
   SourceParticipant,
   TranscriptLine,
 } from "@wirecat/cli-core/meetings"
-import {
-  idOf,
-  LARGEST_PAGE,
-  type MeetApi,
-  ownId,
-  type WireEntry,
-  type WireParticipant,
-  type WireRecord,
-  type WireRecording,
-  type WireSpace,
-  type WireTranscript,
-} from "./api.js"
+import type {
+  MeetConferenceRecord,
+  MeetParticipant,
+  MeetRecording,
+  MeetSmartNote,
+  MeetTranscript,
+  MeetTranscriptEntry,
+} from "../generated/meet/types.js"
+import { MEET_PROVIDER } from "../store.js"
+import { idOf, type MeetApi, ownId } from "./api.js"
 
-export const MEET_PROVIDER_NAME = "google-meet"
-const DAY_MS = 86_400_000
+export const DAY_MS = 86_400_000
 const READY = "FILE_GENERATED"
+/** Spaces looked up at once: a page of a hundred calls would otherwise send a hundred requests together. */
+const AT_ONCE = 4
 
 /**
  * A part of a call this account may not read is left out: a space someone else owns, Gemini notes the account has
@@ -63,7 +62,7 @@ const KINDS = [
   ["phoneUser", "phone"],
 ] as const
 
-const nameOf = (participant: WireParticipant): string | null => {
+const nameOf = (participant: MeetParticipant): string | null => {
   const [key] = KINDS.find(([key]) => participant[key] !== undefined) ?? []
   return (key ? participant[key]?.displayName : undefined) ?? null
 }
@@ -72,7 +71,7 @@ const nameOf = (participant: WireParticipant): string | null => {
  * A signed-in person is `users/{id}` in every call, so their rows join; a guest or a caller is known only by the name
  * typed in this call, so it never joins a person of another call.
  */
-const participantOf = (participant: WireParticipant): SourceParticipant => {
+const participantOf = (participant: MeetParticipant): SourceParticipant => {
   const [, kind] = KINDS.find(([key]) => participant[key] !== undefined) ?? [undefined, "unknown"]
   const user = participant.signedinUser?.user
   const joinedAt = msOf(participant.earliestStartTime)
@@ -91,7 +90,11 @@ const participantOf = (participant: WireParticipant): SourceParticipant => {
   }
 }
 
-const linesOf = (record: WireRecord, entries: WireEntry[], speakers: Map<string, string | null>): TranscriptLine[] => {
+const linesOf = (
+  record: MeetConferenceRecord,
+  entries: MeetTranscriptEntry[],
+  speakers: Map<string, string | null>,
+): TranscriptLine[] => {
   const start = msOf(record.startTime) ?? 0
   return entries.flatMap((entry) => {
     const from = msOf(entry.startTime)
@@ -109,9 +112,9 @@ const linesOf = (record: WireRecord, entries: WireEntry[], speakers: Map<string,
 }
 
 const documentsOf = (
-  transcripts: WireTranscript[],
-  recordings: WireRecording[],
-  notes: WireTranscript[],
+  transcripts: MeetTranscript[],
+  recordings: MeetRecording[],
+  notes: MeetSmartNote[],
 ): MeetingDocumentInput[] => [
   ...transcripts.flatMap((one) =>
     one.docsDestination?.document ? [{ fileId: one.docsDestination.document, role: "transcript" as const }] : [],
@@ -129,54 +132,49 @@ const notReady = () =>
     retryable: true,
   })
 
-/**
- * Google Meet's conference records as a meetings source. One record is one call in a meeting space: the space is the
- * series, the space's link gives the `meet:<code>` join key that ties the call to its calendar entry, and the record's
- * id is the occurrence's id in sync, list and show alike. Meet gives a call no title; the calendar entry carries it.
- *
- * `api` is asked for on the first request, so a profile without `--grant meetings` is refused before anything is sent.
- */
-export const googleMeetSource = (api: () => MeetApi): MeetingSource => {
-  const spaces = new Map<string, Promise<WireSpace | null>>()
-  const space = (name: string | undefined): Promise<WireSpace | null> => {
-    if (!name) return Promise.resolve(null)
-    let found = spaces.get(name)
+/** What one run of the source saw that its answer should say: a rate limit, and the calls with a transcript pending. */
+export interface MeetRun {
+  limitedBy?: CliError
+  pending: Set<string>
+}
+
+export type GoogleMeetSource = MeetingSource & { readonly run: MeetRun }
+
+/** `api` is asked for on the first request, so a profile without `--grant meetings` is refused before anything is sent. */
+export const googleMeetSource = (api: () => MeetApi): GoogleMeetSource => {
+  const run: MeetRun = { pending: new Set() }
+  // After Google's first rate limit nothing more is sent: each request would only be refused again.
+  const send = async <T>(read: (meet: MeetApi) => Promise<T>): Promise<T> => {
+    if (run.limitedBy) throw run.limitedBy
+    try {
+      return await read(api())
+    } catch (error) {
+      if (isCliError(error) && error.code === "rate_limited") run.limitedBy ??= error
+      throw error
+    }
+  }
+  // pull asks for participants, the transcript and the documents one by one; each is read once per run.
+  const reads = new Map<string, Promise<unknown>>()
+  const once = <T>(key: string, read: (meet: MeetApi) => Promise<T>): Promise<T> => {
+    let found = reads.get(key) as Promise<T> | undefined
     if (!found) {
-      found = orNull(api().space(ownId("spaces", name)))
-      spaces.set(name, found)
+      found = send(read)
+      reads.set(key, found)
     }
     return found
   }
+  const space = (name: string | undefined) =>
+    name ? once(name, (meet) => orNull(meet.space(ownId("spaces", name)))) : Promise.resolve(null)
+  const recordOf = (id: string) => once(`conferenceRecords/${id}`, (meet) => meet.record(id))
+  const participants = (id: string) => once(`${id}/participants`, (meet) => meet.participants(id))
+  const transcripts = (id: string) => once(`${id}/transcripts`, (meet) => meet.transcripts(id))
+  const recordings = (id: string) => once(`${id}/recordings`, (meet) => meet.recordings(id))
+  const notes = (id: string) => once(`${id}/notes`, async (meet) => (await orNull(meet.smartNotes(id))) ?? [])
 
-  // pull asks for participants, the transcript and the documents one by one; each list is read once per run.
-  const reads = new Map<string, Map<string, Promise<unknown>>>()
-  const once = <T>(record: string, part: string, read: () => Promise<T>): Promise<T> => {
-    const parts = reads.get(record) ?? new Map<string, Promise<unknown>>()
-    reads.set(record, parts)
-    let found = parts.get(part) as Promise<T> | undefined
-    if (!found) {
-      found = read()
-      parts.set(part, found)
-    }
-    return found
-  }
-  const records = new Map<string, WireRecord>()
-  const recordOf = async (id: string) => {
-    const known = records.get(id)
-    if (known) return known
-    const record = await api().record(id)
-    records.set(id, record)
-    return record
-  }
-  const participants = (id: string) => once(id, "participants", () => api().participants(id))
-  const transcripts = (id: string) => once(id, "transcripts", () => api().transcripts(id))
-  const recordings = (id: string) => once(id, "recordings", () => api().recordings(id))
-  const notes = (id: string) => once(id, "notes", async () => (await orNull(api().smartNotes(id))) ?? [])
-
-  const meetingOf = async (record: WireRecord): Promise<SourceMeeting | undefined> => {
+  const meetingOf = async (record: MeetConferenceRecord): Promise<SourceMeeting | undefined> => {
     if (!record.startTime) return undefined
     const id = ownId("conferenceRecords", record.name)
-    records.set(id, record)
+    reads.set(`conferenceRecords/${id}`, Promise.resolve(record))
     const spaceId = record.space ? ownId("spaces", record.space) : null
     const found = await space(record.space)
     const joinUrl = found?.meetingUri ?? null
@@ -184,7 +182,7 @@ export const googleMeetSource = (api: () => MeetApi): MeetingSource => {
       joinUrl,
       metadata: { meeting_code: found?.meetingCode ?? null, expires_at: record.expireTime ?? null },
       series: spaceId
-        ? { id: spaceId, provider: MEET_PROVIDER_NAME, title: null, kind: "space", ...(joinUrl ? { joinUrl } : {}) }
+        ? { id: spaceId, provider: MEET_PROVIDER.name, title: null, kind: "space", ...(joinUrl ? { joinUrl } : {}) }
         : null,
       occurrence: {
         id,
@@ -195,22 +193,30 @@ export const googleMeetSource = (api: () => MeetApi): MeetingSource => {
       },
     }
   }
-  const meetingsOf = async (list: readonly WireRecord[]) =>
-    (await Promise.all(list.map(meetingOf))).filter((one): one is SourceMeeting => one !== undefined)
+  const meetingsOf = async (list: readonly MeetConferenceRecord[]) => {
+    const found: SourceMeeting[] = []
+    for (let at = 0; at < list.length; at += AT_ONCE)
+      for (const one of await Promise.all(list.slice(at, at + AT_ONCE).map(meetingOf))) if (one) found.push(one)
+    return found
+  }
 
-  /** The transcript lines of every finished transcript; `ready` false when one is still being made. */
-  const transcriptOf = async (id: string) => {
+  /** Every transcript's lines, or none while one is still being made: a part of a call is never kept as all of it. */
+  const transcriptOf = async (id: string): Promise<TranscriptLine[] | null> => {
     const all = await transcripts(id)
-    if (all.length === 0) return { lines: null, ready: true }
+    if (all.length === 0) return null
+    if (!all.every((one) => one.state === READY && one.name)) {
+      run.pending.add(id)
+      return null
+    }
     const [record, people] = await Promise.all([recordOf(id), participants(id)])
     const speakers = new Map(people.flatMap((one) => (one.name ? [[one.name, nameOf(one)] as const] : [])))
     const lines: TranscriptLine[] = []
     for (const transcript of all) {
-      if (transcript.state !== READY || !transcript.name) continue
-      const entries = await api().entries(id, ownId(`conferenceRecords/${id}/transcripts`, transcript.name))
+      const name = ownId(`conferenceRecords/${id}/transcripts`, transcript.name)
+      const entries = await send((meet) => meet.entries(id, name))
       for (const line of linesOf(record, entries, speakers)) lines.push(line)
     }
-    return { lines, ready: all.every((one) => one.state === READY) }
+    return lines
   }
 
   const documents = async (id: string) => {
@@ -219,30 +225,17 @@ export const googleMeetSource = (api: () => MeetApi): MeetingSource => {
   }
 
   return {
-    provider: MEET_PROVIDER_NAME,
-    name: "google-meet",
+    run,
+    provider: MEET_PROVIDER.name,
+    name: MEET_PROVIDER.name,
     transcriptFormat: "meet-entries",
     // A transcript and its Doc are made after the call ends, so each sync looks two days behind its cursor.
     overlapMs: 2 * DAY_MS,
 
     async meetings(since) {
-      const found: WireRecord[] = []
-      let pageToken: string | undefined
-      const seen = new Set<string>()
-      do {
-        const page = await api().records({
-          filter: filterOf({ from: Date.parse(since) }),
-          pageSize: LARGEST_PAGE,
-          pageToken,
-        })
-        // A call still going on has no end and no transcript yet; the next sync after it ends keeps it.
-        for (const record of page.items ?? []) if (record.endTime !== undefined) found.push(record)
-        pageToken = page.nextPageToken ?? undefined
-        if (pageToken && seen.has(pageToken))
-          throw new CliError("invalid_response", "Google Meet sent the same page of calls twice")
-        if (pageToken) seen.add(pageToken)
-      } while (pageToken)
-      return meetingsOf(found)
+      const all = await send((meet) => meet.allRecords(filterOf({ from: Date.parse(since) })))
+      // A call still going on has no end and no transcript yet; the next sync after it ends keeps it.
+      return meetingsOf(all.filter((record) => record.endTime !== undefined))
     },
     participants: async (id) => (await participants(id)).map(participantOf),
     /**
@@ -250,8 +243,8 @@ export const googleMeetSource = (api: () => MeetApi): MeetingSource => {
      * read, so the sync keeps the call due and reads it again; Meet deletes it 30 days after the call.
      */
     async transcript(id) {
-      const { lines, ready } = await transcriptOf(id)
-      if (!ready) throw notReady()
+      const lines = await transcriptOf(id)
+      if (run.pending.has(id)) throw notReady()
       return lines
     },
     chat: async () => null,
@@ -261,24 +254,19 @@ export const googleMeetSource = (api: () => MeetApi): MeetingSource => {
 
     finds: { fields: {}, upcoming: false },
     async find(window, _terms, cursor): Promise<FoundMeetings> {
-      const page = await api().records({
-        filter: filterOf(window),
-        pageSize: LARGEST_PAGE,
-        pageToken: cursor ?? undefined,
-      })
+      const page = await send((meet) => meet.records(filterOf(window), cursor ?? undefined))
       return {
         meetings: (await meetingsOf(page.items ?? [])).map((meeting) => ({ meeting })),
         next: page.nextPageToken ?? null,
       }
     },
-    /** By the record's id or `conferenceRecords/<id>`; a call this account never joined is none. */
     async get(given): Promise<FullMeeting | null> {
       const id = idOf("conferenceRecords", given.trim())
       const record = await orNull(recordOf(id))
       const meeting = record ? await meetingOf(record) : undefined
       if (!meeting) return null
       const [people, transcript, files] = await Promise.all([participants(id), transcriptOf(id), documents(id)])
-      return { meeting, participants: people.map(participantOf), transcript: transcript.lines, documents: files }
+      return { meeting, participants: people.map(participantOf), transcript, documents: files }
     },
   }
 }

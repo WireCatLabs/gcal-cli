@@ -14,7 +14,7 @@ import {
   sessionStorage,
   storageOf,
 } from "./google.js"
-import { GRANT_SCOPES, type Grant, grantsOf, MEET_WRITE_SCOPE, scopesFor } from "./grants.js"
+import { GRANT_SCOPES, type Grant, grantMissing, grantsOf } from "./grants.js"
 import { IDENTITY } from "./identity.js"
 import { openGcalStore, PROVIDER } from "./store.js"
 
@@ -48,12 +48,6 @@ const scopeMissing = () =>
     grant: "read",
   })
 
-const grantMissing = (grant: Grant) =>
-  new CliError("permission_error", `Google did not grant the ${grant} permission`, {
-    reason: "oauth.scope-missing",
-    grant,
-  })
-
 export interface SignInOptions extends Common {
   client: OAuthClient
   grants?: readonly Grant[] | undefined
@@ -68,7 +62,7 @@ export const signIn = async (options: SignInOptions) => {
   const keeper = sessionKeeper(options)
   let account = ""
   const { scopes } = await keeper.signIn({
-    scopes: [...SIGN_IN_SCOPES, ...scopesFor(options.grants ?? [])],
+    scopes: [...SIGN_IN_SCOPES, ...(options.grants ?? []).map((grant) => GRANT_SCOPES[grant])],
     openBrowser: options.openBrowser,
     showUrl: options.showUrl,
     ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
@@ -78,10 +72,7 @@ export const signIn = async (options: SignInOptions) => {
       // Google lets the account untick a scope it was asked for, and still signs in.
       const grants = options.grants ?? []
       const missing = grants.find((grant) => !tokens.scopes.includes(GRANT_SCOPES[grant]))
-      if (missing) throw grantMissing(missing)
-      // Meet writes are asked with both words; unticked, the grant that is short is the one the owner can name.
-      if (scopesFor(grants).includes(MEET_WRITE_SCOPE) && !tokens.scopes.includes(MEET_WRITE_SCOPE))
-        throw grantMissing("write")
+      if (missing) throw grantMissing(missing, `Google did not grant the ${missing} permission`, grants)
       if (!tokens.accessToken) throw new CliError("authentication_error", "Google returned no access token")
       account = await accountEmail(tokens.accessToken, options.fetch ?? googleFetch, options.signal, options.events)
       const previous = savedAccount(env, profile)

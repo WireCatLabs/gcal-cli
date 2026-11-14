@@ -30,8 +30,53 @@ interface Discovery {
 /** The token the tests' saved sign-ins hold; spelled so gitleaks lets it through, never a real one. */
 export const MEET_ACCESS = "fixture-access-token-7Kp2"
 
-/** Meet's own names, from its discovery document; nothing here is typed from memory (WC-TEST-19). */
-const DISCOVERY = JSON.parse(readFileSync(new URL("./meet-discovery.json", import.meta.url), "utf8")) as Discovery
+interface Resource {
+  methods?: Record<
+    string,
+    {
+      id: string
+      httpMethod: string
+      flatPath?: string
+      path: string
+      parameters?: Record<string, Parameter & { description?: string }>
+      request?: { $ref: string }
+      response?: { $ref: string }
+    }
+  >
+  resources?: Record<string, Resource>
+}
+
+const pageSizeOf = (description = "") => {
+  const asked = /at most (\d+)/.exec(description)?.[1]
+  const max = /maximum value is (\d+)/.exec(description)?.[1]
+  return asked && max ? { default: Number(asked), max: Number(max) } : undefined
+}
+
+const methodsOf = (resource: Resource): [string, Method][] => [
+  ...Object.values(resource.methods ?? {}).map((one): [string, Method] => {
+    const pageSize = pageSizeOf(one.parameters?.pageSize?.description)
+    return [
+      one.id.replace(/^meet\./, ""),
+      {
+        httpMethod: one.httpMethod,
+        flatPath: one.flatPath ?? one.path,
+        parameters: one.parameters ?? {},
+        ...(one.request ? { request: one.request.$ref } : {}),
+        response: one.response?.$ref ?? "Empty",
+        ...(pageSize ? { pageSize } : {}),
+      },
+    ]
+  }),
+  ...Object.values(resource.resources ?? {}).flatMap(methodsOf),
+]
+
+/** Meet's own names, from the discovery snapshot gcal generates from; nothing here is typed from memory (WC-TEST-19). */
+const DISCOVERY: Discovery = (() => {
+  const document = JSON.parse(
+    readFileSync(new URL("../../spec/google/meet.json", import.meta.url), "utf8"),
+  ) as Resource & Omit<Discovery, "methods">
+  return { rootUrl: document.rootUrl, schemas: document.schemas, methods: Object.fromEntries(methodsOf(document)) }
+})()
 
 /** The fields `conferenceRecords.list` filters by, from its `filter` parameter's description. */
 const FILTER_FIELDS = new Set(["space.meeting_code", "space.name", "start_time", "end_time"])
@@ -82,7 +127,7 @@ export const googleFailure = (code: number, status: string, message: string, det
  */
 const shapeProblem = (schema: string, value: unknown, where: string, request = false): string | undefined => {
   const properties = DISCOVERY.schemas[schema]?.properties
-  if (!properties) return `meet-discovery.json has no schema ${schema}`
+  if (!properties) return `meet.json has no schema ${schema}`
   if (typeof value !== "object" || value === null || Array.isArray(value)) return `${where} is not an object`
   for (const [key, child] of Object.entries(value as Json)) {
     const property = properties[key]
@@ -107,7 +152,6 @@ const checkShape = (schema: string, value: unknown, where: string): void => {
   if (problem) throw new Error(problem)
 }
 
-/** Whether `path` (`config.accessType`) names a field of `schema`, through its nested messages. */
 const isFieldPath = (schema: string, path: string[]): boolean => {
   const [head, ...rest] = path
   const property = head === undefined ? undefined : DISCOVERY.schemas[schema]?.properties[head]

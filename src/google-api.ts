@@ -1,16 +1,13 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
 import { providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
 import { type EventSink, providerRequest } from "@wirecat/cli-core/cli"
+import { googleError } from "@wirecat/cli-core/google"
 import * as v from "valibot"
-import { operationOf, schemas, validateRequest } from "./api-contract.js"
-import { apiMethod, scopesOf, validateApiParams } from "./api-methods.js"
-import { googleError } from "./errors.js"
-import { metadata } from "./generated/metadata.js"
-import { ACLS_SCOPE, EVENTS_SCOPE } from "./grants.js"
+import { type ApiContract, CALENDAR, operationOf, validateRequest } from "./api-contract.js"
+import { validateApiParams } from "./api-methods.js"
+import { ACLS_SCOPE, EVENTS_SCOPE, type Grant, grantMissing, grantsOf, MEET_READ_SCOPE } from "./grants.js"
 
 const MAX_BYTES = 50 * 1024 * 1024
-const SERVICES = new Map(Object.entries(metadata.services))
-const SCHEMAS = new Map<string, v.GenericSchema>(Object.entries(schemas))
 const TIMEOUT_MS = 30_000
 
 export interface CallOptions {
@@ -39,34 +36,53 @@ export interface GoogleApiOptions {
   now?: () => Date
 }
 
-const scopeNames = (name: string) =>
-  scopesOf(name)
-    .map((scope) => scope.replace("https://www.googleapis.com/auth/", ""))
-    .join(" or ")
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null
 
-/** A method no `--grant` covers is named by its scopes instead. */
-const scopeMissing = (name: string) =>
-  scopesOf(name).includes(EVENTS_SCOPE)
-    ? new CliError(
-        "permission_error",
-        "this method changes Google Calendar events, and this profile signed in with read access only",
-        { reason: "oauth.scope-missing", grant: "write", sent: false },
-      )
-    : scopesOf(name).includes(ACLS_SCOPE)
-      ? new CliError("permission_error", `this method reads or changes who can see a calendar (${scopeNames(name)})`, {
-          reason: "oauth.scope-missing",
-          grant: "sharing",
-          sent: false,
-        })
-      : new CliError(
-          "permission_error",
-          `this method needs a Google permission gcal does not ask for at sign-in (${scopeNames(name)})`,
-          { reason: "oauth.scope-missing", sent: false },
-        )
+/** cli-core's Google refusals, and the one only Calendar sends: a guest changing what the organizer owns. */
+const refusal = (contract: ApiContract, failure: Parameters<typeof googleError>[0]): CliError => {
+  const error = isRecord(failure.body) ? failure.body.error : undefined
+  const reasons = isRecord(error) && Array.isArray(error.errors) ? error.errors.map((item) => item?.reason) : []
+  if (reasons.includes("forbiddenForNonOrganizer"))
+    return new CliError(
+      "permission_error",
+      "only the organizer can change this; change your own copy's fields only, such as your answer or reminders",
+      { reason: "event.organizer-only", status: failure.status },
+    )
+  return googleError({
+    ...failure,
+    service: contract.name,
+    ...(contract.errorsGuide ? { errorsGuide: contract.errorsGuide } : {}),
+  })
+}
+
+const scopeNames = (scopes: readonly string[]) =>
+  scopes.map((scope) => scope.replace("https://www.googleapis.com/auth/", "")).join(" or ")
+
+const GRANT_OF: [scope: string, grant: Grant, what: (scopes: readonly string[]) => string][] = [
+  [
+    EVENTS_SCOPE,
+    "write",
+    () => "this method changes Google Calendar events, and this profile signed in with read access only",
+  ],
+  [ACLS_SCOPE, "sharing", (scopes) => `this method reads or changes who can see a calendar (${scopeNames(scopes)})`],
+  [MEET_READ_SCOPE, "meetings", () => "this profile signed in without access to Google Meet"],
+]
 
 /** Refuses a method the saved sign-in cannot call; with no saved scopes Google decides. */
-export const refuseMissingScope = (name: string, granted: readonly string[] | undefined): void => {
-  if (granted && !scopesOf(name).some((scope) => granted.includes(scope))) throw scopeMissing(name)
+export const refuseMissingScope = (
+  name: string,
+  granted: readonly string[] | undefined,
+  contract: ApiContract = CALENDAR,
+): void => {
+  const scopes = contract.scopes[name] ?? []
+  if (!granted || scopes.some((scope) => granted.includes(scope))) return
+  const covered = GRANT_OF.find(([scope]) => scopes.includes(scope))
+  if (covered) throw grantMissing(covered[1], covered[2](scopes), grantsOf(granted))
+  throw new CliError(
+    "permission_error",
+    `this method needs a Google permission gcal does not ask for at sign-in (${scopeNames(scopes)})`,
+    { reason: "oauth.scope-missing", sent: false },
+  )
 }
 
 const listOf = (value: unknown): string[] =>
@@ -88,10 +104,10 @@ const segmentOf = (key: string, value: unknown) => {
 }
 
 /** `rootUrl + servicePath + path`, path parameters encoded whole, so an id never adds a segment or a query. */
-const requestUrl = (name: string, params: Record<string, unknown>) => {
-  const operation = operationOf(name)
+const requestUrl = (contract: ApiContract, name: string, params: Record<string, unknown>) => {
+  const operation = operationOf(name, contract)
   if (operation.binding.kind !== "http") throw new CliError("configuration_error", "generated method is not HTTP")
-  const service = SERVICES.get(operation.tags[0] ?? "")
+  const service = contract.services[operation.tags[0] ?? ""]
   if (!service) throw new CliError("configuration_error", "generated method names no known Google service")
   if (operation.binding.path.includes("{+"))
     throw new CliError("configuration_error", "generated method has a reserved path expansion gcal does not send")
@@ -107,6 +123,7 @@ const requestUrl = (name: string, params: Record<string, unknown>) => {
   return {
     url,
     method: operation.binding.method,
+    mutates: operation.effect !== "read",
     // The template, not the address: a run record never holds a calendar or event id.
     operation: `${operation.binding.method} /${service.servicePath}${operation.binding.path}`,
     response: operation.response?.schema,
@@ -114,10 +131,10 @@ const requestUrl = (name: string, params: Record<string, unknown>) => {
 }
 
 /** A method's answer as its generated type: `call` returns it unknown, so the schema both checks and names it. */
-export const answerOf = <T>(schema: v.GenericSchema<unknown, T>, data: unknown): T => {
+export const answerOf = <T>(schema: v.GenericSchema<unknown, T>, data: unknown, contract = CALENDAR): T => {
   const parsed = v.safeParse(schema, data)
   if (!parsed.success)
-    throw new CliError("invalid_response", "Google Calendar's answer does not match the API contract")
+    throw new CliError("invalid_response", `${contract.name}'s answer does not match the API contract`)
   return parsed.output
 }
 
@@ -126,16 +143,16 @@ const unknownOutcome = () =>
     retryable: false,
   })
 
-/** Google Calendar over plain fetch: the token goes in the Authorization header only, never into an address. */
-export const googleApi = (options: GoogleApiOptions): GoogleApi => ({
+/** A generated Google API over plain fetch: the token goes in the Authorization header only, never into an address. */
+export const googleApi = (options: GoogleApiOptions, contract: ApiContract = CALENDAR): GoogleApi => ({
   call: async (name, params = {}, body, { headers = {} } = {}) => {
-    const { mutates } = apiMethod(name)
     validateApiParams(params)
     if (body !== undefined && (!body || typeof body !== "object" || Array.isArray(body)))
       throw new CliError("validation_error", "API request body must be a JSON object")
-    validateRequest(name, params, body)
-    refuseMissingScope(name, options.scopes())
-    const request = requestUrl(name, params)
+    validateRequest(name, params, body, contract)
+    refuseMissingScope(name, options.scopes(), contract)
+    const request = requestUrl(contract, name, params)
+    const { mutates } = request
     const token = await options.accessToken()
     // Not AbortSignal.timeout: its timer holds the run's async context until the deadline (tg-cli #827).
     const deadline = new AbortController()
@@ -166,15 +183,15 @@ export const googleApi = (options: GoogleApiOptions): GoogleApi => ({
         }
         const stopped = options.signal?.aborted
         answered({ error, errorCode: stopped ? "cancelled" : "provider_unavailable" })
-        if (stopped) throw new CliError("cancelled", "the Google Calendar request was stopped")
-        throw new CliError("provider_unavailable", "Google Calendar did not answer; no request details were logged", {
+        if (stopped) throw new CliError("cancelled", `the ${contract.name} request was stopped`)
+        throw new CliError("provider_unavailable", `${contract.name} did not answer; no request details were logged`, {
           retryable: true,
         })
       }
       if (!response.ok) {
         answered({ status: response.status, errorCode: "provider_error" })
         const failure = await readJsonResponse(response, { maxBytes: 64 * 1024, signal }).catch(() => undefined)
-        throw googleError({
+        throw refusal(contract, {
           status: response.status,
           body: failure,
           mutates,
@@ -189,11 +206,11 @@ export const googleApi = (options: GoogleApiOptions): GoogleApi => ({
       } catch (error) {
         if (mutates && signal.aborted) throw unknownOutcome()
         if (isCliError(error) && error.code !== "invalid_response") throw error
-        throw new CliError("invalid_response", "Google Calendar answered with something other than bounded JSON")
+        throw new CliError("invalid_response", `${contract.name} answered with something other than bounded JSON`)
       }
-      const schema = request.response ? SCHEMAS.get(request.response) : undefined
+      const schema = request.response ? contract.schemas[request.response] : undefined
       if (schema && !v.safeParse(schema, data).success)
-        throw new CliError("invalid_response", "Google Calendar's answer does not match the API contract")
+        throw new CliError("invalid_response", `${contract.name}'s answer does not match the API contract`)
       return data
     } finally {
       clearTimeout(timer)

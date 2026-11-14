@@ -1,11 +1,11 @@
 import { CliError } from "@wirecat/cli-base"
 import * as v from "valibot"
-import { idOf, type MeetApi, ownId, type WireSpace, type WireSpaceConfig } from "./api.js"
+import type { MeetSpace, MeetSpaceConfig } from "../generated/meet/types.js"
+import { idOf, type MeetApi, ownId } from "./api.js"
 
 const ON_OFF = ["on", "off"] as const
 type OnOff = (typeof ON_OFF)[number]
 
-/** A space's settings in gcal's words: Meet's enum values in lower case, `null` where Google sent none. */
 export const SPACE_SETTINGS = {
   access_type: ["open", "trusted", "restricted"],
   entry_point_access: ["all", "creator_app_only"],
@@ -25,7 +25,6 @@ export type SpaceChange = {
   auto_smart_notes?: OnOff
 }
 
-/** Each setting's place in Meet's `SpaceConfig`, as `spaces.patch` names it in `updateMask`. */
 const MASK: Record<SpaceSetting, string> = {
   access_type: "config.accessType",
   entry_point_access: "config.entryPointAccess",
@@ -54,10 +53,9 @@ export type Space = v.InferOutput<typeof spaceSchema>
 
 const upper = (value: string | undefined) => (value === undefined ? undefined : value.toUpperCase())
 
-/** Meet's `SpaceConfig` for a change, and the `updateMask` paths that name exactly the settings it holds. */
-export const configOf = (change: SpaceChange): { config: WireSpaceConfig; paths: string[] } => {
-  const config: WireSpaceConfig = {}
-  const artifacts: NonNullable<WireSpaceConfig["artifactConfig"]> = {}
+export const configOf = (change: SpaceChange): { config: MeetSpaceConfig; paths: string[] } => {
+  const config: MeetSpaceConfig = {}
+  const artifacts: NonNullable<MeetSpaceConfig["artifactConfig"]> = {}
   if (change.access_type) config.accessType = upper(change.access_type)
   if (change.entry_point_access) config.entryPointAccess = upper(change.entry_point_access)
   if (change.moderation) config.moderation = upper(change.moderation)
@@ -73,7 +71,7 @@ export const configOf = (change: SpaceChange): { config: WireSpaceConfig; paths:
 const said = (value: string | undefined): string | null =>
   value === undefined || value.endsWith("_UNSPECIFIED") ? null : value.toLowerCase()
 
-export const spaceOf = (space: WireSpace): Space => {
+export const spaceOf = (space: MeetSpace): Space => {
   const artifacts = space.config?.artifactConfig
   if (!space.name) throw new CliError("invalid_response", "Google Meet sent a meeting space with no name")
   return {
@@ -89,7 +87,6 @@ export const spaceOf = (space: WireSpace): Space => {
   }
 }
 
-/** spaces.create: a new meeting link, with the account's defaults for every setting the change leaves out. */
 export const createSpace = async (api: MeetApi, change: SpaceChange): Promise<Space> =>
   spaceOf(await api.createSpace(configOf(change).config))
 
@@ -99,7 +96,6 @@ export const createSpace = async (api: MeetApi, change: SpaceChange): Promise<Sp
  */
 export const updateSpace = async (api: MeetApi, given: string, change: SpaceChange): Promise<Space> => {
   const { config, paths } = configOf(change)
-  if (paths.length === 0)
-    throw new CliError("validation_error", "name at least one setting to change", { reason: "space.no-change" })
+  if (paths.length === 0) throw new CliError("validation_error", "name at least one setting to change")
   return spaceOf(await api.patchSpace(idOf("spaces", given), config, paths))
 }

@@ -15,7 +15,7 @@ import { openStore, storePath } from "@wirecat/cli-core/store"
 import type { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
 import { CALENDAR_READ_SCOPE, googleClient, moveOldSignInFile, sessionStorage, signInFilePath } from "./google.js"
-import { ACLS_SCOPE, EVENTS_SCOPE, MEET_READ_SCOPE, MEET_WRITE_SCOPE } from "./grants.js"
+import { ACLS_SCOPE, EVENTS_SCOPE, MEET_READ_SCOPE } from "./grants.js"
 import { run } from "./program.js"
 
 const ACCESS = "fixture-access-token-7Qm2"
@@ -229,7 +229,7 @@ describe("session start", () => {
     expect(new URL(opened[0] ?? "").searchParams.get("scope")).toBe(`openid email ${CALENDAR_READ_SCOPE} ${ACLS_SCOPE}`)
   })
 
-  it("--grant meetings asks for Meet read access only; with write it also asks to make Meet rooms", async () => {
+  it("--grant meetings asks for Meet read access only, and an unticked grant names every grant to ask again", async () => {
     const { gcal, opened } = harness()
     const read = await gcal(
       ["personal", "session", "start", "--client-file", clientFile(), "--grant", "meetings", "--json"],
@@ -241,17 +241,18 @@ describe("session start", () => {
     )
     const both = await gcal(
       ["personal", "session", "start", "--client-file", clientFile(), "--grant", "write,meetings", "--json"],
-      google({ scope: `${GRANTED} ${EVENTS_SCOPE} ${MEET_READ_SCOPE} ${MEET_WRITE_SCOPE}` }),
+      google({ scope: `${GRANTED} ${EVENTS_SCOPE} ${MEET_READ_SCOPE}` }),
     )
     expect(item(both.out)).toMatchObject({ grants: ["write", "meetings"] })
     expect(new URL(opened[1] ?? "").searchParams.get("scope")).toBe(
-      `openid email ${CALENDAR_READ_SCOPE} ${EVENTS_SCOPE} ${MEET_READ_SCOPE} ${MEET_WRITE_SCOPE}`,
+      `openid email ${CALENDAR_READ_SCOPE} ${EVENTS_SCOPE} ${MEET_READ_SCOPE}`,
     )
     const unticked = await gcal(
       ["personal", "session", "start", "--client-file", clientFile(), "--grant", "write,meetings", "--json"],
-      google({ scope: `${GRANTED} ${EVENTS_SCOPE} ${MEET_READ_SCOPE}` }),
+      google({ scope: `${GRANTED} ${EVENTS_SCOPE}` }),
     )
     expect(failure(unticked.err)).toMatchObject({ code: "permission_error", reason: "oauth.scope-missing" })
+    expect(failure(unticked.err).message).toContain("--grant write,meetings again")
   })
 
   it("refuses --grant write when the account unticked it, and an unknown grant", async () => {

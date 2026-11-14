@@ -7,13 +7,12 @@ import { describe, expect, it } from "vitest"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
 import { MEET_READ_SCOPE } from "./grants.js"
 import { IDENTITY } from "./identity.js"
-import { meetApi } from "./meet/api.js"
 import { googleMeetSource } from "./meet/source.js"
 import { run } from "./program.js"
 import { MEET_PROVIDER, openGcalStore } from "./store.js"
 import { type FakeMeetOptions, MEET_ACCESS } from "./testing/fake-meet.js"
 import { fakeGoogleCalendar } from "./testing/google-calendar.js"
-import { CONFERENCES, RECORD, sampleMeet } from "./testing/meet-sample.js"
+import { CONFERENCES, meetOn, RECORD, sampleMeet } from "./testing/meet-sample.js"
 
 const harness = ({
   scopes = [CALENDAR_READ_SCOPE, MEET_READ_SCOPE],
@@ -162,20 +161,24 @@ describe("meetings over Google Meet", () => {
     expect(meet.calls).toEqual([])
   })
 
-  it("doctor warns when the last Google Meet sync is older than 25 days", async () => {
-    const { ok, gcal, env, meetAccount } = harness()
+  it("a sync held 25 days by a transcript still pending says so, before Google deletes the call", async () => {
+    const conferences = structuredClone(CONFERENCES)
+    const { ok, env, meetAccount } = harness({ meet: { conferences } })
     await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
-    expect((await ok("doctor")).item.meet_sync).toMatchObject([{ profile: "personal", stale: false }])
+    expect((await ok("personal", "meetings", "sync")).item.hint).toBeUndefined()
+    const held = new Date(Date.now() - 26 * 86_400_000).toISOString()
     const store = await openGcalStore(env)
     try {
-      const { id } = await meetAccount()
-      await store.meetings.setCursor(id, new Date(Date.now() - 26 * 86_400_000).toISOString(), Date.now())
+      await store.meetings.setCursor((await meetAccount()).id, held, Date.now())
     } finally {
       await store.close()
     }
-    const doctor = await gcal("doctor")
-    expect(doctor.answer.item.meet_sync).toMatchObject([{ profile: "personal", days_ago: 26, stale: true }])
-    expect(doctor.err).toContain("run gcal personal meetings sync")
+    const transcript = conferences[1]?.transcripts?.[0]?.transcript as Record<string, unknown>
+    transcript.state = "ENDED"
+    const synced = await ok("personal", "meetings", "sync")
+    expect(synced.item.hint).toContain(`the sync is held at ${held}`)
+    expect(synced.item.hint).toContain("30 days after it ends")
+    expect((await meetAccount()).cursor).toBe(held)
   })
 })
 
@@ -248,7 +251,7 @@ describe("the shared meetings commands over stored Meet calls", () => {
 describe("the Google Meet source", () => {
   const sourceOn = (options: FakeMeetOptions = {}) => {
     const meet = sampleMeet({ conferences: structuredClone(CONFERENCES), ...options })
-    const api = meetApi({ fetch: meet.fetch, accessToken: async () => MEET_ACCESS })
+    const api = meetOn(meet)
     return { source: googleMeetSource(() => api), meet }
   }
 

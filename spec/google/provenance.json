@@ -6,5 +6,13 @@
     "sha256": "6cbd874b0c44cff67bf5de2b913d5fa1e9b7f0b5706bef3ef080c8d628303951",
     "sourceSha256": "6cbd874b0c44cff67bf5de2b913d5fa1e9b7f0b5706bef3ef080c8d628303951",
     "normalization": "none"
+  },
+  "meet": {
+    "source": "https://meet.googleapis.com/$discovery/rest?version=v2",
+    "revision": "20261110",
+    "version": "v2",
+    "sha256": "a6b5a0a591ef299401c121904f1a704f1caaaab177d8471641b3a8a6b7652e57",
+    "sourceSha256": "2208cea1f5aa6ecbdcd25952fc92c35f7ff58a7f2fe44d967ad4d57bc1d54229",
+    "normalization": "object keys sorted, 2-space JSON; values and array order unchanged"
   }
 }

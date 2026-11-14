@@ -1,22 +1,19 @@
-import { mkdtempSync, rmSync } from "node:fs"
-import { tmpdir } from "node:os"
-import { join } from "node:path"
-import { CliError, isCliError } from "@wirecat/cli-base"
+import { CliError } from "@wirecat/cli-base"
 import { annotate, metaOf, overrideSharedContract } from "@wirecat/cli-base/commands"
 import { timezoneOf } from "@wirecat/cli-base/query"
 import { addCalendarCommands, type CalendarRun } from "@wirecat/cli-core/calendar/cli"
-import { baseContext, environmentOf, type GlobalFlags, NO_EFFECTS, readOnlyLockOf } from "@wirecat/cli-core/cli"
+import { baseContext, environmentOf, type GlobalFlags, NO_EFFECTS } from "@wirecat/cli-core/cli"
 import { levelFor } from "@wirecat/cli-core/sends"
 import type { MessageStore } from "@wirecat/cli-core/store"
 import { Command } from "commander"
 import { configuration, permissions, writeKeys } from "../config.js"
 import { IDENTITY } from "../identity.js"
+import { type StoreRows, storeFor } from "./open-store.js"
 import type { GcalEnvironment } from "./session.js"
 import { signInWords, wordedApi } from "./words.js"
 
 type AccountKey = { provider: string; account: string }
 type ProfileRow = [profile: string, key: AccountKey]
-type OpenStore = (env: NodeJS.ProcessEnv, options?: { readOnly?: boolean }) => Promise<MessageStore>
 
 /** The own account's id when every profile already points at its account in the store; nothing is written. */
 const storedId = async (store: MessageStore, rows: [ProfileRow, ...ProfileRow[]]) => {
@@ -28,56 +25,14 @@ const storedId = async (store: MessageStore, rows: [ProfileRow, ...ProfileRow[]]
   return current ? (await store.accounts.storedAccount(rows[0][1])).id : undefined
 }
 
-/**
- * A command that only reads opens the store read-only, so parallel MCP reads take no write lock. The first read of a
- * profile, a store that is missing or needs a migration, and every command that writes open it for writing and save
- * the account and profile rows. The own profile's row comes first.
- *
- * Under `GCAL_READ_ONLY` a read whose own profile has no row gets an empty store in a temporary folder instead, as
- * cli-core's `openCrmStore` does, so the lock creates no `wirecat.db`; the folder goes when the store closes.
- */
-const storeFor = async (
-  env: NodeJS.ProcessEnv,
-  readOnly: boolean,
-  rows: [ProfileRow, ...ProfileRow[]],
-  open: OpenStore,
-) => {
-  const locked = readOnly && readOnlyLockOf(IDENTITY, env) !== undefined
-  if (readOnly) {
-    // Unlocked, a failed read-only open is never the answer: the writable open below says what is wrong, or fixes it.
-    const store = await open(env, { readOnly: true }).catch((error) => {
-      if (locked && !(isCliError(error) && error.code === "not_found")) throw error
-      return undefined
-    })
-    if (store) {
-      const saved = (some: [ProfileRow, ...ProfileRow[]]) => storedId(store, some).catch(() => undefined)
-      // The lock writes no rows, so a profile never opened stays out of `--source` rather than hiding the own events.
-      const accountId = (await saved(rows)) ?? (locked ? await saved([rows[0]]) : undefined)
-      if (accountId !== undefined) return { store, accountId }
-      await store.close()
-    }
-  }
-  if (locked) return emptyStoreFor(env, rows, open)
-  return savedStoreFor(env, rows, open)
-}
-
-const emptyStoreFor = async (env: NodeJS.ProcessEnv, rows: [ProfileRow, ...ProfileRow[]], open: OpenStore) => {
-  const folder = mkdtempSync(join(tmpdir(), `${IDENTITY.command}-empty-`))
-  const removing = () => rmSync(folder, { recursive: true, force: true })
-  try {
-    const empty = await savedStoreFor({ ...env, MESSAGING_STORE: join(folder, "wirecat.db") }, rows, open)
-    const close = empty.store.close.bind(empty.store)
-    empty.store.close = () => close().finally(removing)
-    return empty
-  } catch (error) {
-    removing()
-    throw error
-  }
-}
-
-const savedStoreFor = async (env: NodeJS.ProcessEnv, rows: [ProfileRow, ...ProfileRow[]], open: OpenStore) => {
-  const store = await open(env)
-  try {
+/** The account and profile rows, the own profile's first. */
+const profileRows = (rows: [ProfileRow, ...ProfileRow[]]): StoreRows => ({
+  stored: async (store, locked) => {
+    const saved = (some: [ProfileRow, ...ProfileRow[]]) => storedId(store, some).catch(() => undefined)
+    // The lock writes no rows, so a profile never opened stays out of `--source` rather than hiding the own events.
+    return (await saved(rows)) ?? (locked ? await saved([rows[0]]) : undefined)
+  },
+  save: async (store) => {
     const save = async ([name, key]: ProfileRow) => {
       const id = await store.accounts.saveAccount(key, { name: null })
       await store.accounts.saveProfile(IDENTITY.command, name, key)
@@ -86,12 +41,9 @@ const savedStoreFor = async (env: NodeJS.ProcessEnv, rows: [ProfileRow, ...Profi
     const [own, ...others] = rows
     const accountId = await save(own)
     for (const other of others) await save(other)
-    return { store, accountId }
-  } catch (error) {
-    await store.close()
-    throw error
-  }
-}
+    return accountId
+  },
+})
 
 /** The selected profile's Google calendar for one command; cli-core closes it before the answer prints. */
 const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }): Promise<CalendarRun> => {
@@ -133,7 +85,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   if (command.opts<{ source?: string }>().source !== undefined && !locked)
     for (const [other, address] of signedInAccounts(env, configuredProfiles))
       rows.push([other, { provider: PROVIDER.name, account: address }])
-  const { store, accountId } = await storeFor(env, readOnly, rows, openGcalStore)
+  const { store, accountId } = await storeFor(env, readOnly, profileRows(rows), openGcalStore)
   const { keyring, fetch, signal } = environment
   let api: ReturnType<typeof googleApi> | undefined
   const google = () =>
