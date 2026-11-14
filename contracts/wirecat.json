@@ -1,7 +1,7 @@
 {
   "wcat_manifest": 2,
   "name": "gcal",
-  "description": "Google Calendar for the terminal, scripts and AI agents: sync, search and change events",
+  "description": "Google Calendar and Google Meet for the terminal, scripts and AI agents: sync, search and change events, read calls",
   "docs_url": "https://github.com/WireCatLabs/gcal-cli#readme",
   "package": "@wirecat/gcal-cli",
   "bin": "wcat-gcal",
@@ -1654,7 +1654,7 @@
         "--json"
       ],
       "lastShape": "runs",
-      "what": "calendars and their events",
+      "what": "calendar events and Google Meet calls",
       "note": null
     },
     "storeInfo": null,

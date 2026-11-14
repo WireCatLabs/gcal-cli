@@ -295,7 +295,7 @@ describe("calendar commands over Google", () => {
       complete: false,
       issues: [{ code: "provider_error", reason: "sync.partial", source: expect.stringMatching(/^calendar:\d+$/u) }],
     })
-    expect(item.hint).toContain("(Team (shared)): Google denied")
+    expect(item.hint).toContain("(Team (shared)): Google Calendar denied")
     expect(item.synced).toContainEqual(
       expect.objectContaining({ external_id: "team@group.calendar.example.com", error: expect.any(String) }),
     )

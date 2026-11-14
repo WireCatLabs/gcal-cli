@@ -432,7 +432,7 @@ gcal events create <calendar> [options]
 
 **Returns:** calendar event write — operation_id, event, entry, scope, removed, ended, converted, from_calendar, and 3 more; every field: gcal commands info events create
 
-**Example:** `gcal personal events create Work --text 'Example lunch with Ana tomorrow 1pm at Example Cafe'`, `gcal personal events create 3 --title 'Example review' --start-date 2026-11-03 --end-date 2026-11-03 --attendee ana@example.com --no-notify`, `gcal personal events create primary --title 'Example sync' --start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 --meet`
+**Example:** `gcal personal events create Work --text 'Example lunch with Ana tomorrow 1pm at Example Cafe'`, `gcal personal events create 3 --title 'Example review' --start-date 2026-11-03 --end-date 2026-11-03 --attendee ana@example.com --no-notify`, `gcal personal events create 3 --title 'Example sync' --start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 --meet`
 
 ### `gcal events update`
 

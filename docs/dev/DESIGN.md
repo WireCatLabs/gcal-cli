@@ -40,10 +40,12 @@ for events and meetings in the store.
 - **Search:** title, description (cleaned), location and attendee names, by words and by meaning. Events appear in
   `search all` and in a person's context. `search events --backend server` asks Google live and saves nothing. Working location,
   focus time, out of office, birthdays and busy-only private events are listed, never searched.
-- **Offline:** everything except `session`, `calendars list`, `calendars add`, `calendars busy`, `sync` and
-  `search events --backend server`.
+- **Offline:** everything except `session`, `calendars list`, `calendars add`, `calendars busy`, `sync`,
+  `meetings sync` and `search events --backend server`. `meetings list` and `meetings show` answer the store alone
+  under `--offline`.
 - **Links:** attendees join people by address; Telegram, WhatsApp and MAX people only by the owner's
-  `people link`; an event joins a Zoom meeting by join key and its other copies by iCalUID; an attached Drive file
+  `people link`; an event joins a Zoom or Google Meet call by join key (`meet:<code>` from the room's link, tested in
+  `src/meetings.test.ts` "a synced call links to its calendar entry") and its other copies by iCalUID; an attached Drive file
   links the event to the stored document. Ambiguous links go to `links review`. Never by name or time alone.
 - **Secrets:** tokens in the system keyring through `@wirecat/cli-core/oauth` (WC-SECR), or with
   `--credential-storage file` in a mode-600 file in the config folder where no keyring works. Passcodes, PINs and the
@@ -72,8 +74,8 @@ for events and meetings in the store.
 - **Google app:** `--client-file`, then `GCAL_GOOGLE_CLIENT_ID` (with `GCAL_GOOGLE_CLIENT_SECRET`), then WireCat's
   Desktop app from cli-core's `constants.json`, through cli-core's `googleApp`. `doctor` reports which as
   `oauth_client`. The owner's console steps: [google-app-verification.md](google-app-verification.md).
-- **Google Meet is part of gcal** (owner, 2026-11-14): "every meeting has a time, so it fits the calendar". There is
-  no gmeet CLI; the code came from gmeet-cli's unreleased `feat/remote-meetings` branch. The calls are cli-core's
+- **Google Meet is part of gcal** (owner, 2026-11-14): "every meeting has a time, so it fits the calendar". The calls
+  are cli-core's
   shared `meetings` group over a Google Meet `MeetingSource` (`src/meet/source.ts`); cli-core's `events list` from the
   same group is left out, since gcal's own `events` lists the same stored events. `summary` and `import` are left out:
   Meet has no summary of its own and no transcript files to import.
@@ -90,7 +92,8 @@ for events and meetings in the store.
     ([artifacts guide](https://developers.google.com/workspace/meet/api/guides/artifacts)).
   - A record and its transcript entries are deleted 30 days after the call
     ([ConferenceRecord](https://developers.google.com/workspace/meet/api/reference/rest/v2/conferenceRecords),
-    artifacts guide). `doctor` warns at 25 days from the store's sync cursor (`meet_sync`).
+    artifacts guide). `meetings sync` names a cursor held 25 days or more in its answer. `doctor` does not: cli-core's
+    doctor opens no store, since one can hang (`appDoctorReport` in `@wirecat/cli-core/cli`).
   - A transcript is `STARTED`, `ENDED` or `FILE_GENERATED`
     ([Transcript](https://developers.google.com/workspace/meet/api/reference/rest/v2/conferenceRecords.transcripts)); a
     sync reads entries only once every transcript of the call is `FILE_GENERATED`, and otherwise leaves the call due.
@@ -100,14 +103,22 @@ for events and meetings in the store.
   - `docsDestination.document` is the Docs id, equal to the Drive file id; `driveDestination.file` is the Drive file id
     (artifacts guide).
   - The list filter takes `start_time` in RFC 3339 in double quotes; page size at most 100
-    (conferences guide; the discovery document, revision 20261110, kept in `src/testing/meet-discovery.json`).
-  - Every read takes `meetings.space.readonly`; `spaces.create` and `spaces.patch` take `meetings.space.created`, which
-    reaches only the spaces the app made
+    (conferences guide; the discovery document, revision 20261110).
+  - Every read takes `meetings.space.readonly`
     ([scopes](https://developers.google.com/workspace/meet/api/guides/authenticate-authorize); discovery document).
-- **Meet sign-in:** `--grant meetings` adds `meetings.space.readonly`; `--grant write,meetings` also adds
-  `meetings.space.created`. Two words, not a third grant: `write` alone must not reach a second Google service, and a
-  read-only Meet profile stays read-only. The default sign-in stays `calendar.readonly`. A profile without the grant
-  is refused before any Meet request (`oauth.scope-missing`, grant `meetings`).
+- **Meet's contract is generated** from `spec/google/meet.json` (`pnpm spec:sync`, `pnpm generate`), apart from
+  Calendar's, into `src/generated/meet/`: its methods stay out of `gcal api`, its permission keys and
+  `API_COVERAGE.md`. Meet's paths are `v2/{+name}`, one template for a call and a space, so `scripts/generate.ts`
+  takes each method's `flatPath`, which names every id on its own; gcal encodes each id as one segment. Its enums are
+  kept as strings, so a value Google adds later does not fail an answer. The methods no command calls are excluded
+  with their reason. The requests go through gcal's own `googleApi`, the same as Calendar's.
+- **Meet sign-in:** `--grant meetings` adds `meetings.space.readonly`; the default sign-in stays `calendar.readonly`.
+  `meetings sync` without the grant is refused before the store opens and before any request (`oauth.scope-missing`,
+  grant `meetings`); `list` and `show` answer the store and say Google refused. A new sign-in replaces every scope
+  the profile held, so a hint to sign in again names the grants it holds as well (`grants` in the error's details).
+- **Rate limits:** a sync stops at Google's first `rate_limited`. The budget gcal hands cli-core's `pull` stops the
+  run, so its `stopped` reads `requests`; the answer adds `complete: false` and `retry_after_ms`. Spaces are looked
+  up four at a time.
 - **A Meet link on an event:** `events create|update --meet` sends `conferenceData.createRequest` with
   `conferenceDataVersion=1` under `calendar.events`
   ([create events, conferencing](https://developers.google.com/workspace/calendar/api/guides/create-events#conferencing)).
@@ -115,7 +126,8 @@ for events and meetings in the store.
   (Discovery `CreateConferenceRequest.requestId`). `update --meet` needs another change: cli-core's update refuses a
   patch with no field, and its fields have no conference yet.
 - **Meet rooms** (`src/meet/spaces.ts`, `createSpace`/`updateSpace`): ported, tested against the fake, and not yet a
-  command. They wait for cli-core's shared `meetings create|update` with provider settings.
+  command. They wait for cli-core's shared `meetings create|update` with provider settings. Until then gcal asks for
+  no `meetings.space.created`.
 
 ## Open questions for the owner
 
