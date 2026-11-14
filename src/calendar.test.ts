@@ -612,7 +612,7 @@ describe("calendar commands over Google", () => {
       ["sync"],
       ["events", "list", "--limit", "2"],
       ["events", "show", `event:${event.id}`],
-      ["search", "events", "planning", "--limit", "1", "--cursor", "0", "--exact", "--newest"],
+      ["search", "events", "planning", "--limit", "1", "--exact", "--newest"],
       ["people", "list"],
       ["people", "link", "email:bob@example.com", "me"],
       ["calendars", "sync", "owner@example.com"],

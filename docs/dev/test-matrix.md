@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**228 ✅ · 365 ⛔ · 0 ❌** — 106 commands, 487 options.
+**229 ✅ · 364 ⛔ · 0 ❌** — 106 commands, 487 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -386,7 +386,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api calendar-events-instances` | `--time-max` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-list` |  | ✅ |  |
 | `api calendar-events-list` | `--alt` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
-| `api calendar-events-list` | `--fields` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
+| `api calendar-events-list` | `--fields` | ✅ |  |
 | `api calendar-events-list` | `--user-ip` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-list` | `--pretty-print` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
 | `api calendar-events-list` | `--quota-user` | ⛔ | generated from Google's Discovery document; src/alignment.test.ts checks every method's options against the snapshot, and src/api.test.ts runs generated commands and `api call` through the one executor they share |
