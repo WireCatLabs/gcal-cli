@@ -162,6 +162,19 @@ describe("meetings over Google Meet", () => {
     expect(meet.calls).toEqual([])
   })
 
+  it("without --grant meetings list and show save no Google Meet account, and name the grant", async () => {
+    const { gcal, env } = harness({ scopes: [CALENDAR_READ_SCOPE] })
+    const listed = await gcal("personal", "meetings", "list")
+    expect(listed.answer.items).toEqual([])
+    expect(listed.answer.missing).toContainEqual({
+      field: "server",
+      why: expect.stringContaining("gcal personal session start --grant meetings again"),
+    })
+    const shown = await gcal("personal", "meetings", "show", RECORD)
+    expect(shown.error.message).toContain("--grant meetings")
+    expect(existsSync(env.MESSAGING_STORE ?? "")).toBe(false)
+  })
+
   it("a sync refused for the grant leaves no Google Meet account, and the hint keeps the grants held", async () => {
     const { gcal, env } = harness({ scopes: [CALENDAR_READ_SCOPE, EVENTS_SCOPE] })
     const synced = await gcal("personal", "meetings", "sync")

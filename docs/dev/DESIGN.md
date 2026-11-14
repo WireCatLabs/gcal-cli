@@ -114,7 +114,7 @@ for events and meetings in the store.
   with their reason. The requests go through gcal's own `googleApi`, the same as Calendar's.
 - **Meet sign-in:** `--grant meetings` adds `meetings.space.readonly`; the default sign-in stays `calendar.readonly`.
   `meetings sync` without the grant is refused before the store opens and before any request (`oauth.scope-missing`,
-  grant `meetings`); `list` and `show` answer the store and say Google refused. A new sign-in replaces every scope
+  grant `meetings`); `list` and `show` answer the store alone, save no Google Meet account, and add a `missing` line with the command that adds the grant. A new sign-in replaces every scope
   the profile held, so a hint to sign in again names the grants it holds as well (`grants` in the error's details).
 - **Rate limits:** a sync stops at Google's first `rate_limited`. The budget gcal hands cli-core's `pull` stops the
   run, so its `stopped` reads `requests`; the answer adds `complete: false` and `retry_after_ms`. Spaces are looked

@@ -44,11 +44,18 @@ const empty = async (env: NodeJS.ProcessEnv, rows: StoreRows, open: OpenStore) =
  * profile, a store that is missing or needs a migration, and every command that writes open it for writing and save
  * the rows.
  *
- * Under `GCAL_READ_ONLY` a read whose rows are missing gets an empty store in a temporary folder instead, as
- * cli-core's `openCrmStore` does, so the lock creates no `wirecat.db`; the folder goes when the store closes.
+ * Under `GCAL_READ_ONLY`, or for a read that must save no rows (`saves: false`), a read whose rows are missing gets an
+ * empty store in a temporary folder instead, as cli-core's `openCrmStore` does, so it creates no `wirecat.db`; the
+ * folder goes when the store closes.
  */
-export const storeFor = async (env: NodeJS.ProcessEnv, readOnly: boolean, rows: StoreRows, open: OpenStore) => {
-  const locked = readOnly && readOnlyLockOf(IDENTITY, env) !== undefined
+export const storeFor = async (
+  env: NodeJS.ProcessEnv,
+  readOnly: boolean,
+  rows: StoreRows,
+  open: OpenStore,
+  { saves = true }: { saves?: boolean } = {},
+) => {
+  const locked = readOnly && (readOnlyLockOf(IDENTITY, env) !== undefined || !saves)
   if (readOnly) {
     // Unlocked, a failed read-only open is never the answer: the writable open below says what is wrong, or fixes it.
     const store = await open(env, { readOnly: true }).catch((error) => {

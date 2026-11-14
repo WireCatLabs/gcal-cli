@@ -123,6 +123,17 @@ const TRANSCRIPT_PENDING = "Google Meet has not finished the transcript yet; the
 
 /** cli-core's reads answer `{ items, page, limit, hasMore, meta? }` or one value; gcal prints both in its envelope. */
 const bodyOf = (command: Command, value: unknown, state: MeetingsRun) => {
+  const body = answerOf(command, value, state)
+  const ungranted = state.ungranted
+  if (!ungranted || !isRecord(body)) return body
+  const missing = [
+    ...(Array.isArray(body.missing) ? (body.missing as Missing[]) : []),
+    { field: "server", why: ungranted },
+  ]
+  return { ...body, missing } as typeof body
+}
+
+const answerOf = (command: Command, value: unknown, state: MeetingsRun) => {
   const run = state.opened?.run()
   if (isRecord(value) && Array.isArray(value.items) && isRecord(value.page))
     return value as Parameters<typeof renderAnswer>[2]
@@ -172,6 +183,8 @@ interface MeetingsRun {
   answers: (() => void)[]
   /** Where a sync left the cursor, read after it so its answer can say how long a call has held it. */
   cursor?: string | null
+  /** Why Google was not asked: the profile signed in without `--grant meetings`, and the command that adds it. */
+  ungranted?: string
 }
 
 const depsOf = (state: MeetingsRun): MeetingCommandDeps => {
@@ -297,13 +310,22 @@ export const meetingsMount = () => {
       // Before the store opens for writing, so a refused sync leaves no Google Meet account behind.
       if (fetchesOnly(at)) granted()
       const unread = !(access.scopes() ?? []).includes(MEET_READ_SCOPE)
+      if (unread && effects?.remote === "read" && !storeOnly)
+        try {
+          granted()
+        } catch (error) {
+          state.ungranted = error instanceof Error ? error.message : String(error)
+        }
       // A command whose only write is a file (`meetings export --output`) leaves the store as it was; list and show
       // keep what Google returns, so they write unless they read the store alone or cannot read Google at all.
       const reads =
         effects?.remote === "read"
           ? (storeOnly || unread) && effects.local === "read"
           : effects?.local === "read" || (readsOverMcp(at) && !fetchesOnly(at))
-      const { store, accountId } = await storeFor(env, reads, meetRows(email), openGcalStore)
+      // Without the grant a read can keep nothing from Google, so it saves no Google Meet account either.
+      const { store, accountId } = await storeFor(env, reads, meetRows(email), openGcalStore, {
+        saves: !(unread && effects?.remote === "read"),
+      })
       let closed: Promise<void> | undefined
       const close = () => (closed ??= store.close())
       // Still tracked: a command that fails never reaches postAction.
