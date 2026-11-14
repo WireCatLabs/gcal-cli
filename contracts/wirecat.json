@@ -410,6 +410,97 @@
     },
     {
       "path": [
+        "meetings",
+        "list"
+      ],
+      "summary": "meetings, newest first: the service's and the stored ones, kept in the store",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "meetings.list",
+      "entity": "meeting"
+    },
+    {
+      "path": [
+        "meetings",
+        "show"
+      ],
+      "summary": "show a meeting, read again from the service with its people, transcript and…",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "meetings.show",
+      "entity": "meeting_details"
+    },
+    {
+      "path": [
+        "meetings",
+        "transcript"
+      ],
+      "summary": "show current meeting transcripts",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "meetings.transcript",
+      "entity": "meeting_transcript"
+    },
+    {
+      "path": [
+        "meetings",
+        "export"
+      ],
+      "summary": "export a meeting as Markdown or one transcript as WebVTT",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "meetings.export",
+      "entity": "meeting_export"
+    },
+    {
+      "path": [
+        "meetings",
+        "people"
+      ],
+      "summary": "find meeting participants by name or email",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "meetings.people",
+      "entity": "meeting_participants"
+    },
+    {
+      "path": [
+        "meetings",
+        "sync"
+      ],
+      "summary": "bring the stored meetings up to date from the connected account, oldest…",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "meetings.sync",
+      "entity": "meeting_ingestion"
+    },
+    {
+      "path": [
+        "meetings",
+        "repair"
+      ],
+      "summary": "preview filling in what older builds left out of stored transcripts (their…",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "meetings.repair",
+      "entity": "meeting_repair"
+    },
+    {
+      "path": [
         "api",
         "list"
       ],
@@ -1331,6 +1422,19 @@
         "untrusted"
       ]
     },
+    "meeting": {
+      "fields": [
+        "id",
+        "provider_id",
+        "title",
+        "started_at",
+        "ended_at",
+        "duration_ms",
+        "participants_count",
+        "created_at",
+        "updated_at"
+      ]
+    },
     "api_method": {
       "fields": [
         "service"
@@ -1407,6 +1511,7 @@
       "oauth2.googleapis.com",
       "openidconnect.googleapis.com",
       "www.googleapis.com",
+      "meet.googleapis.com",
       "registry.npmjs.org",
       "huggingface.co",
       "*.huggingface.co",

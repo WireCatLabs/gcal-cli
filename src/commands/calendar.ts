@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { CliError, isCliError } from "@wirecat/cli-base"
-import { annotate } from "@wirecat/cli-base/commands"
+import { annotate, metaOf, overrideSharedContract } from "@wirecat/cli-base/commands"
 import { timezoneOf } from "@wirecat/cli-base/query"
 import { addCalendarCommands, type CalendarRun } from "@wirecat/cli-core/calendar/cli"
 import { baseContext, environmentOf, type GlobalFlags, NO_EFFECTS, readOnlyLockOf } from "@wirecat/cli-core/cli"
@@ -146,7 +146,8 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   let source: ReturnType<typeof googleCalendarSource> | undefined
   let writer: ReturnType<typeof googleCalendarWriter> | undefined
   let feeds: ReturnType<typeof icsFeeds> | undefined
-  const googleWriter = () => (writer ??= googleCalendarWriter(google()))
+  const meet = command.opts<{ meet?: boolean }>().meet === true
+  const googleWriter = () => (writer ??= googleCalendarWriter(google(), { meet }))
   return {
     profile,
     account: key,
@@ -187,6 +188,28 @@ export const calendarCommands = (): Command[] => {
     feeds: true,
     writes: { quickAdd: true, move: true, importEvent: true },
   })
+  const events = holder.commands.find((group) => group.name() === "events")
+  for (const name of ["create", "update"]) {
+    const write = events?.commands.find((one) => one.name() === name)
+    if (write)
+      overrideSharedContract(write, "Google Calendar makes a Google Meet link for an event it writes.", (one) => {
+        one.option(
+          "--meet",
+          name === "create"
+            ? "also make a Google Meet link for the event"
+            : "also give the event a Google Meet link, with at least one other change",
+        )
+        annotate(one, {
+          examples: [
+            ...(metaOf(one).examples ?? []),
+            name === "create"
+              ? `${IDENTITY.command} personal events create primary --title 'Example sync' ` +
+                "--start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 --meet"
+              : `${IDENTITY.command} personal events update event:42 --title 'Example sync' --meet --no-notify`,
+          ],
+        })
+      })
+  }
   for (const group of holder.commands) if (group.commands.length) annotate(group, { effects: NO_EFFECTS })
   return [...holder.commands]
 }

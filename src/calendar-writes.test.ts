@@ -115,6 +115,45 @@ describe("event writes over Google", () => {
     })
   })
 
+  it("create --meet asks Calendar for a Meet link under the event's id, and update --meet adds one", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    const made = await gcal(...create, ...at, "--meet")
+    expect(made.code).toBe(0)
+    const [insert] = posts(google)
+    const id = made.item.operation_id
+    expect(insert?.query.get("conferenceDataVersion")).toBe("1")
+    expect(insert?.body).toMatchObject({
+      conferenceData: { createRequest: { requestId: id, conferenceSolutionKey: { type: "hangoutsMeet" } } },
+    })
+    expect(made.item.entry.join_url).toBe("https://meet.google.com/new-meet-cod")
+
+    const plain = await gcal(...create, ...at)
+    expect(posts(google)[1]?.query.has("conferenceDataVersion")).toBe(false)
+    const updated = await gcal(
+      "personal",
+      "events",
+      "update",
+      plain.item.event,
+      "--title",
+      "Example planning, online",
+      "--meet",
+    )
+    expect(updated.code).toBe(0)
+    const patch = posts(google)[2]
+    expect(patch?.query.get("conferenceDataVersion")).toBe("1")
+    expect(patch?.body).toMatchObject({ conferenceData: { createRequest: { requestId: plain.item.operation_id } } })
+    expect(updated.item.entry.join_url).toBe("https://meet.google.com/new-meet-cod")
+  })
+
+  it("--meet takes no --text: the quick add reads its whole event from the line", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    const refused = await gcal("personal", "events", "create", "owner@example.com", "--text", "Lunch 1pm", "--meet")
+    expect(refused.error).toMatchObject({ code: "validation_error", reason: "event.text-with-fields" })
+    expect(posts(google)).toEqual([])
+  })
+
   it("a --dry-run preview shows the api key a shared write checks, and refuses as the write would", async () => {
     const { gcal, google } = harness()
     await gcal("personal", "sync")

@@ -72,9 +72,9 @@ gcal session start [options]
 | `--client-id <id>` | your own Desktop app OAuth client ID, used instead of WireCat's; its secret comes from GCAL_GOOGLE_CLIENT_SECRET. |
 | `--no-browser` | print the sign-in URL instead of opening a browser. |
 | `--credential-storage <storage>` | where the sign-in is kept: keyring, which falls back to a private file, or file. Default: `keyring`. |
-| `--grant <scopes>` | also ask for these, comma-separated: write, sharing. |
+| `--grant <scopes>` | also ask for these, comma-separated: write, sharing, meetings. |
 
-**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --client-id 1234-abc.apps.googleusercontent.com`, `gcal personal session start --grant write,sharing`
+**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --client-id 1234-abc.apps.googleusercontent.com`, `gcal personal session start --grant write,sharing`, `gcal personal session start --grant meetings`
 
 ### `gcal session status`
 
@@ -428,10 +428,11 @@ gcal events create <calendar> [options]
 | `--no-notify` | the provider mails nobody. |
 | `--operation-id <id>` | the operation_id a create that ended in outcome_unknown named: a retry finds that event. |
 | `--text <text>` | one line the provider reads the title, date, time and place from, in place of the other fields; nobody is mailed without --notify. |
+| `--meet` | also make a Google Meet link for the event. |
 
 **Returns:** calendar event write — operation_id, event, entry, scope, removed, ended, converted, from_calendar, and 3 more; every field: gcal commands info events create
 
-**Example:** `gcal personal events create Work --text 'Example lunch with Ana tomorrow 1pm at Example Cafe'`, `gcal personal events create 3 --title 'Example review' --start-date 2026-11-03 --end-date 2026-11-03 --attendee ana@example.com --no-notify`, `gcal personal events create 3 --title 'Example standup' --start-time 2026-11-02T09:30 --end-time 2026-11-02T09:45 --repeat 'FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12'`
+**Example:** `gcal personal events create Work --text 'Example lunch with Ana tomorrow 1pm at Example Cafe'`, `gcal personal events create 3 --title 'Example review' --start-date 2026-11-03 --end-date 2026-11-03 --attendee ana@example.com --no-notify`, `gcal personal events create 3 --title 'Example standup' --start-time 2026-11-02T09:30 --end-time 2026-11-02T09:45 --repeat 'FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12'`, `gcal personal events create primary --title 'Example sync' --start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 --meet`
 
 ### `gcal events update`
 
@@ -464,10 +465,11 @@ gcal events update <event> [options]
 | `--operation-id <id>` | with --following, the operation_id an outcome_unknown named: a retry finds that new series. |
 | `--notify` | the provider mails the other attendees; needs events.notify allowed; this or --no-notify is required when there are other attendees. |
 | `--no-notify` | the provider mails nobody. |
+| `--meet` | also give the event a Google Meet link, with at least one other change. |
 
 **Returns:** calendar event write — operation_id, event, entry, scope, removed, ended, converted, from_calendar, and 3 more; every field: gcal commands info events update
 
-**Example:** `gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --notify`, `gcal personal events update event:42 --series --repeat 'FREQ=WEEKLY;BYDAY=TU;UNTIL=20261231T230000Z' --no-notify`, `gcal personal events update event:42 --following --start-time 2026-11-09T10:00 --end-time 2026-11-09T10:30 --no-notify`
+**Example:** `gcal personal events update event:42 --start-time 2026-11-02T14:00 --end-time 2026-11-02T15:00 --notify`, `gcal personal events update event:42 --series --repeat 'FREQ=WEEKLY;BYDAY=TU;UNTIL=20261231T230000Z' --no-notify`, `gcal personal events update event:42 --following --start-time 2026-11-09T10:00 --end-time 2026-11-09T10:30 --no-notify`, `gcal personal events update event:42 --title 'Example sync' --meet --no-notify`
 
 ### `gcal events delete`
 
@@ -695,6 +697,175 @@ gcal links resolve <review> <choice>
 **Returns:** calendar link resolution — id, status, chosen; every field: gcal commands info links resolve
 
 **Example:** `gcal personal links resolve 7 event:42`
+
+## `gcal meetings`
+
+stored meetings and their records
+
+### `gcal meetings list`
+
+meetings, newest first: the service's and the stored ones, kept in the store
+
+```sh
+gcal meetings list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+| `--backend <archive\|server\|both>` | where to read: the store (archive), the service (server), or both, kept in the store (default: both). |
+| `--limit <n>` | meetings per page. Default: `100`. |
+| `--page <n>` | page number. Default: `1`. |
+
+**Returns:** meeting — ref, id, provider_id, provider, account, title, url, started_at, and 11 more; every field: gcal commands info meetings list
+
+**Next usually:** `gcal meetings show <meeting>`, `gcal meetings transcript <meeting>`, `gcal meetings export <meeting>`
+
+**Example:** `gcal personal meetings list started_at>=2026-11-01 --limit 20 --json`
+
+### `gcal meetings show`
+
+show a meeting, read again from the service with its people, transcript and documents
+
+```sh
+gcal meetings show <meeting> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `meeting` | required | the stored meeting's number, its meeting: ref, or the service's id (provider_id). |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+| `--backend <archive\|server\|both>` | where to read: the store (archive), the service (server), or both, kept in the store (default: both). |
+
+**Returns:** meeting details — ref, id, provider_id, provider, account, title, url, started_at, and 20 more; every field: gcal commands info meetings show
+
+**Next usually:** `gcal meetings transcript <meeting>`, `gcal meetings export <meeting>`
+
+**Example:** `gcal personal meetings show 1 --json`
+
+### `gcal meetings transcript`
+
+show current meeting transcripts
+
+```sh
+gcal meetings transcript <meeting> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `meeting` | required | stored meeting id. |
+
+| Option | What it does |
+|---|---|
+| `--history` | include superseded transcript versions. |
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** meeting transcript — ref, meeting, source, language, superseded_at, created_at, lines; every field: gcal commands info meetings transcript
+
+**Example:** `gcal personal meetings transcript 1 --json`
+
+### `gcal meetings export`
+
+export a meeting as Markdown or one transcript as WebVTT
+
+**Changes something on this computer only.**
+
+```sh
+gcal meetings export <meeting> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `meeting` | required | stored meeting id. |
+
+| Option | What it does |
+|---|---|
+| `--format <format>` | export format. One of: `markdown`, `vtt`. Default: `markdown`. |
+| `--transcript-id <id>` | export a specific transcript version. |
+| `--output <file>` | write content to a new file through the host's writer. |
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+
+**Returns:** meeting export — meeting_id, format, filename, content, output; every field: gcal commands info meetings export
+
+**Example:** `gcal personal meetings export 1 --format markdown --json`
+
+### `gcal meetings people`
+
+find meeting participants by name or email
+
+```sh
+gcal meetings people <query> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | required | a name or an email address. |
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+| `--limit <n>` | most matching observations per page, 1–1000 (default 50). |
+| `--scan-limit <n>` | most participant observations to inspect, 1–10000 (default 1000). |
+| `--max-read-bytes <bytes>` | most stored name and email bytes to read (default 1048576). |
+| `--cursor <cursor>` | continue with the same name query and selected account. |
+
+**Returns:** meeting participants — schema_version, kind, account_id, query, items, ambiguity, coverage, page; every field: gcal commands info meetings people
+
+**Example:** `gcal personal meetings people "Test Person" --json`
+
+### `gcal meetings sync`
+
+bring the stored meetings up to date from the connected account, oldest first; a run that stops before its deadline keeps what it saved and the next one goes on from there
+
+**Changes something on this computer only.**
+
+```sh
+gcal meetings sync [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+| `--since-time <time>` | fetch meetings starting at or after this ISO 8601 date or time. |
+| `--lookback-days <days>` | revisit recent occurrences for late transcripts (0–31). |
+| `--rescan` | read the last 30 days again, not only what came after the last sync. |
+
+**Returns:** meeting ingestion — meetings, participants, transcript_rows, summaries, warnings, timezone; every field: gcal commands info meetings sync
+
+**Example:** `gcal personal meetings sync --since-time 2026-11-01T00:00:00Z --json`
+
+### `gcal meetings repair`
+
+preview filling in what older builds left out of stored transcripts (their language); --yes stores it
+
+**Changes something on this computer only.**
+
+```sh
+gcal meetings repair [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--json` | one JSON value. |
+| `--jsonl` | one JSON object per item. |
+| `--yes` | store the detected languages; otherwise only preview. |
+
+**Returns:** meeting repair — account_id, applied, transcripts, languages; every field: gcal commands info meetings repair
+
+**Example:** `gcal personal meetings repair --json`
 
 ## `gcal api`
 
