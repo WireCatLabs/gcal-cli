@@ -313,6 +313,7 @@ const callCommand = () =>
     effects: REMOTE_WRITE,
     examples: [
       `${IDENTITY.command} personal api call calendar.events.list --params '{"calendarId":"primary","maxResults":10}'`,
+      `${IDENTITY.command} personal api call calendar.events.list --params '{"calendarId":"primary","fields":"items(id,attachments(fileId,mimeType),organizer/self)"}' --json`,
       `${IDENTITY.command} personal api call calendar.freebusy.query --body '{"timeMin":"2026-11-02T00:00:00Z","timeMax":"2026-11-03T00:00:00Z","items":[{"id":"primary"}]}'`,
     ],
   })

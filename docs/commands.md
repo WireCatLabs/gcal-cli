@@ -308,8 +308,8 @@ gcal events list [query] [options]
 
 | Option | What it does |
 |---|---|
-| `--limit <n>` | events per page, 1–1000. Default: `100`. |
-| `--page <n>` | which page, starting at 1. Default: `1`. |
+| `--limit <n>` | events per page, 1–1000; the profile's defaults.limit when absent. |
+| `--page <n>` | which page, starting at 1. |
 | `--source <accounts>` | calendar accounts held in the store to read as one list: all, a provider, or a list such as gcal:work,gcal:personal or group:<name>; the profile's account when absent. |
 
 **Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 13 more; every field: gcal commands info events list
@@ -607,8 +607,8 @@ gcal search events <query> [options]
 
 | Option | What it does |
 |---|---|
-| `--limit <n>` | events per page. Default: `20`. |
-| `--cursor <cursor>` | go on from where the last page stopped; page.next gives it. Default: `0`. |
+| `--limit <n>` | events per page; the profile's defaults.limit when absent. |
+| `--cursor <cursor>` | go on from the previous page's page.next_cursor, with the same query. |
 | `--exact` | every word as written, no word stems. |
 | `--newest` | latest start first instead of best first. |
 | `--backend <archive\|server\|both>` | where to search: archive, the local store, or server, the provider's own search over the synced calendars, earliest first; both gives the store's hits, each the provider also found marked server, then the provider's other hits, one page with no cursor. One of: `archive`, `server`, `both`. Default: `archive`. |
@@ -749,7 +749,7 @@ gcal api call <method> [options]
 | `--body <json>` | request body as a JSON object. |
 | `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
-**Example:** `gcal personal api call calendar.events.list --params '{"calendarId":"primary","maxResults":10}'`, `gcal personal api call calendar.freebusy.query --body '{"timeMin":"2026-11-02T00:00:00Z","timeMax":"2026-11-03T00:00:00Z","items":[{"id":"primary"}]}'`
+**Example:** `gcal personal api call calendar.events.list --params '{"calendarId":"primary","maxResults":10}'`, `gcal personal api call calendar.events.list --params '{"calendarId":"primary","fields":"items(id,attachments(fileId,mimeType),organizer/self)"}' --json`, `gcal personal api call calendar.freebusy.query --body '{"timeMin":"2026-11-02T00:00:00Z","timeMax":"2026-11-03T00:00:00Z","items":[{"id":"primary"}]}'`
 
 ### `gcal api calendar-acl-delete`
 
@@ -2011,8 +2011,8 @@ gcal runs list [query] [options]
 
 | Option | What it does |
 |---|---|
-| `--limit <n>` | how many to show. Default: `20`. |
-| `--page <n>` | which page, starting at 1. Default: `1`. |
+| `--limit <n>` | how many to show. |
+| `--page <n>` | which page, starting at 1. |
 
 **Returns:** run — run_id, command, started_at, status, cli_version, profile, completed_at, requests, and 23 more; every field: gcal commands info runs list
 
