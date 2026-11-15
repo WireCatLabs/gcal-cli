@@ -73,19 +73,18 @@ export type GoogleCalendarWriter = CalendarWriter &
 /**
  * A new Google Meet link for the event: Calendar makes it, with no Meet scope, when the request carries
  * `conferenceDataVersion=1` (https://developers.google.com/workspace/calendar/api/guides/create-events#conferencing).
- * Google ignores a `requestId` it has seen, so the event's own id makes a retried write ask for one link, not two.
+ * cli-core gives each write a fresh `requestId`, since Google ignores one it has seen.
  */
-const newMeet = (requestId: string) => ({
-  conferenceData: { createRequest: { requestId, conferenceSolutionKey: { type: "hangoutsMeet" } } },
-})
+const conferenceOf = (patch: EventPatch) =>
+  patch.conference
+    ? {
+        conferenceData: {
+          createRequest: { requestId: patch.conference.requestId, conferenceSolutionKey: { type: "hangoutsMeet" } },
+        },
+      }
+    : {}
 
-export interface WriterOptions {
-  meet?: boolean
-}
-
-export const googleCalendarWriter = (api: GoogleApi, { meet = false }: WriterOptions = {}): GoogleCalendarWriter => {
-  const conference = (eventId: string) => (meet ? newMeet(eventId) : {})
-  const version = meet ? { conferenceDataVersion: 1 } : {}
+export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
   const where = (calendar: StoredCalendar, eventId: string, notify: boolean) => ({
     calendarId: calendar.externalId,
     eventId,
@@ -111,13 +110,23 @@ export const googleCalendarWriter = (api: GoogleApi, { meet = false }: WriterOpt
     guarded(async () =>
       answerOf(
         schema.CalendarEvent,
-        await api.call("calendar.events.patch", { ...where(calendar, eventId, notify), ...version }, body, {
-          headers: { "if-match": etag },
-        }),
+        await api.call(
+          "calendar.events.patch",
+          { ...where(calendar, eventId, notify), ...("conferenceData" in body ? { conferenceDataVersion: 1 } : {}) },
+          body,
+          { headers: { "if-match": etag } },
+        ),
       ),
     )
 
-  const replace = (calendar: StoredCalendar, eventId: string, event: CalendarEvent, etag: string, notify: boolean) =>
+  const replace = (
+    calendar: StoredCalendar,
+    eventId: string,
+    event: CalendarEvent,
+    changes: EventPatch,
+    etag: string,
+    notify: boolean,
+  ) =>
     guarded(async () =>
       answerOf(
         schema.CalendarEvent,
@@ -125,7 +134,7 @@ export const googleCalendarWriter = (api: GoogleApi, { meet = false }: WriterOpt
           "calendar.events.update",
           // Without these Google ignores the event's Meet link and Drive files in the body it is given.
           { ...where(calendar, eventId, notify), conferenceDataVersion: 1, supportsAttachments: true },
-          { ...event, ...conference(eventId) },
+          { ...event, ...conferenceOf(changes) },
           { headers: { "if-match": etag } },
         ),
       ),
@@ -133,6 +142,8 @@ export const googleCalendarWriter = (api: GoogleApi, { meet = false }: WriterOpt
 
   return {
     provider: "google-calendar",
+    // The same list as `writes.conferences` in commands/calendar.ts, which mounts `--conference` before a writer exists.
+    conferences: ["google-meet"],
 
     async create(calendar, draft: EventDraft, { id, notify }) {
       if (!GOOGLE_ID.test(id))
@@ -142,8 +153,12 @@ export const googleCalendarWriter = (api: GoogleApi, { meet = false }: WriterOpt
       try {
         const made = await api.call(
           "calendar.events.insert",
-          { calendarId: calendar.externalId, sendUpdates: notify ? "all" : "none", ...version },
-          { id, ...bodyOf(draft), ...conference(id) },
+          {
+            calendarId: calendar.externalId,
+            sendUpdates: notify ? "all" : "none",
+            ...(draft.conference ? { conferenceDataVersion: 1 } : {}),
+          },
+          { id, ...bodyOf(draft), ...conferenceOf(draft) },
         )
         return entryOf(answerOf(schema.CalendarEvent, made), calendar)
       } catch (error) {
@@ -236,6 +251,7 @@ export const googleCalendarWriter = (api: GoogleApi, { meet = false }: WriterOpt
             calendar,
             externalId,
             { ...event, ...bodyOf(changes, recurring) },
+            changes,
             etag,
             notify,
           )
@@ -243,7 +259,7 @@ export const googleCalendarWriter = (api: GoogleApi, { meet = false }: WriterOpt
         }
       }
       return entryOf(
-        await patch(calendar, externalId, { ...bodyOf(changes), ...conference(externalId) }, etag, notify),
+        await patch(calendar, externalId, { ...bodyOf(changes), ...conferenceOf(changes) }, etag, notify),
         calendar,
       )
     },

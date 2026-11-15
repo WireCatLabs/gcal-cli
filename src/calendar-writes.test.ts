@@ -115,42 +115,70 @@ describe("event writes over Google", () => {
     })
   })
 
-  it("create --meet asks Calendar for a Meet link under the event's id, and update --meet adds one", async () => {
+  it("create --conference google-meet asks Calendar for a Meet link with a fresh request id each write", async () => {
     const { gcal, google } = harness()
     await gcal("personal", "sync")
-    const made = await gcal(...create, ...at, "--meet")
+    const made = await gcal(...create, ...at, "--conference", "google-meet")
     expect(made.code).toBe(0)
-    const [insert] = posts(google)
-    const id = made.item.operation_id
+    const again = await gcal(...create, ...at, "--conference", "google-meet")
+    const [insert, second] = posts(google)
     expect(insert?.query.get("conferenceDataVersion")).toBe("1")
-    expect(insert?.body).toMatchObject({
-      conferenceData: { createRequest: { requestId: id, conferenceSolutionKey: { type: "hangoutsMeet" } } },
-    })
+    const request = (body: unknown) =>
+      (body as { conferenceData: { createRequest: { requestId: string; conferenceSolutionKey: unknown } } })
+        .conferenceData.createRequest
+    expect(request(insert?.body).conferenceSolutionKey).toEqual({ type: "hangoutsMeet" })
+    expect(request(insert?.body).requestId).toMatch(/^[0-9a-f-]{36}$/)
+    expect(request(second?.body).requestId).not.toBe(request(insert?.body).requestId)
     expect(made.item.entry.join_url).toBe("https://meet.google.com/new-meet-cod")
+    expect(again.code).toBe(0)
 
-    const plain = await gcal(...create, ...at)
-    expect(posts(google)[1]?.query.has("conferenceDataVersion")).toBe(false)
-    const updated = await gcal(
-      "personal",
-      "events",
-      "update",
-      plain.item.event,
-      "--title",
-      "Example planning, online",
-      "--meet",
-    )
-    expect(updated.code).toBe(0)
-    const patch = posts(google)[2]
-    expect(patch?.query.get("conferenceDataVersion")).toBe("1")
-    expect(patch?.body).toMatchObject({ conferenceData: { createRequest: { requestId: plain.item.operation_id } } })
-    expect(updated.item.entry.join_url).toBe("https://meet.google.com/new-meet-cod")
+    await gcal(...create, ...at)
+    expect(posts(google)[2]?.query.has("conferenceDataVersion")).toBe(false)
+    expect(posts(google)[2]?.body).not.toHaveProperty("conferenceData")
   })
 
-  it("--meet takes no --text: the quick add reads its whole event from the line", async () => {
+  it("update --conference adds a link once; an event that has one is refused before Google is asked", async () => {
     const { gcal, google } = harness()
     await gcal("personal", "sync")
-    const refused = await gcal("personal", "events", "create", "owner@example.com", "--text", "Lunch 1pm", "--meet")
-    expect(refused.error).toMatchObject({ code: "validation_error", reason: "event.text-with-fields" })
+    const plain = await gcal(...create, ...at)
+    const update = (...extra: string[]) =>
+      gcal("personal", "events", "update", plain.item.event, "--conference", "google-meet", ...extra)
+    const updated = await update()
+    expect(updated.code).toBe(0)
+    const patch = posts(google)[1]
+    expect(patch?.query.get("conferenceDataVersion")).toBe("1")
+    expect(patch?.body).toMatchObject({
+      conferenceData: { createRequest: { conferenceSolutionKey: { type: "hangoutsMeet" } } },
+    })
+    expect(updated.item.entry.join_url).toBe("https://meet.google.com/new-meet-cod")
+
+    const refused = await update("--title", "Example planning, again")
+    expect(refused.error).toMatchObject({ code: "validation_error", reason: "event.conference-exists" })
+    expect(posts(google)).toHaveLength(2)
+  })
+
+  it("--conference takes only google-meet, and --meet is gone", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    expect((await gcal(...create, ...at, "--conference", "zoom")).code).not.toBe(0)
+    expect((await gcal(...create, ...at, "--meet")).code).not.toBe(0)
+    expect(posts(google)).toEqual([])
+  })
+
+  it("--conference takes no --text: the quick add reads its whole event from the line", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    const refused = await gcal(
+      "personal",
+      "events",
+      "create",
+      "owner@example.com",
+      "--text",
+      "Lunch 1pm",
+      "--conference",
+      "google-meet",
+    )
+    expect(refused.code).not.toBe(0)
     expect(posts(google)).toEqual([])
   })
 
