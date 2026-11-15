@@ -159,8 +159,10 @@ When the owner asks for a digest, standup report or "what is my week":
 - `--series` changes or deletes every occurrence, and `--following` this one and every later one; use them only when
   the owner said so. `outcome_unknown` on `update --following` names the new series' id: repeat with `--operation-id <id>`.
   A new `--repeat` rule that ends a series sooner needs `events.delete.series`, which is denied by default.
-- `events create … --meet` gives the new event a Google Meet link (its `join_url`); `events update event:<id> … --meet`
-  adds one together with another change. Both need `--grant write` only.
+- `events create … --conference google-meet` gives the new event a Google Meet link (its `join_url`);
+  `events update event:<id> --conference google-meet` adds one to an event that has none. Both need `--grant write`.
+- `meetings create --setting <name>=<value>` makes a Meet room that starts now; `meetings update spaces/<id>` changes
+  one gcal made. Both need `--grant write,meetings` and ask first.
 - `events move` keeps the event's id; an occurrence moves only with `--series`, the whole repeating event.
 - `events create <calendar> --text "<line>"` lets Google read the title, day, time and place from one line, with no
   other field options. On `outcome_unknown`, repeat it with the same line and `--operation-id <the operation_id it

@@ -5,7 +5,15 @@ import { googleError } from "@wirecat/cli-core/google"
 import * as v from "valibot"
 import { type ApiContract, CALENDAR, operationOf, validateRequest } from "./api-contract.js"
 import { validateApiParams } from "./api-methods.js"
-import { ACLS_SCOPE, EVENTS_SCOPE, type Grant, grantMissing, grantsOf, MEET_READ_SCOPE } from "./grants.js"
+import {
+  ACLS_SCOPE,
+  EVENTS_SCOPE,
+  type Grant,
+  grantMissing,
+  grantsOf,
+  MEET_READ_SCOPE,
+  MEET_WRITE_SCOPE,
+} from "./grants.js"
 
 const MAX_BYTES = 50 * 1024 * 1024
 const TIMEOUT_MS = 30_000
@@ -58,7 +66,7 @@ const refusal = (contract: ApiContract, failure: Parameters<typeof googleError>[
 const scopeNames = (scopes: readonly string[]) =>
   scopes.map((scope) => scope.replace("https://www.googleapis.com/auth/", "")).join(" or ")
 
-const GRANT_OF: [scope: string, grant: Grant, what: (scopes: readonly string[]) => string][] = [
+const GRANT_OF: [scope: string, grant: Grant | Grant[], what: (scopes: readonly string[]) => string][] = [
   [
     EVENTS_SCOPE,
     "write",
@@ -66,6 +74,7 @@ const GRANT_OF: [scope: string, grant: Grant, what: (scopes: readonly string[]) 
   ],
   [ACLS_SCOPE, "sharing", (scopes) => `this method reads or changes who can see a calendar (${scopeNames(scopes)})`],
   [MEET_READ_SCOPE, "meetings", () => "this profile signed in without access to Google Meet"],
+  [MEET_WRITE_SCOPE, ["write", "meetings"], () => "this method makes or changes a Google Meet space"],
 ]
 
 /** Refuses a method the saved sign-in cannot call; with no saved scopes Google decides. */

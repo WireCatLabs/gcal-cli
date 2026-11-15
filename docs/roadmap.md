@@ -19,7 +19,7 @@ meetings that clash. `events prepare` gathers what you need for the next meeting
 a line of text, and `events export` and `events import` read and write `.ics` files. `calendars add <url>` follows a
 calendar published as an `.ics` address, read-only. After `session start --grant meetings`, `meetings sync`, `list`,
 `show` and `transcript` keep and read your Google Meet calls with who joined, the transcript and its Drive files, linked
-to the calendar event. `events create --meet` gives an event a Meet link. `search all` searches stored meetings, chats
+to the calendar event. `events create --conference google-meet` gives an event a Meet link, and `meetings create` makes a Meet room. `search all` searches stored meetings, chats
 and notes together.
 `gcal api` reaches every Google
 Calendar API method by name. Every command is in the [command reference](commands.md).

@@ -6,7 +6,7 @@ import { rememberAccount, run as runShared } from "@wirecat/cli-core/cli"
 import type { MeetingSearchIndexStore } from "@wirecat/cli-core/meetings"
 import { describe, expect, it } from "vitest"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
-import { EVENTS_SCOPE, MEET_READ_SCOPE } from "./grants.js"
+import { EVENTS_SCOPE, MEET_READ_SCOPE, MEET_WRITE_SCOPE } from "./grants.js"
 import { IDENTITY } from "./identity.js"
 import { googleMeetSource } from "./meet/source.js"
 import { definition, run } from "./program.js"
@@ -499,5 +499,118 @@ describe("the Google Meet source", () => {
     const [first] = await source.meetings("2026-11-01T00:00:00Z")
     expect(first?.joinUrl).toBeNull()
     expect(first?.series?.id).toBe("space-a")
+  })
+})
+
+describe("meetings create and update over Google Meet spaces", () => {
+  const WRITES = [CALENDAR_READ_SCOPE, EVENTS_SCOPE, MEET_READ_SCOPE, MEET_WRITE_SCOPE]
+  const spaceCalls = (meet: ReturnType<typeof sampleMeet>) =>
+    meet.calls.filter(({ path }) => path.startsWith("/v2/spaces/created") || path === "/v2/spaces")
+
+  it("create makes a space that starts now, with the settings given, and keeps nothing in the store", async () => {
+    const { ok, meet, env } = harness({ scopes: WRITES })
+    const made = await ok(
+      "personal",
+      "meetings",
+      "create",
+      "--setting",
+      "access_type=trusted",
+      "--setting",
+      "auto_transcription=true",
+      "--yes",
+    )
+    expect(made.item).toMatchObject({
+      action: "create",
+      provider: "google-meet",
+      account: "owner@example.com",
+      change: { kind: "instant", settings: { access_type: "trusted", auto_transcription: true } },
+      applied: true,
+      meeting: { id: "created-1", kind: "instant", join_url: "https://meet.google.com/abc-mnop-xyz" },
+      untrusted: expect.arrayContaining(["meeting.join_url"]),
+    })
+    expect(Date.parse(made.item.change.start_time)).toBeGreaterThan(0)
+    expect(spaceCalls(meet)).toMatchObject([
+      {
+        method: "POST",
+        body: {
+          config: {
+            accessType: "TRUSTED",
+            artifactConfig: { transcriptionConfig: { autoTranscriptionGeneration: "ON" } },
+          },
+        },
+      },
+    ])
+    expect(meet.refusals).toEqual([])
+    expect(existsSync(env.MESSAGING_STORE ?? "")).toBe(false)
+  })
+
+  it("update patches only the settings named, by the space's id", async () => {
+    const { ok, meet } = harness({ scopes: WRITES })
+    await ok("personal", "meetings", "create", "--yes")
+    const updated = await ok(
+      "personal",
+      "meetings",
+      "update",
+      "spaces/created-1",
+      "--setting",
+      "moderation=true",
+      "--yes",
+    )
+    expect(updated.item).toMatchObject({ action: "update", id: "spaces/created-1", applied: true })
+    expect(spaceCalls(meet)[1]).toMatchObject({
+      method: "PATCH",
+      path: "/v2/spaces/created-1",
+      query: { updateMask: "config.moderation" },
+      body: { config: { moderation: "ON" } },
+    })
+  })
+
+  it("--dry-run previews without Google; a title or a start is refused, naming the settings it takes", async () => {
+    const { ok, gcal, meet } = harness({ scopes: WRITES })
+    const preview = await ok("personal", "meetings", "create", "--setting", "moderation=false", "--dry-run")
+    expect(preview.item).toMatchObject({ preview: true })
+    const titled = await gcal("personal", "meetings", "create", "--title", "Planning", "--yes")
+    expect(titled.error).toMatchObject({ code: "validation_error" })
+    expect(titled.error.message).toContain("--setting access_type")
+    const started = await gcal("personal", "meetings", "create", "--start-time", "2026-11-20T10:00:00Z", "--yes")
+    expect(started.error).toMatchObject({ code: "validation_error" })
+    const empty = await gcal("personal", "meetings", "update", "spaces/created-1", "--yes")
+    expect(empty.error).toMatchObject({ code: "validation_error" })
+    expect(spaceCalls(meet)).toEqual([])
+  })
+
+  it("asks first: with nobody to answer and no --yes the space is not made", async () => {
+    const { gcal, meet } = harness({ scopes: WRITES })
+    const refused = await gcal("personal", "meetings", "create")
+    expect(refused.code).not.toBe(0)
+    expect(refused.error.code).toBe("confirmation_required")
+    expect(spaceCalls(meet)).toEqual([])
+  })
+
+  it("without the space grant create is refused before any request, keeping the grants already held", async () => {
+    const { gcal, meet, env } = harness({ scopes: [CALENDAR_READ_SCOPE, EVENTS_SCOPE, MEET_READ_SCOPE] })
+    const refused = await gcal("personal", "meetings", "create", "--yes")
+    expect(refused.error).toMatchObject({ code: "permission_error", reason: "oauth.scope-missing" })
+    expect(refused.error.message).toContain("gcal personal session start --grant write,meetings again")
+    const update = await gcal(
+      "personal",
+      "meetings",
+      "update",
+      "spaces/created-1",
+      "--setting",
+      "moderation=true",
+      "--yes",
+    )
+    expect(update.error.message).toContain("--grant write,meetings again")
+    expect(meet.calls).toEqual([])
+    expect(existsSync(env.MESSAGING_STORE ?? "")).toBe(false)
+  })
+
+  it("help lists the space settings with their values", async () => {
+    const { raw } = harness({ scopes: WRITES })
+    const help = await raw(["personal", "meetings", "create", "--help"])
+    const text = help.out.join("\n")
+    expect(text).toContain("access_type=open|trusted|restricted")
+    expect(text).toContain("auto_smart_notes=true|false")
   })
 })

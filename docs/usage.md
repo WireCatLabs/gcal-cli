@@ -40,10 +40,11 @@ permission, and the default sign-in asks for read access to Calendar only:
 | `write` | `calendar.events` | create, change and delete events, answer invitations, and add a Meet link to an event |
 | `sharing` | `calendar.acls` | see and change who can see a calendar |
 | `meetings` | `meetings.space.readonly` | read the Google Meet calls you can see, who joined, the transcript and its Drive files |
+| `write,meetings` | also `meetings.space.created` | make Google Meet rooms and change the ones `gcal` made |
 
 Google's lists: [Calendar scopes](https://developers.google.com/workspace/calendar/api/auth) and
-[Meet scopes](https://developers.google.com/workspace/meet/api/guides/authenticate-authorize). `gcal` asks for no Meet
-write permission. A new sign-in replaces the permissions a profile held, so ask for all of them at once:
+[Meet scopes](https://developers.google.com/workspace/meet/api/guides/authenticate-authorize). `gcal` asks for Meet write
+access only with both `write` and `meetings`. A new sign-in replaces the permissions a profile held, so ask for all of them at once:
 `--grant write,meetings`.
 
 Without `--client-file` or `--client-id`, `gcal` signs in through your own app when `GCAL_GOOGLE_CLIENT_ID` or the
@@ -331,7 +332,23 @@ gcal personal search all "budget"                    # transcripts beside events
 Without `--grant meetings`, `meetings list` answers what the store holds and says Google refused, and `meetings sync`
 is refused with the command that signs in with the grant.
 
-To give a new event a Meet link, see [change events](#change-events): `events create … --meet`.
+To give a new event a Meet link, see [change events](#change-events): `events create … --conference google-meet`.
+
+### Make a Meet room
+
+After `session start --grant write,meetings`, `meetings create` makes a Google Meet room that starts now, and
+`meetings update` changes a room `gcal` made. A room has no title or time: the calendar event carries those.
+
+```sh
+gcal personal meetings create --setting access_type=trusted --setting auto_transcription=true
+gcal personal meetings update spaces/abc123 --setting moderation=true
+```
+
+- `--setting access_type=open|trusted|restricted`: who joins without knocking.
+- `--setting moderation|auto_recording|auto_transcription|auto_smart_notes=true|false`: host controls, and what
+  Google records, transcribes and notes in every call of the room.
+- Both ask first; `--yes` answers for a script. The answer's `meeting.id` is the room's id for `meetings update`, and
+  `meeting.join_url` its link. Google lets `gcal` change only the rooms it made.
 
 ## Get reminded before a meeting
 
@@ -624,7 +641,8 @@ writes; Google is reached through the same generated methods as `gcal api`.
 gcal personal events create 3 --title "Planning" --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00
 gcal personal events create 3 --title "Offsite" --start-date 2026-11-03 --end-date 2026-11-04
 gcal personal events create Work --text "Lunch with Ana tomorrow 1pm at Example Cafe"
-gcal personal events create 3 --title "Sync" --start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 --meet
+gcal personal events create 3 --title "Sync" --start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 \
+  --conference google-meet
 gcal personal events create 3 --title "Standup" --start-time 2026-11-02T09:30 --end-time 2026-11-02T09:45 \
   --repeat "FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12"
 gcal personal events update event:42 --series --repeat "FREQ=WEEKLY;BYDAY=TU" --no-notify
@@ -664,9 +682,9 @@ gcal personal events delete event:42 --following --no-notify
 - New dates on a timed event make it all-day, and new times make an all-day event timed. `gcal` reads the event from
   Google and sends it whole, with your change, and only if it is still the version the last sync saw. A repeating
   event whose rule ends on a date or a time of the old kind needs its rule again with `--repeat`.
-- `--meet` on `events create` and `events update` asks Google Calendar for a new Google Meet link for the event. It
-  needs `--grant write` only, no Meet permission. The event's `join_url` is the new link. On `update`, `--meet` goes
-  with at least one other change. It takes no `--text`.
+- `--conference google-meet` on `events create` and `events update` asks Google Calendar for a new Google Meet link
+  for the event. It needs `--grant write` only, no Meet permission. The event's `join_url` is the new link. An event
+  that has a link already is refused (`event.conference-exists`), so its attendees keep theirs. It takes no `--text`.
 - `respond` changes only your own answer; the rest of the guest list stays as Google has it.
 - `create --text` hands one line to Google's
   [quick add](https://developers.google.com/workspace/calendar/api/v3/reference/events/quickAdd), which reads the title,

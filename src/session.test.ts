@@ -15,7 +15,7 @@ import { openStore, storePath } from "@wirecat/cli-core/store"
 import type { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
 import { CALENDAR_READ_SCOPE, googleClient, moveOldSignInFile, sessionStorage, signInFilePath } from "./google.js"
-import { ACLS_SCOPE, EVENTS_SCOPE, MEET_READ_SCOPE } from "./grants.js"
+import { ACLS_SCOPE, EVENTS_SCOPE, MEET_READ_SCOPE, MEET_WRITE_SCOPE } from "./grants.js"
 import { run } from "./program.js"
 
 const ACCESS = "fixture-access-token-7Qm2"
@@ -241,12 +241,18 @@ describe("session start", () => {
     )
     const both = await gcal(
       ["personal", "session", "start", "--client-file", clientFile(), "--grant", "write,meetings", "--json"],
-      google({ scope: `${GRANTED} ${EVENTS_SCOPE} ${MEET_READ_SCOPE}` }),
+      google({ scope: `${GRANTED} ${EVENTS_SCOPE} ${MEET_READ_SCOPE} ${MEET_WRITE_SCOPE}` }),
     )
     expect(item(both.out)).toMatchObject({ grants: ["write", "meetings"] })
     expect(new URL(opened[1] ?? "").searchParams.get("scope")).toBe(
-      `openid email ${CALENDAR_READ_SCOPE} ${EVENTS_SCOPE} ${MEET_READ_SCOPE}`,
+      `openid email ${CALENDAR_READ_SCOPE} ${EVENTS_SCOPE} ${MEET_READ_SCOPE} ${MEET_WRITE_SCOPE}`,
     )
+    const noSpaces = await gcal(
+      ["personal", "session", "start", "--client-file", clientFile(), "--grant", "write,meetings", "--json"],
+      google({ scope: `${GRANTED} ${EVENTS_SCOPE} ${MEET_READ_SCOPE}` }),
+    )
+    expect(failure(noSpaces.err)).toMatchObject({ code: "permission_error", reason: "oauth.scope-missing" })
+    expect(failure(noSpaces.err).message).toContain("--grant write,meetings again")
     const unticked = await gcal(
       ["personal", "session", "start", "--client-file", clientFile(), "--grant", "write,meetings", "--json"],
       google({ scope: `${GRANTED} ${EVENTS_SCOPE}` }),

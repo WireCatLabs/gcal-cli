@@ -1,101 +1,80 @@
 import { CliError } from "@wirecat/cli-base"
-import * as v from "valibot"
+import type {
+  ManagedMeeting,
+  ManagedMeetingChange,
+  MeetingManagementPorts,
+  MeetingSetting,
+} from "@wirecat/cli-core/meetings"
 import type { MeetSpace, MeetSpaceConfig } from "../generated/meet/types.js"
 import { idOf, type MeetApi, ownId } from "./api.js"
 
-const ON_OFF = ["on", "off"] as const
-type OnOff = (typeof ON_OFF)[number]
+/** A space's settings by cli-core's `--setting` names. A space has no title or time, so these are all it takes. */
+export const SPACE_SETTINGS: readonly MeetingSetting[] = [
+  {
+    name: "access_type",
+    type: "choice",
+    values: ["open", "trusted", "restricted"],
+    description: "who joins without knocking: anyone with the link, the organization's people, or only those invited",
+  },
+  { name: "moderation", type: "boolean", description: "the host decides who may share their screen, chat and present" },
+  { name: "auto_recording", type: "boolean", description: "record every call in the space from its start" },
+  { name: "auto_transcription", type: "boolean", description: "transcribe every call in the space from its start" },
+  { name: "auto_smart_notes", type: "boolean", description: "take Gemini notes in every call in the space" },
+]
 
-export const SPACE_SETTINGS = {
-  access_type: ["open", "trusted", "restricted"],
-  entry_point_access: ["all", "creator_app_only"],
-  moderation: ON_OFF,
-  auto_recording: ON_OFF,
-  auto_transcription: ON_OFF,
-  auto_smart_notes: ON_OFF,
-} as const
+type Settings = NonNullable<ManagedMeetingChange["settings"]>
 
-export type SpaceSetting = keyof typeof SPACE_SETTINGS
-export type SpaceChange = {
-  access_type?: "open" | "trusted" | "restricted"
-  entry_point_access?: "all" | "creator_app_only"
-  moderation?: OnOff
-  auto_recording?: OnOff
-  auto_transcription?: OnOff
-  auto_smart_notes?: OnOff
-}
-
-const MASK: Record<SpaceSetting, string> = {
+const MASK: Record<string, string> = {
   access_type: "config.accessType",
-  entry_point_access: "config.entryPointAccess",
   moderation: "config.moderation",
   auto_recording: "config.artifactConfig.recordingConfig.autoRecordingGeneration",
   auto_transcription: "config.artifactConfig.transcriptionConfig.autoTranscriptionGeneration",
   auto_smart_notes: "config.artifactConfig.smartNotesConfig.autoSmartNotesGeneration",
 }
 
-const nullableText = v.nullable(v.string())
+const wire = (value: string | boolean | undefined) =>
+  value === undefined ? undefined : typeof value === "boolean" ? (value ? "ON" : "OFF") : value.toUpperCase()
 
-/** A meeting space: the link and code people join by. Names follow zoom's meeting where the thing is the same. */
-export const spaceSchema = v.strictObject({
-  id: v.string(),
-  join_url: nullableText,
-  meeting_code: nullableText,
-  access_type: nullableText,
-  entry_point_access: nullableText,
-  moderation: nullableText,
-  auto_recording: nullableText,
-  auto_transcription: nullableText,
-  auto_smart_notes: nullableText,
-})
-
-export type Space = v.InferOutput<typeof spaceSchema>
-
-const upper = (value: string | undefined) => (value === undefined ? undefined : value.toUpperCase())
-
-export const configOf = (change: SpaceChange): { config: MeetSpaceConfig; paths: string[] } => {
+/** The settings as Meet's `SpaceConfig`, and the `updateMask` paths that name exactly them. */
+export const configOf = (settings: Settings = {}): { config: MeetSpaceConfig; paths: string[] } => {
   const config: MeetSpaceConfig = {}
   const artifacts: NonNullable<MeetSpaceConfig["artifactConfig"]> = {}
-  if (change.access_type) config.accessType = upper(change.access_type)
-  if (change.entry_point_access) config.entryPointAccess = upper(change.entry_point_access)
-  if (change.moderation) config.moderation = upper(change.moderation)
-  if (change.auto_recording) artifacts.recordingConfig = { autoRecordingGeneration: upper(change.auto_recording) }
-  if (change.auto_transcription)
-    artifacts.transcriptionConfig = { autoTranscriptionGeneration: upper(change.auto_transcription) }
-  if (change.auto_smart_notes) artifacts.smartNotesConfig = { autoSmartNotesGeneration: upper(change.auto_smart_notes) }
+  const { access_type, moderation, auto_recording, auto_transcription, auto_smart_notes } = settings
+  if (access_type !== undefined) config.accessType = wire(access_type)
+  if (moderation !== undefined) config.moderation = wire(moderation)
+  if (auto_recording !== undefined) artifacts.recordingConfig = { autoRecordingGeneration: wire(auto_recording) }
+  if (auto_transcription !== undefined)
+    artifacts.transcriptionConfig = { autoTranscriptionGeneration: wire(auto_transcription) }
+  if (auto_smart_notes !== undefined) artifacts.smartNotesConfig = { autoSmartNotesGeneration: wire(auto_smart_notes) }
   if (Object.keys(artifacts).length > 0) config.artifactConfig = artifacts
-  const paths = (Object.keys(MASK) as SpaceSetting[]).filter((key) => change[key] !== undefined).map((key) => MASK[key])
+  const paths = Object.keys(MASK).flatMap((name) => (settings[name] === undefined ? [] : [MASK[name] as string]))
   return { config, paths }
 }
 
-const said = (value: string | undefined): string | null =>
-  value === undefined || value.endsWith("_UNSPECIFIED") ? null : value.toLowerCase()
-
-export const spaceOf = (space: MeetSpace): Space => {
-  const artifacts = space.config?.artifactConfig
-  if (!space.name) throw new CliError("invalid_response", "Google Meet sent a meeting space with no name")
+/** A new space: a call that can start now, with no title, length or zone of its own. */
+const managedOf = (space: MeetSpace, startTime: string | undefined): ManagedMeeting => {
+  if (!space.meetingUri) throw new CliError("invalid_response", "Google Meet sent a new meeting space with no link")
   return {
     id: ownId("spaces", space.name),
-    join_url: space.meetingUri ?? null,
-    meeting_code: space.meetingCode ?? null,
-    access_type: said(space.config?.accessType),
-    entry_point_access: said(space.config?.entryPointAccess),
-    moderation: said(space.config?.moderation),
-    auto_recording: said(artifacts?.recordingConfig?.autoRecordingGeneration),
-    auto_transcription: said(artifacts?.transcriptionConfig?.autoTranscriptionGeneration),
-    auto_smart_notes: said(artifacts?.smartNotesConfig?.autoSmartNotesGeneration),
+    title: null,
+    kind: "instant",
+    startTime: startTime ?? null,
+    durationMinutes: null,
+    timezone: null,
+    agenda: null,
+    joinUrl: space.meetingUri,
   }
 }
 
-export const createSpace = async (api: MeetApi, change: SpaceChange): Promise<Space> =>
-  spaceOf(await api.createSpace(configOf(change).config))
-
 /**
- * spaces.patch on a space this app created; Google refuses one it did not. A meeting code is not taken: patch names
- * the space only by its id.
+ * `meetings create|update` over Meet's spaces.create and spaces.patch. Patch reaches only the spaces this app made
+ * (`meetings.space.created`), and names its fields in `updateMask`: `*` would clear every field left out.
  */
-export const updateSpace = async (api: MeetApi, given: string, change: SpaceChange): Promise<Space> => {
-  const { config, paths } = configOf(change)
-  if (paths.length === 0) throw new CliError("validation_error", "name at least one setting to change")
-  return spaceOf(await api.patchSpace(idOf("spaces", given), config, paths))
-}
+export const spacePorts = (api: () => MeetApi): MeetingManagementPorts => ({
+  create: async (change) => managedOf(await api().createSpace(configOf(change.settings).config), change.startTime),
+  update: async (id, change) => {
+    const { config, paths } = configOf(change.settings)
+    await api().patchSpace(idOf("spaces", id), config, paths)
+  },
+  fields: { create: { fields: [], settings: SPACE_SETTINGS }, update: { fields: [], settings: SPACE_SETTINGS } },
+})

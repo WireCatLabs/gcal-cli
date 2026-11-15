@@ -2,6 +2,7 @@ import { CliError } from "@wirecat/cli-base"
 import { annotate, hasSharedContract, metaOf, overrideSharedContract } from "@wirecat/cli-base/commands"
 import type { Missing } from "@wirecat/cli-base/standards"
 import {
+  askBeforeWrite,
   baseContext,
   environmentOf,
   fetchesOnly,
@@ -10,6 +11,7 @@ import {
   listOf,
   NO_EFFECTS,
   outputFor,
+  pagingOf,
   readsOverMcp,
   refuseOffline,
   renderAnswer,
@@ -18,7 +20,7 @@ import {
   writeNewFile,
   writesNewFileOnlyWith,
 } from "@wirecat/cli-core/cli"
-import type { MeetingStore } from "@wirecat/cli-core/meetings"
+import { createMeetingManagement, type MeetingManagement, type MeetingStore } from "@wirecat/cli-core/meetings"
 import { addMeetingCommands, type MeetingCommandDeps } from "@wirecat/cli-core/meetings/cli"
 import type { MessageStore } from "@wirecat/cli-core/store"
 import { Command } from "commander"
@@ -28,16 +30,19 @@ import { MEET_READ_SCOPE } from "../grants.js"
 import { IDENTITY } from "../identity.js"
 import type { MeetApi } from "../meet/api.js"
 import type { GoogleMeetSource, MeetRun } from "../meet/source.js"
+import { spacePorts } from "../meet/spaces.js"
 import { MEET_PROVIDER } from "../store.js"
 import { type StoreRows, storeFor } from "./open-store.js"
 import type { GcalEnvironment } from "./session.js"
 import { inWords, signInWords, wordedApi } from "./words.js"
 
 interface Opened {
-  store: MessageStore
-  accountId: number
+  /** Absent for a space write: it changes Google only, and keeps nothing. */
+  store?: MessageStore
+  accountId?: number
   source: () => GoogleMeetSource
   run: () => MeetRun | undefined
+  management: () => MeetingManagement
   close: () => Promise<void>
 }
 
@@ -60,6 +65,13 @@ const EXAMPLES: Record<string, string> = {
   "meetings people": '"Test Person"',
   "meetings sync": "--since-time 2026-11-01T00:00:00Z",
   "meetings repair": "",
+  "meetings create": "--setting access_type=trusted --setting auto_transcription=true",
+  "meetings update": "spaces/abc-mnop-xyz --setting moderation=true",
+}
+
+const SPACE_WRITES: Record<string, string> = {
+  "meetings create": "meet.spaces.create",
+  "meetings update": "meet.spaces.patch",
 }
 
 const withExample = (leaf: Command) => {
@@ -192,13 +204,34 @@ const depsOf = (state: MeetingsRun): MeetingCommandDeps => {
     if (!state.opened) throw new CliError("configuration_error", "the meetings store is not open for this command")
     return state.opened
   }
+  const stored = () => {
+    const { store, accountId } = need()
+    if (!store || accountId === undefined)
+      throw new CliError("configuration_error", "the meetings store is not open for this command")
+    return { store, accountId }
+  }
+  // The account is known only once the command runs; the declaration, which mounts the options, is the same for all.
+  const declared = createMeetingManagement(
+    { provider: MEET_PROVIDER.name, account: "unbound" },
+    spacePorts(() => {
+      throw new CliError("configuration_error", "no Google Meet account is open for this command")
+    }),
+  )
+  const management: MeetingManagement = {
+    ...declared,
+    create: (change, options) => need().management().create(change, options),
+    update: (id, change, options) => need().management().update(id, change, options),
+  }
   return {
     get store(): MeetingStore {
-      return need().store.meetings
+      return stored().store.meetings
     },
     get accountId() {
-      return need().accountId
+      return stored().accountId
     },
+    management,
+    askFirst: askBeforeWrite,
+    pagingOf,
     get source() {
       return need().source()
     },
@@ -207,7 +240,7 @@ const depsOf = (state: MeetingsRun): MeetingCommandDeps => {
       inCommandRun(command, async () => {
         const result = await body()
         if (pathOf(command).join(" ") === "meetings sync")
-          state.cursor = await need().store.meetings.cursor(need().accountId)
+          state.cursor = await stored().store.meetings.cursor(stored().accountId)
         return result
       }),
     newFileOutput: writesNewFileOnlyWith,
@@ -294,7 +327,7 @@ export const meetingsMount = () => {
       const storeOnly = flags.offline === true || flags.backend === "archive"
       const { fetch, signal } = environment
       const access = apiAccess({ env, profile, signInCommand: signInWords(profile), keyring, fetch, signal })
-      const granted = () => {
+      const granted = (method = "meet.conferenceRecords.list") => {
         const scopes = access.scopes()
         if (!scopes)
           throw inWords(
@@ -302,10 +335,35 @@ export const meetingsMount = () => {
             profile,
           )
         try {
-          refuseMissingScope("meet.conferenceRecords.list", scopes, MEET)
+          refuseMissingScope(method, scopes, MEET)
         } catch (error) {
           throw inWords(error, profile)
         }
+      }
+      let api: MeetApi | undefined
+      const meet = (): MeetApi => {
+        if (api) return api
+        refuseOffline(at, MEET.name)
+        granted(spaceWrite)
+        api = meetApi(wordedApi(googleApi(access, MEET), profile))
+        return api
+      }
+      let management: MeetingManagement | undefined
+      const manage = () =>
+        (management ??= createMeetingManagement({ provider: MEET_PROVIDER.name, account: email }, spacePorts(meet)))
+      const spaceWrite = SPACE_WRITES[pathOf(at).join(" ")]
+      if (spaceWrite) {
+        // Asked before the owner's question, which a missing grant would only waste.
+        granted(spaceWrite)
+        state.opened = {
+          close: async () => {},
+          source: () => {
+            throw new CliError("configuration_error", "a space write reads no calls")
+          },
+          run: () => undefined,
+          management: manage,
+        }
+        return
       }
       // Before the store opens for writing, so a refused sync leaves no Google Meet account behind.
       if (fetchesOnly(at)) granted()
@@ -330,14 +388,6 @@ export const meetingsMount = () => {
       const close = () => (closed ??= store.close())
       // Still tracked: a command that fails never reaches postAction.
       environment.trackCloseable?.({ close })
-      let api: MeetApi | undefined
-      const meet = (): MeetApi => {
-        if (api) return api
-        refuseOffline(at, MEET.name)
-        granted()
-        api = meetApi(wordedApi(googleApi(access, MEET), profile))
-        return api
-      }
       let source: GoogleMeetSource | undefined
       state.opened = {
         store,
@@ -345,6 +395,7 @@ export const meetingsMount = () => {
         close,
         source: () => (source ??= googleMeetSource(meet)),
         run: () => source?.run,
+        management: manage,
       }
     },
   }

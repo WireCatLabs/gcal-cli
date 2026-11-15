@@ -94,7 +94,8 @@ More:
   `session start --grant write` first.
 - Call any Google Calendar API v3 method by name with `gcal api`.
 - Keep your Google Meet calls with who joined, their transcripts and Drive files: `gcal personal meetings sync`, after
-  `session start --grant meetings`. Give a new event a Meet link with `events create … --meet`.
+  `session start --grant meetings`. Give a new event a Meet link with `events create … --conference google-meet`.
+  Make a Meet room with `meetings create`, after `session start --grant write,meetings`.
 
 More: [use it](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md)
 ([wirecat.dev](https://wirecat.dev/en/docs/gcal/usage)).

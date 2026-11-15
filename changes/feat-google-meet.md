@@ -6,13 +6,18 @@
   `meetings list` and `show` ask Google and the store at once. See [Google Meet](../docs/usage.md#google-meet).
 - **`session start --grant meetings`** asks for read access to Google Meet (`meetings.space.readonly`). The default
   sign-in is unchanged. A hint to sign in again names every grant the profile holds, so it keeps them.
-- **`events create --meet` and `events update --meet`** give the event a new Google Meet link. They need
-  `--grant write` only.
+- **`events create --conference google-meet` and `events update --conference google-meet`** give the event a new
+  Google Meet link, with cli-core's shared `--conference`. They need `--grant write` only. An event that has a link
+  already is refused (`event.conference-exists`).
+- **`meetings create` and `meetings update`** make a Google Meet room that starts now and change the rooms gcal made:
+  `--setting access_type=open|trusted|restricted`, `moderation`, `auto_recording`, `auto_transcription` and
+  `auto_smart_notes` (`true|false`). They ask first, like every remote write. `session start --grant write,meetings`
+  adds `meetings.space.created` for them.
 - **`meetings sync` says when a call has held it for 25 days or more:** Google deletes a call's record 30 days after
   it ends. A rate limit stops the sync and says when to run it again.
 
 ### Changed — may break callers
 
-- **Built on cli-core 0.660.0** (was 0.659.0). See the
+- **Built on cli-core CORE_VERSION** (was 0.664.0). See the
   [cli-core changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
 - **`gcal` reaches `meet.googleapis.com`**, a new host in the manifest.

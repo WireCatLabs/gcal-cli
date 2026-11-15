@@ -119,15 +119,19 @@ for events and meetings in the store.
 - **Rate limits:** a sync stops at Google's first `rate_limited`. The budget gcal hands cli-core's `pull` stops the
   run, so its `stopped` reads `requests`; the answer adds `complete: false` and `retry_after_ms`. Spaces are looked
   up four at a time.
-- **A Meet link on an event:** `events create|update --meet` sends `conferenceData.createRequest` with
-  `conferenceDataVersion=1` under `calendar.events`
+- **A Meet link on an event:** cli-core's shared `events create|update --conference google-meet`. The writer declares
+  `conferences: ["google-meet"]` and sends `conferenceData.createRequest` with `conferenceDataVersion=1` under
+  `calendar.events`
   ([create events, conferencing](https://developers.google.com/workspace/calendar/api/guides/create-events#conferencing)).
-  The event's id is the `requestId`; Google ignores a `requestId` it has seen, so a retried write makes one link
-  (Discovery `CreateConferenceRequest.requestId`). `update --meet` needs another change: cli-core's update refuses a
-  patch with no field, and its fields have no conference yet.
-- **Meet rooms** (`src/meet/spaces.ts`, `createSpace`/`updateSpace`): ported, tested against the fake, and not yet a
-  command. They wait for cli-core's shared `meetings create|update` with provider settings. Until then gcal asks for
-  no `meetings.space.created`.
+  cli-core gives each write a fresh `requestId`, since Google ignores one it has seen, and refuses an event that has a
+  link already (`event.conference-exists`).
+- **Meet rooms:** `meetings create|update` are cli-core's meeting management over `spacePorts`
+  (`src/meet/spaces.ts`): Meet REST v2 `spaces.create` and `spaces.patch` with `updateMask` naming only the settings
+  given. A space has no title or time, so the ports declare no portable field, only settings, and every create is an
+  instant room. The management mounts at program build, before the account is known, so the mounted object forwards
+  `create` and `update` to one bound to the profile's Google address in `prepare`. A space write opens no store.
+  `meetings.space.created` is asked only with `--grant write,meetings`; not `meetings.space.settings`, which changes
+  every call of the account.
 
 ## Open questions for the owner
 
