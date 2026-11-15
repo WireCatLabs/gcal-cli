@@ -579,6 +579,25 @@ describe("meetings create and update over Google Meet spaces", () => {
     expect(spaceCalls(meet)).toEqual([])
   })
 
+  it("a space takes none of the portable fields: each is refused on create and update, naming the settings", async () => {
+    const { gcal, meet } = harness({ scopes: WRITES })
+    const fields = [
+      ["--title", "Planning"],
+      ["--kind", "instant"],
+      ["--start-time", "2026-11-20T10:00:00Z"],
+      ["--duration-minutes", "30"],
+      ["--timezone", "Europe/Madrid"],
+      ["--agenda", "Budget"],
+    ]
+    for (const field of fields)
+      for (const command of [["create"], ["update", "spaces/created-1"]]) {
+        const refused = await gcal("personal", "meetings", ...command, ...field, "--yes")
+        expect(refused.error).toMatchObject({ code: "validation_error" })
+        expect(refused.error.message).toContain(`does not take ${field[0]}`)
+      }
+    expect(meet.calls).toEqual([])
+  })
+
   it("asks first: with nobody to answer and no --yes the space is not made", async () => {
     const { gcal, meet } = harness({ scopes: WRITES })
     const refused = await gcal("personal", "meetings", "create")

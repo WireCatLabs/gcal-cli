@@ -501,6 +501,32 @@
     },
     {
       "path": [
+        "meetings",
+        "create"
+      ],
+      "summary": "create a meeting on the service",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "meetings.create",
+      "entity": "meeting_change"
+    },
+    {
+      "path": [
+        "meetings",
+        "update"
+      ],
+      "summary": "change a meeting on the service",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "meetings.update",
+      "entity": "meeting_change"
+    },
+    {
+      "path": [
         "api",
         "list"
       ],
