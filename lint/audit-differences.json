@@ -9,36 +9,8 @@
   {
     "group": "all",
     "rule": "same-entity-schema",
-    "target": "entity meeting",
-    "reason": "cli-core 0.660.0 adds provider_id and untrusted to meeting items; zm is still on 0.659.0, and the entry goes once zm publishes on 0.660.0+.",
-    "review_after": "2026-11-28"
-  },
-  {
-    "group": "all",
-    "rule": "same-entity-schema",
     "target": "entity meeting_details",
-    "reason": "cli-core 0.660.0 adds provider_id and untrusted to meeting items; zm is still on 0.659.0, and the entry goes once zm publishes on 0.660.0+.",
-    "review_after": "2026-11-28"
-  },
-  {
-    "group": "all",
-    "rule": "same-entity-schema",
-    "target": "entity meeting_export",
-    "reason": "cli-core #2946 marks other people's meeting text untrusted in these answers; zm is still on 0.663.0, and the entry goes once zm publishes on the cli-core release that carries #2946.",
-    "review_after": "2026-11-29"
-  },
-  {
-    "group": "all",
-    "rule": "same-entity-schema",
-    "target": "entity meeting_participants",
-    "reason": "cli-core #2946 marks other people's meeting text untrusted in these answers; zm is still on 0.663.0, and the entry goes once zm publishes on the cli-core release that carries #2946.",
-    "review_after": "2026-11-29"
-  },
-  {
-    "group": "all",
-    "rule": "same-entity-schema",
-    "target": "entity meeting_transcript",
-    "reason": "cli-core #2946 marks other people's meeting text untrusted in these answers; zm is still on 0.663.0, and the entry goes once zm publishes on the cli-core release that carries #2946.",
+    "reason": "cli-core 0.668.0 (#2977) changes the meeting details answer gcal builds on; zm 0.77.0 is on cli-core 0.667.0, and the entry goes once zm publishes on 0.668.0+.",
     "review_after": "2026-11-29"
   }
 ]
