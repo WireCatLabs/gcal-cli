@@ -25,10 +25,10 @@ import { addMeetingCommands, type MeetingCommandDeps } from "@wirecat/cli-core/m
 import type { MessageStore } from "@wirecat/cli-core/store"
 import { Command } from "commander"
 import { configuration } from "../config.js"
-import { refuseMissingScope } from "../google-api.js"
 import { MEET_READ_SCOPE } from "../grants.js"
 import { IDENTITY } from "../identity.js"
 import type { MeetApi } from "../meet/api.js"
+import { spaceIdOf } from "../meet/ids.js"
 import type { GoogleMeetSource, MeetRun } from "../meet/source.js"
 import { spacePorts } from "../meet/spaces.js"
 import { MEET_PROVIDER } from "../store.js"
@@ -65,8 +65,8 @@ const EXAMPLES: Record<string, string> = {
   "meetings people": '"Test Person"',
   "meetings sync": "--since-time 2026-11-01T00:00:00Z",
   "meetings repair": "",
-  "meetings create": "--setting access_type=trusted --setting auto_transcription=true",
-  "meetings update": "spaces/abc-mnop-xyz --setting moderation=true",
+  "meetings create": "--setting access_type=trusted --setting auto_transcription=true --dry-run",
+  "meetings update": "spaces/jQCFfuBOdN5z --setting moderation=true --dry-run",
 }
 
 const SPACE_WRITES: Record<string, string> = {
@@ -269,7 +269,6 @@ export const meetingsMount = () => {
       const state: MeetingsRun = { commands: new Set(), answers: [] }
       const holder = new Command(IDENTITY.command)
       addMeetingCommands(holder, depsOf(state))
-      // cli-core's `events list` reads the same stored events gcal's own `events` group already lists.
       const meetings = holder.commands.find((group) => group.name() === "meetings")
       if (!meetings) throw new CliError("configuration_error", "cli-core mounted no meetings group")
       overrideSharedContract(
@@ -286,6 +285,7 @@ export const meetingsMount = () => {
         state.commands.add(leaf)
       }
       runs.set(meetings, state)
+      // Not cli-core's `events list`: it reads the same stored events gcal's own `events` group already lists.
       return [meetings]
     },
     configure: (program: Command) => {
@@ -307,19 +307,25 @@ export const meetingsMount = () => {
       const environment = environmentOf<GcalEnvironment>(at)
       const { settings, env, keyring } = baseContext(at, configuration.resolveSettings)
       const { profile } = settings
-      const [{ apiAccess, savedAccount }, { googleApi }, { meetApi, MEET }, { googleMeetSource }, { openGcalStore }] =
-        await Promise.all([
-          import("../session.js"),
-          import("../google-api.js"),
-          import("../meet/api.js"),
-          import("../meet/source.js"),
-          import("../store.js"),
-        ])
+      const [
+        { apiAccess, savedAccount },
+        { googleApi, refuseMissingScope },
+        { meetApi, MEET },
+        { googleMeetSource },
+        { openGcalStore },
+      ] = await Promise.all([
+        import("../session.js"),
+        import("../google-api.js"),
+        import("../meet/api.js"),
+        import("../meet/source.js"),
+        import("../store.js"),
+      ])
+      const spaceWrite = SPACE_WRITES[pathOf(at).join(" ")]
       const email = savedAccount(env, profile)
       if (!email)
         throw new CliError(
           "authentication_error",
-          `profile ${profile} has no Google account yet; run ${signInWords(profile)} --grant meetings`,
+          `profile ${profile} has no Google account yet; run ${signInWords(profile)} --grant ${spaceWrite ? "write,meetings" : "meetings"}`,
           { reason: "session.missing" },
         )
       const effects = metaOf(at).effects
@@ -351,10 +357,10 @@ export const meetingsMount = () => {
       let management: MeetingManagement | undefined
       const manage = () =>
         (management ??= createMeetingManagement({ provider: MEET_PROVIDER.name, account: email }, spacePorts(meet)))
-      const spaceWrite = SPACE_WRITES[pathOf(at).join(" ")]
       if (spaceWrite) {
-        // Asked before the owner's question, which a missing grant would only waste.
+        // Checked before the owner's question, which a missing grant or a wrong id would only waste.
         granted(spaceWrite)
+        if (at.name() === "update") spaceIdOf(String(at.args[0] ?? ""))
         state.opened = {
           close: async () => {},
           source: () => {

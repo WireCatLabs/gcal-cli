@@ -6,7 +6,8 @@ import type {
   MeetingSetting,
 } from "@wirecat/cli-core/meetings"
 import type { MeetSpace, MeetSpaceConfig } from "../generated/meet/types.js"
-import { idOf, type MeetApi, ownId } from "./api.js"
+import type { MeetApi } from "./api.js"
+import { ownId, spaceIdOf } from "./ids.js"
 
 /** A space's settings by cli-core's `--setting` names. A space has no title or time, so these are all it takes. */
 export const SPACE_SETTINGS: readonly MeetingSetting[] = [
@@ -66,15 +67,12 @@ const managedOf = (space: MeetSpace, startTime: string | undefined): ManagedMeet
   }
 }
 
-/**
- * `meetings create|update` over Meet's spaces.create and spaces.patch. Patch reaches only the spaces this app made
- * (`meetings.space.created`), and names its fields in `updateMask`: `*` would clear every field left out.
- */
+/** `meetings create|update` over Meet's spaces.create and spaces.patch; patch reaches only the spaces this app made. */
 export const spacePorts = (api: () => MeetApi): MeetingManagementPorts => ({
   create: async (change) => managedOf(await api().createSpace(configOf(change.settings).config), change.startTime),
   update: async (id, change) => {
     const { config, paths } = configOf(change.settings)
-    await api().patchSpace(idOf("spaces", id), config, paths)
+    await api().patchSpace(spaceIdOf(id), config, paths)
   },
   fields: { create: { fields: [], settings: SPACE_SETTINGS }, update: { fields: [], settings: SPACE_SETTINGS } },
 })

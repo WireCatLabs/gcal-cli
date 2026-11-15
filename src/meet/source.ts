@@ -18,7 +18,8 @@ import type {
   MeetTranscriptEntry,
 } from "../generated/meet/types.js"
 import { MEET_PROVIDER } from "../store.js"
-import { idOf, type MeetApi, ownId } from "./api.js"
+import type { MeetApi } from "./api.js"
+import { idOf, ownId } from "./ids.js"
 
 const DAY_MS = 86_400_000
 const READY = "FILE_GENERATED"

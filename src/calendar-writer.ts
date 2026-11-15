@@ -12,6 +12,7 @@ import { entryOf } from "./calendar-source.js"
 import * as schema from "./generated/schemas.js"
 import type { CalendarEvent } from "./generated/types.js"
 import { answerOf, type GoogleApi } from "./google-api.js"
+import { CONFERENCES } from "./meet/ids.js"
 
 // https://developers.google.com/workspace/calendar/api/v3/reference/events#id — base32hex, 5 to 1024 characters.
 const GOOGLE_ID = /^[a-v0-9]{5,1024}$/u
@@ -142,8 +143,7 @@ export const googleCalendarWriter = (api: GoogleApi): GoogleCalendarWriter => {
 
   return {
     provider: "google-calendar",
-    // The same list as `writes.conferences` in commands/calendar.ts, which mounts `--conference` before a writer exists.
-    conferences: ["google-meet"],
+    conferences: CONFERENCES,
 
     async create(calendar, draft: EventDraft, { id, notify }) {
       if (!GOOGLE_ID.test(id))

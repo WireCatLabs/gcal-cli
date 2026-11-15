@@ -341,7 +341,7 @@ After `session start --grant write,meetings`, `meetings create` makes a Google M
 
 ```sh
 gcal personal meetings create --setting access_type=trusted --setting auto_transcription=true
-gcal personal meetings update spaces/abc123 --setting moderation=true
+gcal personal meetings update spaces/jQCFfuBOdN5z --setting moderation=true
 ```
 
 - `--setting access_type=open|trusted|restricted`: who joins without knocking.

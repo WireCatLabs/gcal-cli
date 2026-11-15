@@ -8,6 +8,7 @@ import type { MessageStore } from "@wirecat/cli-core/store"
 import { Command } from "commander"
 import { configuration, permissions, writeKeys } from "../config.js"
 import { IDENTITY } from "../identity.js"
+import { CONFERENCES } from "../meet/ids.js"
 import { type StoreRows, storeFor } from "./open-store.js"
 import type { GcalEnvironment } from "./session.js"
 import { signInWords, wordedApi } from "./words.js"
@@ -137,7 +138,7 @@ export const calendarCommands = (): Command[] => {
     freeBusy: true,
     serverSearch: true,
     feeds: true,
-    writes: { quickAdd: true, move: true, importEvent: true, conferences: ["google-meet"] },
+    writes: { quickAdd: true, move: true, importEvent: true, conferences: CONFERENCES },
   })
   for (const group of holder.commands) if (group.commands.length) annotate(group, { effects: NO_EFFECTS })
   return [...holder.commands]

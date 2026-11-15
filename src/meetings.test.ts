@@ -606,6 +606,29 @@ describe("meetings create and update over Google Meet spaces", () => {
     expect(existsSync(env.MESSAGING_STORE ?? "")).toBe(false)
   })
 
+  it("update by a meeting code or an empty id is refused before the question and any request", async () => {
+    const { gcal, meet } = harness({ scopes: WRITES })
+    for (const id of ["abc-mnop-xyz", "spaces/abc-mnop-xyz", "spaces/", "spaces/.."]) {
+      const refused = await gcal("personal", "meetings", "update", id, "--setting", "moderation=true")
+      expect(refused.error).toMatchObject({ code: "validation_error" })
+      expect(refused.error.message).toContain("meeting.id")
+    }
+    expect(meet.calls).toEqual([])
+  })
+
+  it("a profile with no Google account is told to sign in with write,meetings for a space write", async () => {
+    const { raw } = harness({ scopes: WRITES })
+    const config = {
+      GCAL_CONFIG_DIR: mkdtempSync(join(tmpdir(), "config-")),
+      GCAL_STATE_DIR: mkdtempSync(join(tmpdir(), "state-")),
+    }
+    const created = await raw(["personal", "meetings", "create", "--yes", "--json"], config)
+    expect(created.code).not.toBe(0)
+    expect(created.err.join("\n")).toContain("session start --grant write,meetings")
+    const synced = await raw(["personal", "meetings", "sync", "--json"], config)
+    expect(synced.err.join("\n")).toMatch(/session start --grant meetings\b(?!,)/)
+  })
+
   it("help lists the space settings with their values", async () => {
     const { raw } = harness({ scopes: WRITES })
     const help = await raw(["personal", "meetings", "create", "--help"])

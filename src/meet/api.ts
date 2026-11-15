@@ -1,4 +1,3 @@
-import { CliError } from "@wirecat/cli-base"
 import { type GooglePage, googlePages } from "@wirecat/cli-core/google"
 import type * as v from "valibot"
 import type { ApiContract } from "../api-contract.js"
@@ -29,17 +28,6 @@ export const MEET: ApiContract = {
  * Past it the service coerces, as each pageSize description in the discovery document says.
  */
 const LARGEST_PAGE = 100
-
-/** A resource name Google sent: any other shape is Google's fault, not the caller's. */
-export const ownId = (prefix: string, name: string | undefined): string => {
-  const id = name?.startsWith(`${prefix}/`) ? name.slice(prefix.length + 1) : ""
-  if (id === "" || id === "." || id === ".." || /[/?#\\\s]/.test(id))
-    throw new CliError("invalid_response", `${MEET.name} sent a ${prefix} name in a shape it does not document`)
-  return id
-}
-
-export const idOf = (prefix: string, name: string): string =>
-  name.startsWith(`${prefix}/`) ? name.slice(prefix.length + 1) : name
 
 type Listed = { nextPageToken?: string } & Record<string, unknown>
 

@@ -157,6 +157,32 @@ describe("event writes over Google", () => {
     expect(posts(google)).toHaveLength(2)
   })
 
+  it("update --conference with new dates sends the link request on the whole-event replace too", async () => {
+    const { gcal, google } = harness()
+    await gcal("personal", "sync")
+    const plain = await gcal(...create, ...at)
+    const updated = await gcal(
+      "personal",
+      "events",
+      "update",
+      plain.item.event,
+      "--start-date",
+      "2026-11-03",
+      "--end-date",
+      "2026-11-03",
+      "--conference",
+      "google-meet",
+      "--no-notify",
+    )
+    expect(updated.code).toBe(0)
+    const replace = posts(google).at(-1)
+    expect(replace?.method).toBe("PUT")
+    expect(replace?.query.get("conferenceDataVersion")).toBe("1")
+    expect(replace?.body).toMatchObject({
+      conferenceData: { createRequest: { conferenceSolutionKey: { type: "hangoutsMeet" } } },
+    })
+  })
+
   it("--conference takes only google-meet, and --meet is gone", async () => {
     const { gcal, google } = harness()
     await gcal("personal", "sync")
