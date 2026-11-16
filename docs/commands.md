@@ -32,6 +32,7 @@ lists the profiles on this computer.
 | `--yes` | go ahead without the question an ask level puts before a write. |
 | `--record` | keep this run even where the config says record false; record_input false leaves the typed words out. |
 | `--no-record` | do not keep this run, even if it fails. |
+| `--read-only` | refuse every change, as GCAL_READ_ONLY=1 does. |
 
 ## `gcal commands`
 

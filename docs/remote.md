@@ -160,7 +160,8 @@ gcal personal mcp serve --http --public-url https://laptop.example-tailnet.ts.ne
 
 `api=readonly` refuses every change, events included; `api.calendar.acl=deny` keeps the app from sharing a calendar.
 An override only tightens: it never loosens the profile's level. To allow more, change the profile's permissions
-([settings](configuration.md#permissions)). `GCAL_READ_ONLY=1` in the server's environment also refuses every change.
+([settings](configuration.md#permissions)). `GCAL_READ_ONLY=1` in the server's environment, or
+`mcp serve --read-only`, also refuses every change.
 
 ## Stop or revoke access
 

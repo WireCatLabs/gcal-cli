@@ -72,10 +72,22 @@ const mcpCommand = () => {
   })
 }
 
+/** `--read-only` is `GCAL_READ_ONLY=1` for this run, as in drive. */
+const readOnlyFlag = (program: Command) =>
+  program.option("--read-only", "refuse every change, as GCAL_READ_ONLY=1 does").hook("preAction", (_root, action) => {
+    if (!action.optsWithGlobals<{ readOnly?: boolean }>().readOnly) return
+    // Every check, cli-core's and gcal's, and each tool run of `mcp serve` reads the lock from the run's environment.
+    const env = environmentOf(program).env ?? process.env
+    env[`${IDENTITY.envPrefix}_READ_ONLY`] = "1"
+  })
+
 export const definition = (): ProgramDefinition => ({
   app: IDENTITY,
   configuration,
-  configure: placeInSections,
+  configure: (program) => {
+    placeInSections(program)
+    readOnlyFlag(program)
+  },
   firstScreen: FIRST_SCREEN,
   commands: () => [
     commandsCommand(IDENTITY),
