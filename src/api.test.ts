@@ -505,6 +505,42 @@ describe("writes", () => {
     expect((await gcal(["personal", "api", "call", "calendar.colors.get", "--json"], fake)).code).toBe(0)
   })
 
+  it.each([
+    ["before the profile", ["--read-only", "personal"]],
+    ["after the profile", ["personal", "--read-only"]],
+  ])("refuses a write under --read-only %s and still reads", async (_where, head) => {
+    const { gcal } = harness()
+    const fake = google()
+    const quickAdd = ["api", "call", "calendar.events.quickAdd", "--params", '{"calendarId":"primary","text":"Lunch"}']
+    const refused = await gcal([...head, ...quickAdd, "--yes", "--json"], fake)
+    expect(refused.code).toBe(5)
+    expect(failure(refused.err).message).toContain("read-only (GCAL_READ_ONLY)")
+    expect((await gcal([...head, "api", "calendar-colors-get", "--json"], fake)).code).toBe(0)
+    expect(toCalendar(fake.requests).map(({ url }) => url.pathname)).toEqual(["/calendar/v3/colors"])
+  })
+
+  it("mcp serve --read-only refuses a write tool and still reads", async () => {
+    const { env, keyring } = harness()
+    const fake = google()
+    const { client, close } = await mcpClient({ env, keyring, fetch: fake.fetch }, ["--read-only"])
+    try {
+      const tool = async (name: string, command: string, args: Record<string, unknown>) =>
+        (await client.callTool({ name, arguments: { command, arguments: args } })) as {
+          isError?: boolean
+          content: { text: string }[]
+        }
+      const deleted = await tool("gcal_write", "api calendar-events-delete", { calendar_id: "primary", event_id: "e1" })
+      expect(deleted.isError).toBe(true)
+      expect(JSON.parse(deleted.content[0]?.text ?? "").error.message).toContain(
+        "the read-only lock blocks this change",
+      )
+      expect((await tool("gcal_read", "api calendar-colors-get", {})).isError).toBeFalsy()
+      expect(toCalendar(fake.requests).map(({ url }) => url.pathname)).toEqual(["/calendar/v3/colors"])
+    } finally {
+      expect(await close()).toBe(0)
+    }
+  })
+
   it("previews a write with --dry-run and sends nothing", async () => {
     const { gcal } = harness()
     const fake = google()

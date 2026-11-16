@@ -1,6 +1,6 @@
 {
   "name": "@wirecat/gcal-cli",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "mcpName": "dev.wirecat/gcal-cli",
   "description": "Google Calendar sync, search, free/busy and event changes from the terminal and for AI agents",
   "license": "Apache-2.0",
@@ -61,8 +61,8 @@
     "docs:spell": "cspell lint --config cspell.json --no-progress --no-summary README.md SECURITY.md CHANGELOG.md AGENTS.md CLAUDE.md 'docs/*.md' 'skills/**/*.md'"
   },
   "dependencies": {
-    "@wirecat/cli-base": "0.102.0",
-    "@wirecat/cli-core": "0.664.0",
+    "@wirecat/cli-base": "0.102.1",
+    "@wirecat/cli-core": "0.673.0",
     "commander": "15.0.0",
     "valibot": "1.5.0"
   },

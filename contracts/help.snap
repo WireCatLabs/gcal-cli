@@ -10,6 +10,7 @@ What you can do:
   events list person:ana@example.com    upcoming events with one person
   calendars busy --duration-minutes 30  free stretches the calendars share this week
   events create <calendar> --title …    add an event; attendees are mailed only if you say
+  --read-only …                         this run refuses every change
 
 Works with:
   tg                                    Telegram in the same local store: search, review and tasks offline

@@ -32,6 +32,7 @@ export const FIRST_SCREEN: FirstScreen = {
     { command: "events list person:ana@example.com", does: "upcoming events with one person" },
     { command: "calendars busy --duration-minutes 30", does: "free stretches the calendars share this week" },
     { command: "events create <calendar> --title …", does: "add an event; attendees are mailed only if you say" },
+    { command: "--read-only …", does: "this run refuses every change" },
   ],
   start: `${IDENTITY.command} personal session start`,
 }

@@ -191,7 +191,8 @@ gcal personal config set permissions.events.create ask               # ask befor
 gcal personal events create 3 --title 'Example planning' --start-time 2026-11-02T10:00 --end-time 2026-11-02T10:30 --dry-run
 ```
 
-`--dry-run` shows the permission a command needs and does nothing. `GCAL_READ_ONLY=1` refuses every write.
+`--dry-run` shows the permission a command needs and does nothing. `GCAL_READ_ONLY=1`, or `--read-only` for one
+run, refuses every write.
 
 More: [settings](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/configuration.md)
 ([wirecat.dev](https://wirecat.dev/en/docs/gcal/configuration)).
