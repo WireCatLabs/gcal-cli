@@ -29,9 +29,11 @@ summary() {
 
 answer=""
 failed=""
-# Runs one step; the error's code, reason and gcal's own message are safe to show (gcal never repeats Google's text).
+# Runs one step; the first argument names it. The error's code, reason and gcal's own message are safe to show
+# (gcal never repeats Google's text).
 run() {
   local err
+  shift
   err=$(mktemp)
   if answer=$("$@" 2>"$err"); then
     rm -f "$err"
