@@ -2,6 +2,24 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## 0.32.0 — 16.11.2026
+
+### Changed — may break callers
+
+- **The agent skill is shorter.** `SKILL.md` keeps what an agent needs on every turn (the profile rule, answering
+  from the calendar, the limits on changes, output) in about 7 KB instead of 17 KB, and links the rest in
+  `skills/gcal-cli/references/`: events, meeting briefs and digests, changing events, Google Meet, calendars and
+  feeds, the Calendar API and MCP. No rule was dropped. The skill now also names `meetings list --backend archive`,
+  the working hours of `calendars busy --hours`, and `--send-notifications false` for sharing on the command line. An
+  agent that reads the skill pays about 2,500 fewer tokens on every turn.
+
+### Fixed
+
+- **`gcal skill install` installs the skill's `references/` beside `SKILL.md`,** in `~/.claude/skills/gcal-cli/` and
+  `~/.agents/skills/gcal-cli/`, and `gcal skill show <name>` prints one of them (`gcal skill show events`). Before,
+  only `SKILL.md` was installed, and its links to the references led nowhere. gcal builds on cli-core 0.681.0 and
+  cli-base 0.106.0.
+
 ## 0.31.0 — 16.11.2026
 
 ### Added

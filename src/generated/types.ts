@@ -48,9 +48,9 @@ export type CalendarEventWorkingLocationProperties = {
 
 export type CalendarFreeBusyResponse = {
   /** List of free/busy information for calendars. */
-  calendars?: Record<string, CalendarFreeBusyCalendar>
+  calendars?: { [key: string]: CalendarFreeBusyCalendar }
   /** Expansion of groups. */
-  groups?: Record<string, CalendarFreeBusyGroup>
+  groups?: { [key: string]: CalendarFreeBusyGroup }
   /** The start of the interval. */
   timeMin?: string
   /** Type of the resource ("calendar#freeBusy"). */
@@ -166,7 +166,7 @@ export type CalendarCalendarNotification = {
 }
 
 export type CalendarConferenceParametersAddOnParameters = {
-  parameters?: Record<string, string>
+  parameters?: { [key: string]: string }
 }
 
 export type CalendarColorDefinition = {
@@ -236,7 +236,7 @@ export type CalendarChannel = {
   /** A version-specific identifier for the watched resource. */
   resourceUri?: string
   /** Additional parameters controlling delivery channel behavior. Optional. */
-  params?: Record<string, string>
+  params?: { [key: string]: string }
 }
 
 export type CalendarConferenceSolutionKey = {
@@ -266,11 +266,11 @@ export type CalendarError = {
 
 export type CalendarColors = {
   /** A global palette of event colors, mapping from the color ID to its definition. An event resource may refer to one of these color IDs in its colorId field. Read-only. */
-  event?: Record<string, CalendarColorDefinition>
+  event?: { [key: string]: CalendarColorDefinition }
   /** Type of the resource ("calendar#colors"). */
   kind?: string
   /** A global palette of calendar colors, mapping from the color ID to its definition. A calendarListEntry resource refers to one of these color IDs in its colorId field. Read-only. */
-  calendar?: Record<string, CalendarColorDefinition>
+  calendar?: { [key: string]: CalendarColorDefinition }
   /** Last modification time of the color palette (as a RFC3339 timestamp). Read-only. */
   updated?: string
 }
@@ -364,9 +364,9 @@ export type CalendarEvent = {
   /** Extended properties of the event. */
   extendedProperties?: {
     /** Properties that are shared between copies of the event on other attendees' calendars. */
-    shared?: Record<string, string>
+    shared?: { [key: string]: string }
     /** Properties that are private to the copy of the event that appears on this calendar. */
-    private?: Record<string, string>
+    private?: { [key: string]: string }
   }
   /** Source from which the event was created. For example, a web page, an email message or any document identifiable by an URL with HTTP or HTTPS scheme. Can only be seen or modified by the creator of the event. */
   source?: {
@@ -432,7 +432,7 @@ export type CalendarEvent = {
     /** The gadget's type. Deprecated. */
     type?: string
     /** Preferences. */
-    preferences?: Record<string, string>
+    preferences?: { [key: string]: string }
   }
   /** Whether anyone can invite themselves to the event (deprecated). Optional. The default is False. */
   anyoneCanAddSelf?: boolean
