@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# The owner's live check of Google Meet in gcal: list, sync, the store, one call in full, and with --write a room made
+# and changed. It prints counts and step names only: never a token, a name, a transcript line or a link.
+set -euo pipefail
+
+write=false
+args=()
+for arg in "$@"; do
+  if [[ $arg == --write ]]; then write=true; else args+=("$arg"); fi
+done
+if [[ ${#args[@]} -ne 1 ]]; then
+  echo "usage: bin/gcal-meet-check [--write] <profile>" >&2
+  echo "  sign in first: gcal <profile> session start --grant meetings (with --write: --grant write,meetings)" >&2
+  exit 2
+fi
+profile=${args[0]}
+
+# Reads a gcal JSON answer on stdin and prints what the expression makes of it; `a` is the answer.
+summary() {
+  node -e '
+    let text = ""
+    process.stdin.on("data", (chunk) => (text += chunk)).on("end", () => {
+      const a = JSON.parse(text)
+      const out = new Function("a", `return (${process.argv[1]})`)(a)
+      if (out === false) process.exit(1)
+      if (out !== true) console.log(out)
+    })' "$1"
+}
+
+answer=""
+failed=""
+# Runs one step; the error's code, reason and gcal's own message are safe to show (gcal never repeats Google's text).
+run() {
+  local err
+  err=$(mktemp)
+  if answer=$("$@" 2>"$err"); then
+    rm -f "$err"
+    return 0
+  fi
+  failed=$(node -e '
+    const fs = require("node:fs")
+    const lines = fs.readFileSync(process.argv[1], "utf8").trim().split("\n")
+    try { const { error } = JSON.parse(lines.at(-1)); console.log(`${error.code} ${error.reason ?? ""}: ${error.message}`) }
+    catch { console.log("no JSON error") }' "$err")
+  rm -f "$err"
+  return 1
+}
+stop() {
+  echo "FAILED at step $1: $2" >&2
+  exit 1
+}
+
+echo "gcal $(gcal --version)"
+
+run session gcal "$profile" session status --check --json || stop session "$failed"
+echo "session: $(summary '`verified ${a.item.verified}`' <<<"$answer")"
+
+run list gcal "$profile" meetings list --json || stop list "$failed"
+found='`${a.items.length} calls: ` +
+  ["server", "archive", "both"].map((f) => `${a.items.filter((m) => m.found_in === f).length} ${f}`).join(", ") +
+  `, complete ${a.meta?.complete ?? "?"}`'
+echo "list: $(summary "$found" <<<"$answer")"
+first=$(summary 'a.items[0]?.provider_id ?? ""' <<<"$answer")
+
+run sync gcal "$profile" meetings sync --json || stop sync "$failed"
+echo "sync: $(summary '`${a.item.meetings} calls kept`' <<<"$answer")"
+
+run stored gcal "$profile" meetings list --backend archive --json || stop stored "$failed"
+echo "stored: $(summary '`${a.items.length} calls in the store`' <<<"$answer")"
+
+if [[ -n $first ]]; then
+  run show gcal "$profile" meetings show "$first" --json || stop show "$failed"
+  call='`${a.item.participants.length} people, ${a.item.transcripts.length} transcripts, ` +
+    `${a.item.documents.length} Drive files, missing: ${(a.missing ?? []).map((m) => m.field).join(", ") || "nothing"}`'
+  echo "show: $(summary "$call" <<<"$answer")"
+else
+  echo "show: skipped, Google lists no call you organized in the last 30 days"
+fi
+
+if $write; then
+  run create gcal "$profile" meetings create --setting access_type=trusted --yes --json || stop create "$failed"
+  room=$(summary 'a.item?.meeting?.id ?? ""' <<<"$answer")
+  [[ -n $room ]] || stop create "the answer has no room id"
+  echo "create: a room was made"
+  run update gcal "$profile" meetings update "$room" --setting moderation=true --yes --json || stop update "$failed"
+  echo "update: the room was changed"
+fi
+echo "all steps passed"
