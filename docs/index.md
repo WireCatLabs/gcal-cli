@@ -5,6 +5,7 @@ only, unless you sign in with `--grant write` to create, change and delete event
 
 It signs in to Google (`session start`, `session status`, `session end`), syncs your calendars into the local WireCat
 store (`sync`, `store status`, `calendars`), and reads them there: `events`, `search events`, `people` and `links`.
+With `--grant meetings`, `meetings` keeps your Google Meet calls with who joined and the transcript.
 `calendars busy` asks Google when people are free. With the write grant, `events create | update | delete | move |
 respond` change Google Calendar. It also has the commands every WireCat CLI shares: `doctor`, `commands`, `guide`, `config`,
 `skill`, `mcp`, `runs` and `upgrade`. Start with [installation](installation.md), then [usage](usage.md).

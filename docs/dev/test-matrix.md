@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**230 ✅ · 364 ⛔ · 0 ❌** — 106 commands, 488 options.
+**270 ✅ · 365 ⛔ · 0 ❌** — 115 commands, 520 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -64,6 +64,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events create` | `--description` | ✅ |  |
 | `events create` | `--attendee` | ✅ |  |
 | `events create` | `--repeat` | ✅ |  |
+| `events create` | `--conference` | ✅ |  |
 | `events create` | `--notify` | ✅ |  |
 | `events create` | `--no-notify` | ✅ |  |
 | `events create` | `--operation-id` | ✅ |  |
@@ -78,6 +79,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `events update` | `--description` | ✅ |  |
 | `events update` | `--attendee` | ✅ |  |
 | `events update` | `--repeat` | ✅ |  |
+| `events update` | `--conference` | ✅ |  |
 | `events update` | `--calendar` | ✅ |  |
 | `events update` | `--series` | ✅ |  |
 | `events update` | `--following` | ✅ |  |
@@ -119,6 +121,45 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `people link` | `--reason` | ⛔ | cli-core src/cli/messenger/messenger.test.ts: an agent's people link proposes the link and needs --reason |
 | `links review` |  | ✅ |  |
 | `links resolve` |  | ✅ |  |
+| `meetings list` |  | ✅ |  |
+| `meetings list` | `--backend` | ✅ |  |
+| `meetings list` | `--limit` | ✅ |  |
+| `meetings list` | `--page` | ✅ |  |
+| `meetings show` |  | ✅ |  |
+| `meetings show` | `--backend` | ✅ |  |
+| `meetings transcript` |  | ✅ |  |
+| `meetings transcript` | `--history` | ✅ |  |
+| `meetings export` |  | ✅ |  |
+| `meetings export` | `--format` | ✅ |  |
+| `meetings export` | `--transcript-id` | ✅ |  |
+| `meetings export` | `--output` | ✅ |  |
+| `meetings people` |  | ✅ |  |
+| `meetings people` | `--limit` | ✅ |  |
+| `meetings people` | `--scan-limit` | ✅ |  |
+| `meetings people` | `--max-read-bytes` | ✅ |  |
+| `meetings people` | `--cursor` | ⛔ | cli-core's shared meetings group; its participant-search tests page with the cursor, and src/meetings.test.ts runs meetings people over stored Meet calls |
+| `meetings sync` |  | ✅ |  |
+| `meetings sync` | `--since-time` | ✅ |  |
+| `meetings sync` | `--lookback-days` | ✅ |  |
+| `meetings sync` | `--rescan` | ✅ |  |
+| `meetings repair` |  | ✅ |  |
+| `meetings repair` | `--yes` | ✅ |  |
+| `meetings create` |  | ✅ |  |
+| `meetings create` | `--title` | ✅ |  |
+| `meetings create` | `--kind` | ✅ |  |
+| `meetings create` | `--start-time` | ✅ |  |
+| `meetings create` | `--duration-minutes` | ✅ |  |
+| `meetings create` | `--timezone` | ✅ |  |
+| `meetings create` | `--agenda` | ✅ |  |
+| `meetings create` | `--setting` | ✅ |  |
+| `meetings update` |  | ✅ |  |
+| `meetings update` | `--title` | ✅ |  |
+| `meetings update` | `--kind` | ✅ |  |
+| `meetings update` | `--start-time` | ✅ |  |
+| `meetings update` | `--duration-minutes` | ✅ |  |
+| `meetings update` | `--timezone` | ✅ |  |
+| `meetings update` | `--agenda` | ✅ |  |
+| `meetings update` | `--setting` | ✅ |  |
 | `api list` |  | ✅ |  |
 | `api show` |  | ✅ |  |
 | `api call` |  | ✅ |  |

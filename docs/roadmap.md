@@ -17,7 +17,10 @@ about each meeting that starts soon, or runs your own program for it, and `sched
 `events list --source all` lists the events of every signed-in account as one list, and `overlapping:true` finds
 meetings that clash. `events prepare` gathers what you need for the next meeting, `events create --text` adds one from
 a line of text, and `events export` and `events import` read and write `.ics` files. `calendars add <url>` follows a
-calendar published as an `.ics` address, read-only. `search all` searches stored meetings, chats and notes together.
+calendar published as an `.ics` address, read-only. After `session start --grant meetings`, `meetings sync`, `list`,
+`show` and `transcript` keep and read your Google Meet calls with who joined, the transcript and its Drive files, linked
+to the calendar event. `events create --conference google-meet` gives an event a Meet link, and `meetings create` makes a Meet room. `search all` searches stored meetings, chats
+and notes together.
 `gcal api` reaches every Google
 Calendar API method by name. Every command is in the [command reference](commands.md).
 

@@ -5,5 +5,19 @@
     "target": "reason meeting-project.stale: code",
     "reason": "cli-core 0.651.0 made a stale meeting project fingerprint conflict, not configuration_error; the published CLIs are still on 0.650.0 or older, and the entry goes once they publish on 0.651.0+.",
     "review_after": "2026-11-27"
+  },
+  {
+    "group": "all",
+    "rule": "same-entity-schema",
+    "target": "entity meeting_details",
+    "reason": "cli-core 0.668.0 (#2977) changes the meeting details answer gcal builds on; zm 0.77.0 is on cli-core 0.667.0, and the entry goes once zm publishes on 0.668.0+.",
+    "review_after": "2026-11-29"
+  },
+  {
+    "group": "all",
+    "rule": "same-entity-schema",
+    "target": "entity meeting",
+    "reason": "cli-core 0.674.0 adds an optional call (a phone call's direction, manager and client_phone) to the shared meeting schema; zm 0.77.0 is on cli-core 0.667.0, and the entry goes once zm publishes on 0.674.0+.",
+    "review_after": "2026-11-30"
   }
 ]

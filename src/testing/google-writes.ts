@@ -160,15 +160,42 @@ export const fakeGoogleWrites = (
     return event
   }
 
+  /**
+   * A `conferenceData.createRequest` becomes a Meet link only with `conferenceDataVersion=1`; at version 0, the
+   * default, Google ignores conference data in the body (Events: insert, `conferenceDataVersion`).
+   */
+  const conferenced = (body: Record<string, unknown> | undefined, query: URLSearchParams) => {
+    const data = body?.conferenceData
+    if (!body || !isObject(data)) return body
+    const { conferenceData: _ignored, ...rest } = body
+    if (query.get("conferenceDataVersion") !== "1") return rest
+    const request = isObject(data.createRequest) ? data.createRequest : undefined
+    if (!request) return body
+    const code = "new-meet-cod"
+    return {
+      ...rest,
+      hangoutLink: `https://meet.google.com/${code}`,
+      conferenceData: {
+        createRequest: { ...request, status: { statusCode: "success" } },
+        entryPoints: [
+          { entryPointType: "video", uri: `https://meet.google.com/${code}`, label: `meet.google.com/${code}` },
+        ],
+        conferenceSolution: { key: { type: "hangoutsMeet" }, name: "Google Meet" },
+        conferenceId: code,
+      },
+    }
+  }
+
   const fetch = async (input: string | URL | Request, init: RequestInit = {}): Promise<Response> => {
     const url = new URL(String(input))
     const path = decodeURIComponent(url.pathname.slice(PREFIX.length))
     const method = init.method ?? "GET"
     const ifMatch = new Headers(init.headers).get("if-match") ?? undefined
-    const body: Record<string, unknown> | undefined = typeof init.body === "string" ? JSON.parse(init.body) : undefined
+    const sent: Record<string, unknown> | undefined = typeof init.body === "string" ? JSON.parse(init.body) : undefined
+    const body = conferenced(sent, url.searchParams)
     const special = method === "POST" ? path.match(/^calendars\/([^/]+)\/events\/(quickAdd|import)$/u) : null
     if (special) {
-      requests.push({ method, path, query: url.searchParams, ifMatch, body })
+      requests.push({ method, path, query: url.searchParams, ifMatch, body: sent })
       notified.push(url.searchParams.get("sendUpdates") === "all")
       return answered(json(special[2] === "quickAdd" ? quickAdd(url.searchParams) : imported(body ?? {})))
     }
@@ -180,7 +207,7 @@ export const fakeGoogleWrites = (
       if (fallback) return fallback(input, init)
       return json(NOT_FOUND, 404)
     }
-    requests.push({ method, path, query: url.searchParams, ifMatch, body })
+    requests.push({ method, path, query: url.searchParams, ifMatch, body: sent })
     if (write) notified.push(url.searchParams.get("sendUpdates") === "all")
     if (all && method === "POST") {
       const id = typeof body?.id === "string" ? body.id : `generated${events.size}`

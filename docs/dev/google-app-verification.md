@@ -34,7 +34,7 @@ share this one project, so they share those 100 users too.
 
 ## 3. Declare the Calendar scopes
 
-Open **Data Access → Add or remove scopes**, add these three, and save. The Console shows the class of each scope in
+Open **Data Access → Add or remove scopes**, add these four, and save. The Console shows the class of each scope in
 that list; Google gives "reading events stored in Google Calendar" as an example of a sensitive scope
 ([sensitive scope verification](https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification)).
 
@@ -43,6 +43,7 @@ that list; Google gives "reading events stored in Google Calendar" as an example
 | `https://www.googleapis.com/auth/calendar.readonly` | Every sign-in: sync, search, free/busy, calendar list |
 | `https://www.googleapis.com/auth/calendar.events` | `session start --grant write`: create, change, delete events, answer invitations |
 | `https://www.googleapis.com/auth/calendar.acls` | `session start --grant sharing`: see and change who can see a calendar |
+| `https://www.googleapis.com/auth/meetings.space.readonly` | `session start --grant meetings`: read the Google Meet calls, who joined, the transcript and its Drive files |
 
 `openid` and `email` are asked for too; they are not sensitive. Keep drive's four scopes as they are.
 
@@ -66,7 +67,9 @@ For each scope, a justification. Text to adapt:
 > for sync, search and free/busy; the narrower `calendar.events.readonly` cannot list calendars.
 > `calendar.events` is asked for only when the user runs `session start --grant write`, to create, change and delete
 > events and to answer invitations. `calendar.acls` is asked for only with `--grant sharing`, to see and change who can
-> see a calendar the user owns. No data goes to a WireCat server.
+> see a calendar the user owns. `meetings.space.readonly` is asked for only with `--grant meetings`, to keep the
+> user's Google Meet calls beside their calendar events: when each call took place, who joined, its transcript and the
+> Drive ids of the files Meet made. No data goes to a WireCat server.
 
 A demonstration video, unlisted on YouTube, in English. Google asks that it show the whole flow, including the OAuth
 grant, the app's name and branding, and the full consent screen with the exact scopes; the language selector on the

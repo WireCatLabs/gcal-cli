@@ -14,7 +14,7 @@ import {
   sessionStorage,
   storageOf,
 } from "./google.js"
-import { GRANT_SCOPES, type Grant, grantsOf } from "./grants.js"
+import { GRANT_SCOPES, type Grant, grantMissing, grantsOf, MEET_WRITE_SCOPE, scopesFor } from "./grants.js"
 import { IDENTITY } from "./identity.js"
 import { openGcalStore, PROVIDER } from "./store.js"
 
@@ -48,12 +48,6 @@ const scopeMissing = () =>
     grant: "read",
   })
 
-const grantMissing = (grant: Grant) =>
-  new CliError("permission_error", `Google did not grant the ${grant} permission`, {
-    reason: "oauth.scope-missing",
-    grant,
-  })
-
 export interface SignInOptions extends Common {
   client: OAuthClient
   grants?: readonly Grant[] | undefined
@@ -68,7 +62,7 @@ export const signIn = async (options: SignInOptions) => {
   const keeper = sessionKeeper(options)
   let account = ""
   const { scopes } = await keeper.signIn({
-    scopes: [...SIGN_IN_SCOPES, ...(options.grants ?? []).map((grant) => GRANT_SCOPES[grant])],
+    scopes: [...SIGN_IN_SCOPES, ...scopesFor(options.grants ?? [])],
     openBrowser: options.openBrowser,
     showUrl: options.showUrl,
     ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
@@ -76,8 +70,15 @@ export const signIn = async (options: SignInOptions) => {
     accept: async (tokens) => {
       if (!tokens.scopes.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
       // Google lets the account untick a scope it was asked for, and still signs in.
-      const missing = (options.grants ?? []).find((grant) => !tokens.scopes.includes(GRANT_SCOPES[grant]))
-      if (missing) throw grantMissing(missing)
+      const grants = options.grants ?? []
+      const missing = grants.find((grant) => !tokens.scopes.includes(GRANT_SCOPES[grant]))
+      if (missing) throw grantMissing(missing, `Google did not grant the ${missing} permission`, grants)
+      if (scopesFor(grants).includes(MEET_WRITE_SCOPE) && !tokens.scopes.includes(MEET_WRITE_SCOPE))
+        throw grantMissing(
+          ["write", "meetings"],
+          "Google did not grant the permission to make Google Meet spaces",
+          grants,
+        )
       if (!tokens.accessToken) throw new CliError("authentication_error", "Google returned no access token")
       account = await accountEmail(tokens.accessToken, options.fetch ?? googleFetch, options.signal, options.events)
       const previous = savedAccount(env, profile)

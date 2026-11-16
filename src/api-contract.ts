@@ -1,20 +1,49 @@
 import { CliError } from "@wirecat/cli-base"
 import type { ManifestOperation } from "@wirecat/cli-base/codegen"
 import { apiJson, apiPlainJson, checkApiBody, checkApiParameter, parseApiJson } from "@wirecat/cli-core/cli"
+import type * as v from "valibot"
 import { operations } from "./generated/manifest.js"
+import { metadata } from "./generated/metadata.js"
 import { schemas } from "./generated/schemas.js"
 
 export { operations, schemas }
-export const operationOf = (name: string): ManifestOperation => {
-  const operation = operations.find((item) => item.id === name)
+
+/** One generated Google API: its methods, their schemas and scopes, and where each service is served. */
+export interface ApiContract {
+  /** As people know it, in messages: `Google Calendar`, `Google Meet`. */
+  name: string
+  operations: readonly ManifestOperation[]
+  schemas: Readonly<Record<string, v.GenericSchema>>
+  services: Readonly<Record<string, { rootUrl: string; servicePath: string }>>
+  scopes: Readonly<Record<string, readonly string[]>>
+  errorsGuide?: string
+}
+
+export const CALENDAR: ApiContract = {
+  name: "Google Calendar",
+  operations,
+  schemas,
+  services: metadata.services,
+  scopes: metadata.scopes,
+  errorsGuide: "https://developers.google.com/workspace/calendar/api/guides/errors",
+}
+
+export const operationOf = (name: string, contract: ApiContract = CALENDAR): ManifestOperation => {
+  const operation = contract.operations.find((item) => item.id === name)
   if (!operation)
-    throw new CliError("validation_error", "unknown Google Calendar method", {
+    throw new CliError("validation_error", `unknown ${contract.name} method`, {
       reason: "api.unknown-method",
     })
   return operation
 }
-export const validateRequest = (name: string, params: Record<string, unknown>, body?: Record<string, unknown>) => {
-  const operation = operationOf(name)
+export const validateRequest = (
+  name: string,
+  params: Record<string, unknown>,
+  body?: Record<string, unknown>,
+  contract: ApiContract = CALENDAR,
+) => {
+  const { schemas } = contract
+  const operation = operationOf(name, contract)
   const allowed = new Map(operation.parameters.map((parameter) => [parameter.name, parameter]))
   for (const key of Object.keys(params))
     if (!allowed.has(key))

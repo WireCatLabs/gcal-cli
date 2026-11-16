@@ -93,8 +93,8 @@ const startCommand = () =>
       mcp: false,
       examples: [
         `${IDENTITY.command} personal session start --client-file ~/client_secret.json`,
-        `${IDENTITY.command} personal session start --client-id 1234-abc.apps.googleusercontent.com`,
         `${IDENTITY.command} personal session start --grant write,sharing`,
+        `${IDENTITY.command} personal session start --grant meetings`,
       ],
     }),
   )
@@ -111,11 +111,13 @@ const startCommand = () =>
       credentialStorage,
       "keyring",
     )
-    .option("--grant <scopes>", "also ask for these, comma-separated: write, sharing", grantList)
+    .option("--grant <scopes>", "also ask for these, comma-separated: write, sharing, meetings", grantList)
     .addHelpText(
       "after",
       "\n--grant write: create, change and delete events, and answer invitations\n" +
         "--grant sharing: see and change who can see a calendar\n" +
+        "--grant meetings: read your Google Meet calls, who joined, their transcripts and Drive files\n" +
+        "--grant write,meetings: also make Google Meet spaces and change the ones gcal made\n" +
         "--credential-storage file: only where no keyring works; the keyring is safer\n",
     )
     .action(async function (

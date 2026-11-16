@@ -5,7 +5,7 @@ import { IDENTITY } from "../identity.js"
 const LIST_METHODS = `run ${IDENTITY.command} api list`
 
 const fixFor = (error: CliError, start: string): string | undefined => {
-  const { reason, grant, next } = error.details
+  const { reason, grant, grants, next } = error.details
   switch (reason) {
     case "oauth.expired":
       return `run ${start} again`
@@ -17,7 +17,7 @@ const fixFor = (error: CliError, start: string): string | undefined => {
     case "oauth.scope-missing":
       if (grant === "read") return `run ${start} again and allow it on the consent screen`
       return typeof grant === "string"
-        ? `run ${start} --grant ${grant} again and leave it ticked on the consent screen`
+        ? `run ${start} --grant ${typeof grants === "string" ? grants : grant} again and leave it ticked on the consent screen`
         : undefined
     case "api.unknown-method":
       return LIST_METHODS

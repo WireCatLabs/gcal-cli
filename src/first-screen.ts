@@ -6,6 +6,7 @@ import { IDENTITY } from "./identity.js"
 
 const SECTIONS: Record<string, HelpSection> = {
   calendars: "read",
+  meetings: "read",
   store: "read",
   search: "read",
   people: "read",

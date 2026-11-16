@@ -9,7 +9,8 @@ export const IDENTITY: AppIdentity = {
   command: "gcal",
   appName: "gcal-cli",
   envPrefix: "GCAL",
-  description: "Google Calendar for the terminal, scripts and AI agents: sync, search and change events",
+  description:
+    "Google Calendar and Google Meet for the terminal, scripts and AI agents: sync, search and change events, read calls",
   version: VERSION,
   issues: "https://github.com/WireCatLabs/gcal-cli/issues/new",
   messenger: false,
@@ -26,12 +27,18 @@ export const DESKTOP: ManifestIdentity & { hosts: readonly string[] } = {
   ...IDENTITY,
   docs: "https://github.com/WireCatLabs/gcal-cli#readme",
   tagline: "Google Calendar events, searchable on your computer",
-  syncs: "calendars and their events",
+  syncs: "calendar events and Google Meet calls",
   signIn: {
     gives: "Lets your agent read your Google calendars, and change events when you allow it.",
     asks: "Google asks you to sign in and allow read-only access to your calendars.",
   },
-  hosts: ["accounts.google.com", "oauth2.googleapis.com", "openidconnect.googleapis.com", "www.googleapis.com"],
+  hosts: [
+    "accounts.google.com",
+    "oauth2.googleapis.com",
+    "openidconnect.googleapis.com",
+    "www.googleapis.com",
+    "meet.googleapis.com",
+  ],
   userHosts: "the calendar feed (ICS) addresses you add",
 }
 
