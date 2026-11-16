@@ -1,288 +1,247 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/WireCatLabs/gcal-cli/main/docs/images/social-preview.png" alt="Google Calendar for your AI agents" width="100%">
+  <img src="https://raw.githubusercontent.com/WireCatLabs/gcal-cli/main/docs/images/social-preview.png" alt="Google Calendar and Meet CLI for AI agents" width="100%">
 </p>
 
-# gcal — Google Calendar CLI for AI agents
+# gcal: Google Calendar and Meet CLI for AI agents
 
 <p align="center">
-  Your Google Calendar in the terminal, searchable on your computer, and ready for Claude Code, Codex, Gemini CLI or any
-  agent — within limits you set.
+  Full control of your Google Calendar and Meet calls from the terminal. Every calendar of every Google account you
+  use, read and write, for you and for Claude Code, Codex, Cursor or any AI agent.
 </p>
 
 <p align="center">
   <a href="https://wirecat.dev/en/docs/gcal">Docs</a> ·
-  <a href="https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md">Use it</a> ·
-  <a href="https://wirecat.dev">WireCat</a>
+  <a href="https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md">Examples</a> ·
+  <a href="https://discord.gg/DebENqbRrJ">Discord</a>
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@wirecat/gcal-cli"><img src="https://img.shields.io/npm/v/@wirecat/gcal-cli" alt="npm"></a>
   <a href="https://github.com/WireCatLabs/gcal-cli/actions/workflows/main.yml"><img src="https://github.com/WireCatLabs/gcal-cli/actions/workflows/main.yml/badge.svg" alt="CI"></a>
-  <a href="https://nodejs.org/"><img src="https://img.shields.io/node/v/@wirecat/gcal-cli" alt="Node"></a>
-  <a href="https://bun.sh/"><img src="https://img.shields.io/badge/bun-tested-f9f1e1" alt="Bun"></a>
   <a href="https://www.npmjs.com/package/@wirecat/gcal-cli"><img src="https://img.shields.io/npm/dm/@wirecat/gcal-cli" alt="npm downloads"></a>
   <a href="https://github.com/WireCatLabs/gcal-cli/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License: Apache 2.0"></a>
 </p>
 
-`gcal` copies the calendars you own into the local [WireCat](https://wirecat.dev) store. Then you list, show and search
-events, the people in them and their Drive files, with no network. With write access it also creates, changes, moves
-and deletes events and answers invitations. A delete asks first. Mailing other people is off until you allow it.
+- **Full control.** Sign in to each Google account you use, personal or work. Read every calendar, create, move and
+  cancel events, answer invitations, add a Meet link, and reach every Google Calendar API method.
+- **Deep search.** Your events are searched on your computer, with no network. Search matches words, and by meaning
+  once you download a small model, so other words for the same thing are found too. Google's own search reaches
+  events outside the synced span.
+- **Meet calls you can come back to.** Who joined, the transcript and the Drive files Google made, linked to the
+  calendar event and kept after Google deletes them.
 
-An example conversation (invented people and events, illustrative output):
+## What you get
+
+- **Know your week at a glance.** "What is on this week?" across every Google account you use, with clashes found.
+- **Find a time for everyone.** Ask when people are free and get the stretches that suit all of them.
+- **Book without the clicking.** Create, move and cancel events, with a Meet link when you want one. Nobody gets an
+  email unless you allow it.
+- **Remember what was said.** Past Meet calls with who joined and the transcript, ready to search and summarise.
+- **Walk into a meeting prepared.** One command gathers the event, its attendees, your latest messages with them and
+  your past meetings with them.
+- **Find any event.** "When did we plan the roadmap review?" by words or by meaning, with no network.
+- **See the whole picture.** Link a person's email to their Telegram or MAX account, and one search covers
+  your events, chats, notes and meeting transcripts.
 
 ```text
-You:    Use gcal. When can I meet Ana for 30 minutes this week?
+You:    When can I meet Ana for 30 minutes this week?
 Agent:  (runs gcal personal calendars busy person:ana@example.com --duration-minutes 30)
-        You both are free on Tuesday 10:00–10:30, Wednesday 14:00–15:00 and Thursday 10:00–12:00.
-You:    Book Tuesday, 30 minutes, "Example planning". Do not email her.
-Agent:  Draft: "Example planning", Tuesday 10:00–10:30, with ana@example.com, no email sent. Create it?
+        You are both free on Tuesday 10:00-10:30, Wednesday 14:00-15:00 and Thursday 10:00-12:00.
+You:    Book Tuesday, 30 minutes, "Example planning", with a Meet link. Do not email her.
+Agent:  Draft: "Example planning", Tuesday 10:00-10:30, with ana@example.com, a new Meet link, no email sent.
+        Create it?
 You:    Yes.
 ```
 
-## Quick start
+*Invented people and events, illustrative output.*
 
-Every `gcal` package carries WireCat's own Google app, so you can sign in with no Google Cloud project of your own.
-Google may refuse the sign-in with it. Then [make your own Google app](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/installation.md#make-your-own-google-app)
-and add `--client-file ~/client_secret.json` to `session start`.
+## Why gcal
+
+- **Your data never leaves your computer.** `gcal` talks only to Google. There is no WireCat server and no account
+  with us. Your events are kept in a local database, and a meeting's passcode or PIN is never stored or printed.
+- **Read-only until you say so.** The first sign-in reads only. Writing events, sharing calendars and Meet each need
+  their own grant, and a delete asks first.
+- **Search that goes all the way back.** A first sync copies a year back and three months ahead, and each later sync
+  asks Google only for what changed. Search reads that copy by words or by meaning, or asks Google's own search.
+- **Safe to give to an agent.** You decide what an agent may do, per command: allow, ask, read only or deny. A write
+  never overwrites a change made in Google since the last sync. Text from an invitation is marked as untrusted, so an
+  agent never takes it as an instruction.
+- **Ready for any agent.** A skill for agents with a terminal, an MCP server for Claude Desktop and Cursor, and a
+  secure link for ChatGPT and Claude in the browser or on your phone.
+- **Free and open source.** Apache 2.0, on macOS, Linux and Windows.
+
+How it compares with other calendar tools: [the comparison](https://wirecat.dev/en/docs/gcal/compare).
+
+## Quick start
 
 ```sh
 npm install -g @wirecat/gcal-cli
-gcal skill install                                            # the agent skill, for Claude Code, Codex and Gemini CLI
-gcal personal session start                                   # sign in to Google in the browser, read-only
-gcal personal sync                                            # copy the calendars you own, then only what changed
-gcal personal events list                                     # your events from today on, earliest first
+gcal skill install                  # the agent skill, for Claude Code, Codex and Gemini CLI
+gcal personal session start         # sign in to Google in the browser, read-only
+gcal personal sync                  # copy your calendars, then only what changed
+gcal personal events list           # your events from today on, earliest first
 ```
 
-`personal` is a profile: a name you choose for one Google account. It is the first word of every command that uses an
-account. A first sync lists a year back and three months ahead. A big one goes on over several runs: run `sync` again
-when it says `partial`.
+It takes a few minutes. `personal` is a name you choose for this Google account. You can add `work` or any other
+later. Every `gcal` package carries WireCat's own Google app, so you need no Google Cloud project. Google may refuse
+the sign-in with it. Then [make your own Google app](https://wirecat.dev/en/docs/gcal/installation) and add
+`--client-file ~/client_secret.json` to `session start`.
 
-You need Node.js 22.16 or a later 22.x, or Node.js 24 or later, on macOS, Linux or Windows. Bun also works. Try it
-without installing: `npx @wirecat/gcal-cli --help`. If `gcal` is not found, run `gcal doctor`. It needs no network and
-shows what is set up. `gcal guide` gives step-by-step scenarios.
+You need Node.js 22.16+ or 24+, or Bun. Try it without installing: `npx @wirecat/gcal-cli --help`.
 
-More: [installation](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/installation.md)
-([wirecat.dev](https://wirecat.dev/en/docs/gcal/installation)).
+More: [installation](https://wirecat.dev/en/docs/gcal/installation)
 
-## What you can do
+## Use it with your agent
 
-**See what is coming.** "Use gcal. What is on my calendar this week?"
+Ask in plain words. The agent picks the commands.
+
+> *"Use gcal. What is on my calendar this week, and what clashes?"*
+> *"Use gcal. Prepare me for my next meeting."*
+> *"Use gcal. What did we decide on the last call with Ana?"*
+
+- **Claude Code, Codex, Gemini CLI** and other agents with a terminal run `gcal` themselves. `gcal skill install`
+  teaches them how.
+- **Claude Desktop, Cursor** and other MCP apps connect to `gcal personal mcp serve`.
+- **ChatGPT or Claude in the browser or on your phone** reach it through your own HTTPS tunnel.
 
 ```sh
-gcal personal events list
+gcal personal mcp add claude-code --allow-writes   # or: codex
+gcal personal mcp config                           # the entry for Claude Desktop, Cursor and others
 ```
 
-**Find an event.** "When did we plan the roadmap review?" Search runs on the local copy. It matches words, and meaning
-too once you download a model.
+More: [agents](https://wirecat.dev/en/docs/gcal/usage) · [from the browser](https://wirecat.dev/en/docs/gcal/remote)
+
+## What it can do
+
+### Your calendars
 
 ```sh
-gcal personal search events roadmap planning
+gcal personal events list --source all                    # every account's events in one list
+gcal personal events list overlapping:true --source all   # meetings that clash, across accounts
+gcal personal events list changed_at>=2026-10-25          # what is new, moved or cancelled since a date
+gcal personal events show event:42                        # attendees, Drive files and history
+gcal personal events prepare                              # what the store holds for your next meeting
 ```
 
-**Find a time for everyone.** Ask Google when people are busy, and get the stretches free for all of them. Nothing is
-stored.
+Only the calendars you own sync at first. `gcal personal calendars list` shows the rest, and
+`gcal personal calendars sync 3` adds calendar 3. Holiday calendars and other `.ics` feeds can be followed too.
+
+### Find a time and book it
 
 ```sh
 gcal personal calendars busy person:ana@example.com --duration-minutes 30 --hours 10:00-16:00
+gcal personal session start --grant write                 # sign in again to change events
+gcal personal events create 3 --title "Sync" --start-time 2026-11-20T10:00 --end-time 2026-11-20T10:30 \
+  --conference google-meet
+gcal personal events respond event:42 accepted --notify
 ```
 
-More:
+`calendars busy` shows a person's busy times only when their calendar is shared with you or your organisation. A
+delete asks first, and Google mails other attendees only when you allow it.
 
-- Show one event with its attendees, Drive files and history: `gcal personal events show event:42`.
-- Link a person to the same person in Telegram, WhatsApp or MAX: `gcal personal people link email:ana@example.com telegram:12345`.
-- Create, change and delete events, repeating ones included, and answer invitations. Sign in again with
-  `session start --grant write` first.
-- Call any Google Calendar API v3 method by name with `gcal api`.
-- Keep your Google Meet calls with who joined, their transcripts and Drive files: `gcal personal meetings sync`, after
-  `session start --grant meetings`. Give a new event a Meet link with `events create … --conference google-meet`.
-  Make a Meet room with `meetings create`, after `session start --grant write,meetings`.
-
-More: [use it](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md)
-([wirecat.dev](https://wirecat.dev/en/docs/gcal/usage)).
-
-## For AI agents
-
-Your agent. Your calendar. Your rules.
-
-- **An agent with a terminal** — Claude Code, Codex, Gemini CLI, OpenClaw or Hermes Agent. It runs `gcal` itself. The
-  skill is the agent's instruction sheet: it explains the commands and the limits. `gcal skill install` writes it.
-- **An app with no terminal** — Claude Desktop, Cursor and other MCP clients. Connect the profile's MCP server,
-  `gcal personal mcp serve`. `gcal personal mcp config` prints the entry to paste.
-- **ChatGPT or Claude in a browser or on your phone** — through your own HTTPS tunnel: `gcal personal mcp serve --http`.
-  [Step by step](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/remote.md) ([wirecat.dev](https://wirecat.dev/en/docs/gcal/remote)).
+### Search
 
 ```sh
-gcal skill install                               # for Claude Code, Codex, Gemini CLI and OpenClaw
-gcal personal mcp add claude-code --allow-writes   # or: codex
-gcal personal mcp check                          # start the server once, as the agent will
+gcal personal search events roadmap planning                    # the local copy, best match first
+gcal personal search events --backend server quarterly review   # Google's own search
+gcal personal search all roadmap                                # events, messages and notes of every WireCat tool
+gcal models download e5-small                                   # once, for search by meaning
 ```
 
-The server offers writing tools, so `mcp add` stops until you pass `--allow-writes`. The profile's permissions decide
-what an agent may change; `gcal personal config set permissions.api readonly` keeps it to reads. Text from an invitation
-is marked `untrusted`: it is data for the agent, never instructions. Commands that set up the sign-in or the agent link,
-`api call` and emptying a calendar are never offered to an agent.
-
-With `--json`, every command prints one JSON value, and an error comes as JSON with a code to branch on.
-
-More: [agents](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md#agents)
-([wirecat.dev](https://wirecat.dev/en/docs/gcal/usage)), [settings and permissions](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/configuration.md#permissions)
-([wirecat.dev](https://wirecat.dev/en/docs/gcal/configuration)).
-
-## Why this tool
-
-- **Your calendar is on your computer.** It sits in the same store as the messages, documents and meetings of the other
-  WireCat tools. An agent can answer "what did we agree with Ana" across all of them.
-- **Reads need no network after a sync.** A meeting's passcode or PIN is never stored or printed.
-- **Every write is guarded.** It never overwrites a change made in Google since the last sync. A delete asks first. It
-  never mails attendees unless you allow it.
-- **Built for agents.** A skill, an MCP server, one JSON form and exit codes a script can branch on.
-
-## Main features
-
-- **Incremental sync.** After the first sync, `sync` asks Google only for what changed. `gcal personal store status`
-  shows how far each calendar is.
-- **Repeating events.** Each occurrence is stored one by one, cancelled ones included.
-- **What changed.** `events list changed_at>=2026-10-25` lists the events that are new, moved or cancelled since a date.
-- **All accounts in one list.** `events list --source all` lists the events of every Google account you signed in to,
-  and says which accounts it read.
-- **Meetings that overlap.** `events list overlapping:true --source all` finds the meetings that clash, also across
-  accounts.
-- **Search by meaning.** `gcal models download e5-small` fetches a small model once. `sync --embed` then indexes new
-  events with it.
-- **Search in Google.** `search events --backend server` asks Google's own search. It also finds events outside the
-  synced span. `--backend both` asks the store and Google together.
-- **One search over everything.** `search all roadmap` finds your meetings beside the chats that other WireCat tools
-  stored and your notes, and says which accounts it read.
-- **Google Meet.** `meetings list` reads Google and the store at once; `meetings sync` keeps each call's people,
-  transcript and Drive files past Google's 30 days, linked to its calendar event.
-- **Every Google Calendar method.** `gcal api` reaches each one, under its own permission key.
-
-## Sign-in and profiles
-
-Each profile is one Google account. No command ever picks a profile for you; `gcal session list` lists them.
+### Google Meet
 
 ```sh
-gcal personal session start                                       # read-only
-gcal personal session start --grant write                         # also create, change and delete events
-gcal personal session start --grant write,sharing                 # also see and change who can see a calendar
-gcal personal session start --grant meetings                      # also read your Google Meet calls
-gcal personal session status --check                              # ask Google whether the sign-in still works
+gcal personal session start --grant meetings   # read access to your Meet calls
+gcal personal meetings sync                    # keep the calls of the last 30 days
+gcal personal meetings show 12                 # one call: who joined, its transcript and Drive files
+gcal personal meetings transcript 12           # what was said, line by line
+gcal personal meetings create --setting access_type=trusted   # a new Meet room, after --grant write,meetings
 ```
 
-`GCAL_PROFILE=personal` names the profile for a whole shell session. The sign-in is kept in the system keyring. Where
-the keyring fails, `gcal` uses a private file and says so once. It never asks.
+Google lists only the calls you organised. A call you joined opens by its id with `meetings show`. Google deletes a
+call's record 30 days after it ends, so sync at least every few weeks. Personal Google accounts get no transcripts.
+`gcal` keeps the Drive files by their id and never downloads them. drive-cli reads them.
 
-More: [sign in](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md#sign-in-to-google)
-([wirecat.dev](https://wirecat.dev/en/docs/gcal/usage)).
+More: [use it](https://wirecat.dev/en/docs/gcal/usage) · [all commands](https://wirecat.dev/en/docs/gcal/commands)
+
+### With your other sources
+
+`gcal` keeps what it reads in the same local database as the other WireCat tools, such as Telegram, WhatsApp and MAX.
+`gcal personal search all` finds a word in events, messages and notes at once, and in meeting transcripts when
+`--source` names a meeting account. Mail has its own search in memo. `gcal personal people link email:ana@example.com telegram:12345` records that two accounts are one
+person.
+
+More: [WireCat](https://wirecat.dev)
+
+## How it works
+
+- **Your own sign-in.** `gcal` signs in to Google through OAuth, and the sign-in is kept in your system keyring.
+  Where the keyring does not work, it uses a file only you can read and says so once.
+- **A local copy.** `sync` saves every page as it goes. A big first sync stops before its time limit and says
+  `partial`, and the next `sync` goes on from there. Repeating events are stored one by one, cancelled ones included.
+- **Polite to Google.** A Meet rate limit stops the sync, keeps what it saved and says when to run it again.
+- **Safe writes.** `--dry-run` shows the permission a write needs and does nothing. `--read-only` refuses every
+  write for one run.
+- **Made for scripts.** `--json` gives one JSON value for every command, and an error comes as JSON with a code to
+  branch on.
+
+More: [settings and permissions](https://wirecat.dev/en/docs/gcal/configuration)
 
 ## Settings and permissions
 
-Settings live in one `config.json`; `gcal personal config show` lists them. Permissions say what each command may do:
-`allow`, `ask`, `readonly` or `deny`.
-
-| Permission | What it covers | Default |
-|---|---|---|
-| `events.create`, `update`, `move`, `respond` | the event writes that are easy to undo | `allow` |
-| `events.delete` | deleting an event | `ask` |
-| `events.notify` | Google mails the other attendees | `deny` |
-| `events.delete.series` | deleting every occurrence of a repeating event | `deny` |
-| `sharing.notify` | Google mails the person a calendar is shared with | `deny` |
-
-Sharing a calendar asks first. Over MCP nobody can answer a question, so `ask` lets a command run. An agent can then
-share a calendar without asking you. To stop it, run `gcal personal config set permissions.api.calendar.acl deny`.
+Each account (profile) has its own permissions: `allow`, `ask`, `readonly` or `deny`, for one command or a group.
 
 ```sh
-gcal personal config set permissions.api readonly                    # reads only, every method
-gcal personal config set permissions.events.create ask               # ask before each new event
-gcal personal events create 3 --title 'Example planning' --start-time 2026-11-02T10:00 --end-time 2026-11-02T10:30 --dry-run
+gcal personal config set permissions.api readonly            # reads only, every method
+gcal personal config set permissions.events.create ask       # ask before each new event
 ```
 
-`--dry-run` shows the permission a command needs and does nothing. `GCAL_READ_ONLY=1`, or `--read-only` for one
-run, refuses every write.
+By default deleting an event asks, and mailing other attendees is denied.
 
-More: [settings](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/configuration.md)
-([wirecat.dev](https://wirecat.dev/en/docs/gcal/configuration)).
-
-## Limits
-
-- Only the calendars you own sync at first. `gcal personal calendars list` shows the rest, and
-  `gcal personal calendars sync 3` adds calendar 3.
-- `gcal` has no Google app of its own yet. Sign-in needs your own client.
-- A Google app in Testing mode ends sign-ins after seven days. Sign in again, or publish the app.
-- `calendars busy` shows a person's busy times only when their calendar is shared with you or your organization.
-- Google's change notifications (`watch`) are not offered: they need a public web address.
-
-What is planned is on the [roadmap](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/roadmap.md)
-([wirecat.dev](https://wirecat.dev/en/docs/gcal/roadmap)).
+More: [settings and permissions](https://wirecat.dev/en/docs/gcal/configuration)
 
 ## Security
 
-- Your event data goes only to Google. The sign-in is kept in the system keyring, or in a file only you can read.
-- No command, error, log or run record shows a token or the client secret.
-- A meeting's passcode or PIN is never stored. A join link is kept without its query string.
-- A write never mails attendees, and a delete never runs unasked, unless you allow it.
-- `gcal` refuses an OAuth client file that other users of the computer can read.
-- Permissions guard against an agent that a message talked into a change. They do not stop an agent that wants to get
-  around them: for that, use a sandbox or a separate user.
+No command, error, log or run record shows a token or the client secret. A meeting's passcode or PIN is never
+stored, and a join link is kept without its query string. Meet participant names and transcripts are marked as
+untrusted for an agent. An agent connected over MCP can share a calendar without asking you, so
+`gcal personal config set permissions.api.calendar.acl deny` stops that.
 
-More: [security](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/security.md)
-([wirecat.dev](https://wirecat.dev/en/docs/gcal/security)). Report a vulnerability as
-[SECURITY.md](https://github.com/WireCatLabs/gcal-cli/blob/main/SECURITY.md) says.
+More: [security](https://wirecat.dev/en/docs/gcal/security) · Report a vulnerability:
+[SECURITY.md](https://github.com/WireCatLabs/gcal-cli/blob/main/SECURITY.md)
 
-## When it does not work
+## When something goes wrong
 
 ```sh
-gcal doctor                        # what is set up; no network, no keyring
-gcal personal session status --check   # does Google still accept the sign-in
-gcal personal sync --trace         # the connection log, never content
-gcal personal runs list            # failed runs are kept
+gcal doctor                              # what is set up, no network
+gcal personal session status --check     # does Google still accept the sign-in
+gcal personal runs list                  # failed runs are kept
 ```
 
-More: [when something goes wrong](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/troubleshooting.md)
-([wirecat.dev](https://wirecat.dev/en/docs/gcal/troubleshooting)).
+More: [troubleshooting](https://wirecat.dev/en/docs/gcal/troubleshooting) · Ask on
+[Discord](https://discord.gg/DebENqbRrJ) · Bugs go to this repository's issues.
 
 ## Documentation
 
-Each page is also on [wirecat.dev/en/docs/gcal](https://wirecat.dev/en/docs/gcal). Below are the sources in this
-repository.
-
-| Section | Pages |
-|---|---|
-| Start | [overview](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/index.md) · [installation](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/installation.md) · [use it](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md) · [ChatGPT or Claude in the browser](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/remote.md) |
-| Reference | [all commands](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/commands.md) · [settings and permissions](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/configuration.md) |
-| If something is wrong | [when something goes wrong](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/troubleshooting.md) · [security](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/security.md) |
-| Project | [roadmap](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/roadmap.md) · [comparison with other tools](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/compare.md) |
-| Changes | [CHANGELOG.md](https://github.com/WireCatLabs/gcal-cli/blob/main/CHANGELOG.md) |
-
-For developers: [design](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/dev/DESIGN.md),
-[tests](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/dev/TESTING.md) and the rules for agents in
-[AGENTS.md](https://github.com/WireCatLabs/gcal-cli/blob/main/AGENTS.md).
+Everything is on [wirecat.dev/en/docs/gcal](https://wirecat.dev/en/docs/gcal). The same pages are in
+[docs/](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/index.md).
 
 ## Development
 
 ```sh
-pnpm install
-pnpm lint && pnpm typecheck && pnpm test
-pnpm build && pnpm smoke:node          # the built command: the bundle users install
-pnpm build && pnpm smoke:bun           # the same under Bun
-pnpm generate                          # rewrite the generated files
-pnpm release:check                     # every check CI runs
+pnpm install && pnpm test
 ```
 
-The shared part — output streams, error codes, the keyring, the store, search and MCP — lives in
-[`@wirecat/cli-base`](https://github.com/WireCatLabs/cli-base) and its sibling library cli-core.
-
-## Part of WireCat
-
-gcal is part of [WireCat](https://wirecat.dev), an open-source, local-first context layer for AI agents.
-[tg-cli](https://github.com/WireCatLabs/tg-cli) and [max-cli](https://github.com/WireCatLabs/max-cli) bring Telegram and
-MAX into the same local store. Start with one tool. Add more context when you need it. Your context. Any agent.
-
-Questions and setup help: join the [WireCat Discord](https://discord.gg/DebENqbRrJ). Bugs go to this
-repository's issues.
-
-## Contributing and license
+More: [design](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/dev/DESIGN.md) ·
+[testing](https://github.com/WireCatLabs/gcal-cli/blob/main/docs/dev/TESTING.md)
 
 Pull requests, bug reports and ideas go to [issues](https://github.com/WireCatLabs/gcal-cli/issues).
 
-Apache License 2.0 — [LICENSE](https://github.com/WireCatLabs/gcal-cli/blob/main/LICENSE).
+## Part of WireCat
+
+`gcal` is one of the [WireCat](https://wirecat.dev) tools: open-source, local-first command-line tools that give AI
+agents your context from messengers, mail, calendars and documents. Each one works on its own.
+
+## License
+
+[Apache 2.0](https://github.com/WireCatLabs/gcal-cli/blob/main/LICENSE)
