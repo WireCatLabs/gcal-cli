@@ -18,6 +18,4 @@
 
 ### Changed — may break callers
 
-- **Built on cli-core 0.668.0 and cli-base 0.102.1** (were 0.664.0 and 0.102.0). See the
-  [cli-core changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
 - **`gcal` reaches `meet.googleapis.com`**, a new host in the manifest.

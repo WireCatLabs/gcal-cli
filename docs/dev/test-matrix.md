@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**269 ✅ · 365 ⛔ · 0 ❌** — 115 commands, 519 options.
+**270 ✅ · 365 ⛔ · 0 ❌** — 115 commands, 520 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -644,4 +644,5 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | *global* | `--yes` | ✅ |  |
 | *global* | `--record` | ✅ |  |
 | *global* | `--no-record` | ✅ |  |
+| *global* | `--read-only` | ✅ |  |
 | *global* | `--help-all` | ⛔ | Commander answers before any command runs, so the trace never sees it; contracts/help.snap covers help |
