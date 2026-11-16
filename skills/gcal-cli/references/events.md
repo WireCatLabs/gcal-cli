@@ -44,7 +44,7 @@ The profile rule, syncing, the answer's clock and "missing is not absent" are in
 
 - `gcal <profile> people list [event:<id>] --json` gives attendees.
 - `gcal <profile> calendars busy starts_at>=<date> ends_at<=<date> person:<email> --duration-minutes 30 --json` asks
-  Google when the owner and the people named are taken (this week without `starts_at` and `ends_at`; repeat
+  Google when the owner and the people named are taken (from the start of today for seven days without `starts_at` and `ends_at`; repeat
   `person:` for each person), and with `--duration-minutes` gives `slots` free for all of them in working hours
   (`--hours 09:00-17:00`, Monday to Friday, the default). Nothing it answers is stored. A person listed in `unknown`
   hides their calendar: never call a slot free for them.
