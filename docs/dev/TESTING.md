@@ -16,7 +16,7 @@ How the tests run, and what they never touch. The rules are the handbook's
   list. `pnpm exec cli-contract contracts/plan.json --update` rewrites the snapshots; review the diff.
 - `pnpm contracts:upgrade` checks that this build reads what the previous release wrote
   ([WC-TEST-14](../../node_modules/@wirecat/cli-base/docs/standards/testing.md)). `contracts/previous/` installs that
-  release from npm (`@wirecat/previous-cli`, now `@wirecat/gcal-cli@0.28.0`). `contracts/seed.mjs` loads its own
+  release from npm (`@wirecat/previous-cli`, now `@wirecat/gcal-cli@0.31.0`). `contracts/seed.mjs` loads its own
   modules and its own cli-core, signs nobody in, and syncs one calendar from a fake Google into the synthetic store, as
   `gcal sync` would. `contracts/upgrade.json` then reads the events, an event's attendees, the sync cursor and search
   with that release and with this build. After a release, move the baseline: the version in
@@ -30,6 +30,10 @@ How the tests run, and what they never touch. The rules are the handbook's
   create, an update and a delete on a test calendar, printing only ids and status. It refuses the account's primary
   calendar. A pass appends the release's line to `docs/dev/live-checks.txt`, which `bin/release` requires
   (WC-REL-17); commit it in the release pull request. It is in the repository, not in the npm package.
+- `bin/gcal-meet-check [--write] <profile>` is the owner's live check of Google Meet with the installed `gcal`: the
+  live list, a sync, the store, one call in full, and with `--write` a room made and changed. It prints counts and
+  step names only, never a name, a transcript line or a link. Sign in first with `--grant meetings` (`--grant
+  write,meetings` for `--write`).
 
 ## The bundle a user installs
 
