@@ -2,6 +2,20 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## 0.29.0 — 16.11.2026
+
+### Added
+
+- **`gcal --read-only` refuses every change for one run, as `GCAL_READ_ONLY=1` does and as drive's `--read-only`
+  does.** `gcal --read-only personal api call calendar.events.quickAdd …` answered `unknown option '--read-only'`; it
+  now answers `permission_error` (exit 5), and reads still run. `gcal personal mcp serve --read-only` refuses every
+  write tool (cli-core 0.673.0, was 0.664.0).
+
+### Fixed
+
+- **An event's Meet transcript or Gemini notes link to it when two Drive profiles imported the same file** (cli-core
+  0.673.0). `search all` showed the event and the document apart.
+
 ## 0.28.0 — 15.11.2026
 
 ### Changed — may break callers
