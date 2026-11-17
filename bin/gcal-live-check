@@ -114,7 +114,7 @@ else
 fi
 
 run search gcal "$profile" --offline search events "$word" --json || stop search "$failed"
-echo "search: $(summary '`${(a.item.hits ?? a.items ?? []).length} events found`' <<<"$answer")"
+echo "search: $(summary '`${(a.item?.hits ?? a.items ?? []).length} events found`' <<<"$answer")"
 
 if command -v memo >/dev/null; then
   run memo memo search all "$word" --json || stop memo "$failed"
