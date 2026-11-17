@@ -11,7 +11,8 @@
 
 <p align="center">
   <a href="https://wirecat.dev/en/docs/gcal">Docs</a> ·
-  <a href="https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md">Examples</a> ·
+  <a href="https://github.com/WireCatLabs/gcal-cli/blob/main/docs/installation.md">Install</a> ·
+  <a href="https://github.com/WireCatLabs/gcal-cli/blob/main/docs/usage.md">Usage</a> ·
   <a href="https://discord.gg/DebENqbRrJ">Discord</a>
 </p>
 
