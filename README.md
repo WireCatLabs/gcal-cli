@@ -53,8 +53,6 @@ Agent:  Draft: "Example planning", Tuesday 10:00-10:30, with ana@example.com, a 
 You:    Yes.
 ```
 
-*Invented people and events, illustrative output.*
-
 ## Why gcal
 
 - **Your data never leaves your computer.** `gcal` talks only to Google. There is no WireCat server and no account
