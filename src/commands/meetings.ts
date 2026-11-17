@@ -1,6 +1,5 @@
 import { CliError } from "@wirecat/cli-base"
 import { annotate, hasSharedContract, metaOf, overrideSharedContract } from "@wirecat/cli-base/commands"
-import type { Missing } from "@wirecat/cli-base/standards"
 import {
   askBeforeWrite,
   baseContext,
@@ -8,7 +7,7 @@ import {
   fetchesOnly,
   inCommandRun,
   itemOf,
-  listOf,
+  meetingAnswerBody,
   NO_EFFECTS,
   outputFor,
   pagingOf,
@@ -51,8 +50,6 @@ const pathOf = (command: Command): string[] =>
   command.parent?.parent ? [...pathOf(command.parent), command.name()] : [command.name()]
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
-const LIST_KEYS = new Set(["items", "page", "limit", "hasMore", "meta"])
-const SHOWN_KEYS = new Set(["item", "missing", "meta"])
 
 /** Meet makes no summary of its own (Gemini notes are a Doc, linked like the transcript), and there is no file to import. */
 const UNUSED = new Set(["summary", "import"])
@@ -133,46 +130,19 @@ const syncAnswer = (command: Command, value: Record<string, unknown>, state: Mee
 
 const TRANSCRIPT_PENDING = "Google Meet has not finished the transcript yet; the next sync or show reads it again"
 
-/** cli-core's reads answer `{ items, page, limit, hasMore, meta? }` or one value; gcal prints both in its envelope. */
+/** A profile without the meetings grant answers from the store; the answer names the grant Google was not asked for. */
 const bodyOf = (command: Command, value: unknown, state: MeetingsRun) => {
   const body = answerOf(command, value, state)
   const ungranted = state.ungranted
-  if (!ungranted || !isRecord(body)) return body
-  const missing = [
-    ...(Array.isArray(body.missing) ? (body.missing as Missing[]) : []),
-    { field: "server", why: ungranted },
-  ]
-  return { ...body, missing } as typeof body
+  if (!ungranted) return body
+  return { ...body, missing: [...(body.missing ?? []), { field: "server", why: ungranted }] }
 }
 
 const answerOf = (command: Command, value: unknown, state: MeetingsRun) => {
-  const run = state.opened?.run()
-  if (isRecord(value) && Array.isArray(value.items) && isRecord(value.page))
-    return value as Parameters<typeof renderAnswer>[2]
-  if (isRecord(value) && Array.isArray(value.items) && Object.keys(value).every((key) => LIST_KEYS.has(key))) {
-    const { next, ...list } = listOf(pathOf(command).join(" "), {
-      items: snakeKeys(value.items) as unknown[],
-      limit: Math.max(1, typeof value.limit === "number" ? value.limit : value.items.length),
-      has_more: value.hasMore === true,
-      ...(isRecord(value.meta) ? { meta: snakeKeys(value.meta) as Parameters<typeof listOf>[1]["meta"] } : {}),
-    })
-    const kept = next?.filter((one) => one.step !== "page.next") ?? []
-    return { ...list, ...(kept.length > 0 ? { next: kept } : {}) }
-  }
-  if (isRecord(value) && isRecord(value.item) && Object.keys(value).every((key) => SHOWN_KEYS.has(key))) {
-    const missing = [
-      ...(Array.isArray(value.missing) ? (value.missing as Missing[]) : []),
-      ...(run?.pending.size ? [{ field: "transcript", why: TRANSCRIPT_PENDING }] : []),
-    ]
-    return itemOf(snakeKeys(value.item), {
-      ...(missing.length > 0 ? { missing } : {}),
-      ...(isRecord(value.meta)
-        ? { meta: snakeKeys(value.meta) as NonNullable<Parameters<typeof itemOf>[1]>["meta"] }
-        : {}),
-    })
-  }
   if (pathOf(command).join(" ") === "meetings sync" && isRecord(value)) return syncAnswer(command, value, state)
-  return itemOf(snakeKeys(value))
+  const body = meetingAnswerBody(command, value)
+  if (!("item" in body) || !state.opened?.run()?.pending.size) return body
+  return { ...body, missing: [...(body.missing ?? []), { field: "transcript", why: TRANSCRIPT_PENDING }] }
 }
 
 /** The profile's Google Meet account: provider `google-meet` and the Google address, so it joins the calendar's. */
@@ -252,10 +222,8 @@ const depsOf = (state: MeetingsRun): MeetingCommandDeps => {
       const budget = runBudgetOf(command)
       return { take: () => (state.opened?.run()?.limitedBy ? "requests" : budget.take()) }
     },
-    write: (value) => {
-      const at = state.action
-      if (!at) throw new CliError("configuration_error", "no command is running")
-      state.answers.push(() => renderAnswer(at, outputFor(at), bodyOf(at, value, state)))
+    write: (value, _format, command) => {
+      state.answers.push(() => renderAnswer(command, outputFor(command), bodyOf(command, value, state)))
     },
   }
 }

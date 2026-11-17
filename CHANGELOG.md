@@ -2,6 +2,18 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Changed — may break callers
+
+- **`meetings people` answers in the standard envelope.** It printed the participant report's own keys (`coverage`,
+  `ambiguity` and others) beside `items` at the top of the answer, which the answer schema refuses. The report is now
+  the answer's `item`, and its next page step is the answer's `next`.
+- **`meetings list` names its next page.** A list with more rows now has a `page.next` step with `--page` in `next`.
+  The shared meetings commands answer through cli-core's `meetingAnswerBody`.
+- **Built on cli-core 0.691.0** (was 0.687.0); cli-base stays 0.109.0. The store moves to schema 69: other WireCat
+  CLIs that use it need a version that speaks it.
+
 ## 0.33.0 — 17.11.2026
 
 ### Changed — may break callers
