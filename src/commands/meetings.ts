@@ -230,6 +230,8 @@ const depsOf = (state: MeetingsRun): MeetingCommandDeps => {
       return stored().accountId
     },
     management,
+    // A read the run's stop cut short must end the command, not fall back to the store (CORE-70).
+    signal: () => (state.action ? environmentOf<GcalEnvironment>(state.action).signal : undefined),
     askFirst: askBeforeWrite,
     pagingOf,
     get source() {

@@ -43,3 +43,11 @@ Run: pnpm generate
 | `calendar.freebusy.query` | `POST freeBusy` | `gcal <profile> api calendar-freebusy-query` | read | contract | generated | Returns free/busy information for a set of calendars. |
 | `calendar.settings.get` | `GET users/me/settings/{setting}` | `gcal <profile> api calendar-settings-get` | read | — | generated | Returns a single user setting. |
 | `calendar.settings.list` | `GET users/me/settings` | `gcal <profile> api calendar-settings-list` | read | — | generated | Returns all user settings for the authenticated user. |
+
+## Effects not taken from the HTTP method
+
+| Operation | Effect | Why |
+|---|---|---|
+| `calendar.calendars.clear` | destructive | override: a POST that deletes every event of the primary calendar |
+| `calendar.calendars.transferOwnership` | destructive | override: a POST that gives the calendar to another account; the owner loses it |
+| `calendar.freebusy.query` | read | override: a POST that only reads when calendars are busy |

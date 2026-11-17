@@ -2,6 +2,24 @@
 
 Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Changed — may break callers
+
+- **A keyring that does not answer is named, not taken for "not signed in".** When the OS keyring fails (on Linux a
+  restarted session bus is a known cause) and the sign-in file holds no entry, `session status`, `session end` and
+  every command that needs Google answer `keyring.unreachable` with the fix: log out and back in, or set
+  `DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus`. Before, they said the profile was not signed in, and
+  `session end` said there was nothing to end while the sign-in stayed in the keyring. `session list` shows the same
+  error on each profile.
+
+### Fixed
+
+- **`search all` finds words from Google Meet transcripts.** `meetings sync` now builds the meetings search index, so
+  a transcript is searchable right after the sync. Before, `search all` found a call only by its title.
+- **A stopped run stops the Meet reads.** `meetings list` and `show` pass the run's stop signal to Google Meet. gcal
+  builds on cli-core 0.687.0 and cli-base 0.109.0.
+
 ## 0.32.0 — 16.11.2026
 
 ### Changed — may break callers
