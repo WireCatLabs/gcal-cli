@@ -3,7 +3,6 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { memoryKeyring } from "@wirecat/cli-base"
 import { rememberAccount, run as runShared } from "@wirecat/cli-core/cli"
-import type { MeetingSearchIndexStore } from "@wirecat/cli-core/meetings"
 import { describe, expect, it } from "vitest"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
 import { EVENTS_SCOPE, MEET_READ_SCOPE, MEET_WRITE_SCOPE } from "./grants.js"
@@ -40,7 +39,7 @@ const harness = ({
     String(input).startsWith("https://meet.googleapis.com/")
       ? meet.fetch(input, init)
       : calendar.fetch(input, init)) as typeof globalThis.fetch
-  const raw = async (argv: string[], extra: NodeJS.ProcessEnv = {}) => {
+  const raw = async (argv: string[], extra: NodeJS.ProcessEnv = {}, signal?: AbortSignal) => {
     const out: string[] = []
     const err: string[] = []
     const code = await run(argv, {
@@ -49,6 +48,7 @@ const harness = ({
       env: { ...env, ...extra },
       keyring,
       fetch,
+      ...(signal ? { signal } : {}),
     })
     return { code, out, err }
   }
@@ -79,6 +79,19 @@ const records = (meet: ReturnType<typeof sampleMeet>) =>
   meet.calls.filter(({ path }) => path === "/v2/conferenceRecords")
 
 describe("meetings over Google Meet", () => {
+  it("a stopped run ends list instead of answering from the store", async () => {
+    const { ok, raw, meet } = harness()
+    await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
+    const stop = new AbortController()
+    meet.fetch = async () => {
+      stop.abort()
+      throw new DOMException("This operation was aborted", "AbortError")
+    }
+    const stopped = await raw(["personal", "meetings", "list", "--json"], {}, stop.signal)
+    expect(stopped.code).not.toBe(0)
+    expect(stopped.out.join("")).not.toContain("rec-2")
+  })
+
   it("sync keeps the ended calls with who joined, the transcript and its Drive files, and skips a live one", async () => {
     const { ok, meet, meetAccount } = harness()
     const report = await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
@@ -196,18 +209,9 @@ describe("meetings over Google Meet", () => {
     )
   })
 
-  it("search all finds what a Meet transcript said, once the search index holds it", async () => {
-    const { ok, env, meetAccount } = harness()
+  it("search all finds what a Meet transcript said right after a sync", async () => {
+    const { ok } = harness()
     await ok("personal", "meetings", "sync", "--since-time", "2026-11-01T00:00:00Z")
-    const store = await openGcalStore(env)
-    try {
-      await (store.meetings as unknown as MeetingSearchIndexStore).indexSearch({
-        accountId: (await meetAccount()).id,
-        maxReadBytes: 1_000_000,
-      })
-    } finally {
-      await store.close()
-    }
     const found = await ok("personal", "search", "all", "plan")
     expect(JSON.stringify(found.items)).toContain("Shall we start with the plan?")
   })

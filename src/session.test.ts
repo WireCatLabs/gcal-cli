@@ -14,7 +14,7 @@ import { brokenKeyring, type KeyringStore, memoryKeyring, systemKeyring } from "
 import { openStore, storePath } from "@wirecat/cli-core/store"
 import type { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
-import { CALENDAR_READ_SCOPE, googleClient, moveOldSignInFile, sessionStorage, signInFilePath } from "./google.js"
+import { CALENDAR_READ_SCOPE, googleClient, moveOldSignInFile, sessionStorage } from "./google.js"
 import { ACLS_SCOPE, EVENTS_SCOPE, MEET_READ_SCOPE, MEET_WRITE_SCOPE } from "./grants.js"
 import { run } from "./program.js"
 
@@ -536,31 +536,20 @@ describe("session status and end", () => {
     expect(item(status.out)).toMatchObject({ state: "saved", credential_storage: "keyring", verified: true })
   })
 
-  it("with no keyring and no sign-in file, status says missing and end has nothing to end", async () => {
-    const { gcal, env } = harness(brokenKeyring("Platform failure: DBus error: Failed to connect to socket"), "default")
+  it("with no keyring and no sign-in file, status and end name the unreachable keyring", async () => {
+    const { gcal } = harness(brokenKeyring("Platform failure: DBus error: Failed to connect to socket"), "default")
     const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true)
     for (const check of [[], ["--check"]]) {
       const status = await gcal(["personal", "session", "status", ...check, "--json"])
-      expect(status.code).toBe(0)
-      expect(item(status.out)).toEqual({
-        profile: "personal",
-        state: "missing",
-        account: null,
-        verified: false,
-      })
-      expect(status.out + status.err).not.toContain("DBus")
+      expect(status.code).not.toBe(0)
+      expect(failure(status.err)).toMatchObject({ reason: "keyring.unreachable" })
+      expect(failure(status.err).message).toContain("log out and back in")
     }
+    // Saying "nothing to end" here would leave a keyring sign-in the owner believes is gone.
     const ended = await gcal(["personal", "session", "end", "--json"])
-    const warnings = stderr.mock.calls.filter(([text]) => String(text).includes("could not reach the OS keyring"))
     stderr.mockRestore()
-    expect(ended.code).toBe(0)
-    expect(item(ended.out)).toEqual({
-      profile: "personal",
-      ended: false,
-      cached_data: "retained",
-    })
-    expect(warnings).toHaveLength(1)
-    expect(String(warnings[0]?.[0])).toContain(signInFilePath(env))
+    expect(ended.code).not.toBe(0)
+    expect(failure(ended.err)).toMatchObject({ reason: "keyring.unreachable" })
   })
 
   it("refuses --check offline", async () => {
@@ -713,14 +702,19 @@ describe("session start --credential-storage file", () => {
     })
   })
 
-  it("warns once for a run over several profiles", async () => {
+  it("names the unreachable keyring for each profile of a run over several", async () => {
     const { gcal, env } = harness(noKeyring)
     writeFileSync(join(env.GCAL_CONFIG_DIR ?? "", "config.json"), JSON.stringify({ profiles: { home: {}, work: {} } }))
     const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true)
-    expect((await gcal(["session", "list", "--json"])).code).toBe(0)
-    const warnings = stderr.mock.calls.filter(([text]) => String(text).includes("could not reach the OS keyring"))
+    const listed = await gcal(["session", "list", "--json"])
     stderr.mockRestore()
-    expect(warnings).toHaveLength(1)
+    expect(listed.code).toBe(0)
+    const items = JSON.parse(listed.out).items as { signed_in: unknown; error?: string }[]
+    expect(items.length).toBeGreaterThan(1)
+    for (const entry of items) {
+      expect(entry.signed_in).toBeNull()
+      expect(entry.error).toContain("keyring did not answer")
+    }
   })
 
   it("keeps the sign-in in a private file under the config folder when asked", async () => {
