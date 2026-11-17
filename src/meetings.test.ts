@@ -2,7 +2,9 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } fro
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { memoryKeyring } from "@wirecat/cli-base"
+import { itemEnvelopeSchema, listEnvelopeSchema } from "@wirecat/cli-base/standards"
 import { rememberAccount, run as runShared } from "@wirecat/cli-core/cli"
+import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { CALENDAR_READ_SCOPE, sessionStorage } from "./google.js"
 import { EVENTS_SCOPE, MEET_READ_SCOPE, MEET_WRITE_SCOPE } from "./grants.js"
@@ -456,6 +458,18 @@ describe("the shared meetings commands over stored Meet calls", () => {
     expect((await raw(["personal", "meetings", "repair", "--json"])).code).toBe(0)
     expect((await raw(["personal", "meetings", "repair", "--yes", "--jsonl"])).code).toBe(0)
     expect(meet.calls).toHaveLength(calls)
+  })
+
+  it("people answers in the envelope the answer schema allows, with its paging step at the top", async () => {
+    const { raw } = await synced()
+    const { code, out } = await raw(["personal", "meetings", "people", "Test Person", "--limit", "1", "--json"])
+    expect(code).toBe(0)
+    const answer = JSON.parse(out.join("\n"))
+    expect(() =>
+      v.parse(v.union([itemEnvelopeSchema(v.unknown()), listEnvelopeSchema(v.unknown())]), answer),
+    ).not.toThrow()
+    expect(answer.next[0]).toMatchObject({ step: "page.next", args: { cursor: answer.item.page.next_cursor } })
+    expect(answer.item).not.toHaveProperty("next")
   })
 
   it("sync --rescan and --lookback-days read the calls again and keep one row each", async () => {
