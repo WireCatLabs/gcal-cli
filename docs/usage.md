@@ -430,7 +430,7 @@ Windows. Run it every 5 minutes, and keep `--due-within` at least that long:
 gcal personal schedule command reminders --every 5m -- events remind --due-within 10m -- /home/me/bin/meeting-reminder
 ```
 
-The words after the first `--` are what the timer runs, as you would type them after `gcal personal`; your program
+The words after the first `--` are what the timer runs, as you would type them after `gcal personal …`; your program
 comes after the second `--`. Name the program by its full path or by a name on your `PATH`: the timer keeps your
 `PATH`, but runs from the schedule's own folder.
 

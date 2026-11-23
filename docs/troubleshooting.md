@@ -21,7 +21,7 @@ A row that says "in the browser" is Google's page; the other texts are what `gca
 
 | Symptom | Cause and fix |
 | --- | --- |
-| `doctor` shows `oauth_client.client: null` | `doctor` gives the reason: usually `GCAL_GOOGLE_CLIENT_SECRET` is set without `GCAL_GOOGLE_CLIENT_ID`. Set the ID too, or unset the secret to use WireCat's app. A profile already signed in still works: its sign-in keeps its app. |
+| `doctor` shows `oauth_client.client: null` | `doctor` gives the reason: usually `GCAL_GOOGLE_CLIENT_SECRET` is set without `GCAL_GOOGLE_CLIENT_ID`. Set the ID too, or unset the secret so that `gcal` signs in through WireCat's app. A profile already signed in still works: its sign-in keeps its app. |
 | "your Google app has no secret here" | You named your own app with `--client-id`, `GCAL_GOOGLE_CLIENT_ID` or `google_client_id`, but `GCAL_GOOGLE_CLIENT_SECRET` is not set. Google refuses a Desktop app without its secret: set it, or pass `--client-file`. |
 | "the client file can be read by other users of this computer" | Run the `chmod 600` the message gives, then `session start` again. |
 | "could not read a Desktop app OAuth client JSON from the client file" | The file is not a Desktop app client. A **Web application** client's file has the wrong shape. In Google Cloud Console, make a client of type **Desktop app** ([step 6](installation.md#6-make-the-client-and-download-its-file)) and pass its file. |
