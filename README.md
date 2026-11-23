@@ -55,7 +55,7 @@ You:    Yes.
 - **Your data never leaves your computer.** `gcal` talks only to Google. There is no WireCat server and no account
   with us. Your events are kept in a local database, and a meeting's passcode or PIN is never stored.
 - **Read-only until you say so.** The first sign-in only reads. Writing events and Meet each need their own grant,
-  and a delete asks first.
+  and a delete asks first in a terminal. Over MCP it runs without asking.
 - **Search that goes all the way back.** A first sync copies a year back and three months ahead, and each later sync
   asks Google only for what changed. Search reads that copy by words or by meaning.
 - **Safe to give to an agent.** You decide what an agent may do, per command. Text from an invitation reaches the
