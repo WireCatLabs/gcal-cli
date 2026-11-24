@@ -356,7 +356,8 @@ describe("calendar commands over Google", () => {
     expect(JSON.stringify(held.item)).toMatch(/sync --allow-deletions \d+/)
     expect((await json("personal", "events", "list", "--limit", "1000")).items).toHaveLength(stored)
     await json("personal", "sync", "--rescan", "--allow-deletions", "1000")
-    expect((await json("personal", "events", "list", "--limit", "1000")).items).toHaveLength(0)
+    const after = (await json("personal", "events", "list", "--limit", "1000")).items
+    expect(after.map(({ status }: { status: string }) => status)).toEqual(Array(stored).fill("cancelled"))
   })
 
   it("search finds a synced event by its words", async () => {
