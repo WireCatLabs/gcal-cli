@@ -2,7 +2,7 @@
 // Source: spec/google/*.json, verified by provenance.json
 // Run: pnpm generate
 
-import type { ManifestOperation } from "@wirecat/cli-base/codegen"
+import type { ManifestOperation, SecurityScheme } from "@wirecat/cli-base/codegen/runtime"
 
 export const operations: readonly ManifestOperation[] = [
   {
@@ -17,6 +17,11 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Deletes an access control rule.",
     description: "Deletes an access control rule.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.acls"],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -107,6 +112,16 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns an access control rule.",
     description: "Returns an access control rule.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.acls",
+          "https://www.googleapis.com/auth/calendar.acls.readonly",
+          "https://www.googleapis.com/auth/calendar.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -201,6 +216,11 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Creates an access control rule.",
     description: "Creates an access control rule.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.acls"],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -301,6 +321,15 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns the rules in the access control list for the calendar.",
     description: "Returns the rules in the access control list for the calendar.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.acls",
+          "https://www.googleapis.com/auth/calendar.acls.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -433,6 +462,11 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Updates an access control rule. This method supports patch semantics.",
     description: "Updates an access control rule. This method supports patch semantics.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.acls"],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -544,6 +578,11 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Updates an access control rule.",
     description: "Updates an access control rule.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.acls"],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -655,6 +694,15 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Removes a calendar from the user's calendar list.",
     description: "Removes a calendar from the user's calendar list.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.calendarlist",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -735,6 +783,17 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns a calendar from the user's calendar list.",
     description: "Returns a calendar from the user's calendar list.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.calendarlist",
+          "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+          "https://www.googleapis.com/auth/calendar.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -819,6 +878,11 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Inserts an existing calendar into the user's calendar list.",
     description: "Inserts an existing calendar into the user's calendar list.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.calendarlist"],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -908,6 +972,16 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns the calendars on the user's calendar list.",
     description: "Returns the calendars on the user's calendar list.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.calendarlist",
+          "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+          "https://www.googleapis.com/auth/calendar.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1062,6 +1136,15 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Updates an existing calendar on the user's calendar list. This method supports patch semantics.",
     description: "Updates an existing calendar on the user's calendar list. This method supports patch semantics.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.calendarlist",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1163,6 +1246,15 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Updates an existing calendar on the user's calendar list.",
     description: "Updates an existing calendar on the user's calendar list.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.calendarlist",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1266,6 +1358,11 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Clears a primary calendar. This operation deletes all events associated with the primary calendar of an account.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.calendars"],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1346,6 +1443,15 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Deletes a secondary calendar. Use calendars.clear for clearing all events on primary calendars.",
     description: "Deletes a secondary calendar. Use calendars.clear for clearing all events on primary calendars.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.calendars",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1426,6 +1532,17 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns metadata for a calendar.",
     description: "Returns metadata for a calendar.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.calendars",
+          "https://www.googleapis.com/auth/calendar.calendars.readonly",
+          "https://www.googleapis.com/auth/calendar.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1511,6 +1628,15 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Creates a secondary calendar.\nThe authenticated user for the request is made the data owner of the new calendar.\n\nNote: We recommend to authenticate as the intended data owner of the calendar. You can use domain-wide delegation of authority to allow applications to act on behalf of a specific user. Don't use a service account for authentication. If you use a service account for authentication, the service account is the data owner, which can lead to unexpected behavior. For example, if a service account is the data owner, data ownership cannot be transferred.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.calendars",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1588,6 +1714,15 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Updates metadata for a calendar. This method supports patch semantics.",
     description: "Updates metadata for a calendar. This method supports patch semantics.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.calendars",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1679,6 +1814,11 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Transfers a secondary calendar between users within a Google Workspace organization. Requires user authentication with Manage Calendars administrator privilege, and one of the following authorization scopes: \n- https://www.googleapis.com/auth/calendar \n- https://www.googleapis.com/auth/calendar.calendars In the request, set useAdminAccess to true. The secondary calendar must be active to be transferred. Transferring disabled or deleted calendars isn't supported.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.calendars"],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1779,6 +1919,15 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Updates metadata for a calendar.",
     description: "Updates metadata for a calendar.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.calendars",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1868,6 +2017,21 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns the color definitions for calendars and events.",
     description: "Returns the color definitions for calendars and events.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.calendarlist",
+          "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+          "https://www.googleapis.com/auth/calendar.events.freebusy",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+          "https://www.googleapis.com/auth/calendar.events.owned.readonly",
+          "https://www.googleapis.com/auth/calendar.events.public.readonly",
+          "https://www.googleapis.com/auth/calendar.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -1940,6 +2104,16 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Deletes an event.",
     description: "Deletes an event.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -2055,6 +2229,21 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Returns an event based on its Google Calendar ID. To retrieve an event using its iCalendar ID, call the events.list method using the iCalUID parameter.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/calendar.events.freebusy",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+          "https://www.googleapis.com/auth/calendar.events.owned.readonly",
+          "https://www.googleapis.com/auth/calendar.events.public.readonly",
+          "https://www.googleapis.com/auth/calendar.events.readonly",
+          "https://www.googleapis.com/auth/calendar.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -2187,6 +2376,16 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Imports an event. This operation is used to add a private copy of an existing event to a calendar. Only events with an eventType of default may be imported.\nDeprecated behavior: If a non-default event is imported, its type will be changed to default and any event-type-specific properties it may have will be dropped.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -2318,6 +2517,16 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Creates an event.",
     description: "Creates an event.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -2488,6 +2697,21 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns instances of the specified recurring event.",
     description: "Returns instances of the specified recurring event.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/calendar.events.freebusy",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+          "https://www.googleapis.com/auth/calendar.events.owned.readonly",
+          "https://www.googleapis.com/auth/calendar.events.public.readonly",
+          "https://www.googleapis.com/auth/calendar.events.readonly",
+          "https://www.googleapis.com/auth/calendar.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -2688,6 +2912,21 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns events on the specified calendar.",
     description: "Returns events on the specified calendar.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/calendar.events.freebusy",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+          "https://www.googleapis.com/auth/calendar.events.owned.readonly",
+          "https://www.googleapis.com/auth/calendar.events.public.readonly",
+          "https://www.googleapis.com/auth/calendar.events.readonly",
+          "https://www.googleapis.com/auth/calendar.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -2998,6 +3237,15 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Moves an event to another calendar, i.e. changes an event's organizer. Note that only default events can be moved; birthday, focusTime, fromGmail, outOfOffice and workingLocation events cannot be moved.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -3123,6 +3371,16 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Updates an event. This method supports patch semantics.",
     description: "Updates an event. This method supports patch semantics.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -3315,6 +3573,16 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Creates an event based on a simple text string.",
     description: "Creates an event based on a simple text string.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -3432,6 +3700,16 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Updates an event.",
     description: "Updates an event.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.app.created",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/calendar.events.owned",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -3624,6 +3902,16 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns free/busy information for a set of calendars.",
     description: "Returns free/busy information for a set of calendars.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.events.freebusy",
+          "https://www.googleapis.com/auth/calendar.freebusy",
+          "https://www.googleapis.com/auth/calendar.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -3701,6 +3989,16 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns a single user setting.",
     description: "Returns a single user setting.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.readonly",
+          "https://www.googleapis.com/auth/calendar.settings",
+          "https://www.googleapis.com/auth/calendar.settings.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -3783,6 +4081,16 @@ export const operations: readonly ManifestOperation[] = [
     summary: "Returns all user settings for the authenticated user.",
     description: "Returns all user settings for the authenticated user.",
     tags: ["calendar"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/calendar.readonly",
+          "https://www.googleapis.com/auth/calendar.settings",
+          "https://www.googleapis.com/auth/calendar.settings.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "alt",
@@ -3880,3 +4188,45 @@ export const operations: readonly ManifestOperation[] = [
     },
   },
 ]
+
+export const securitySchemes: Readonly<Record<string, SecurityScheme>> = {
+  oauth2: {
+    type: "oauth2",
+    flows: {
+      authorizationCode: {
+        scopes: {
+          "https://www.googleapis.com/auth/calendar.calendars":
+            "See and change the properties of Google calendars you have access to, and create secondary calendars",
+          "https://www.googleapis.com/auth/calendar.acls.readonly":
+            "See the sharing permissions of Google calendars you own",
+          "https://www.googleapis.com/auth/calendar.settings": "View and edit your Calendar settings",
+          "https://www.googleapis.com/auth/calendar.settings.readonly": "View your Calendar settings",
+          "https://www.googleapis.com/auth/calendar.events.owned.readonly":
+            "See the events on Google calendars you own",
+          "https://www.googleapis.com/auth/calendar.calendars.readonly":
+            "See the title, description, default time zone, and other properties of Google calendars you have access to",
+          "https://www.googleapis.com/auth/calendar.calendarlist":
+            "See, add, and remove Google calendars you’re subscribed to",
+          "https://www.googleapis.com/auth/calendar.readonly":
+            "See and download any calendar you can access using your Google Calendar",
+          "https://www.googleapis.com/auth/calendar.app.created":
+            "Make secondary Google calendars, and see, create, change, and delete events on them",
+          "https://www.googleapis.com/auth/calendar.acls":
+            "See and change the sharing permissions of Google calendars you own",
+          "https://www.googleapis.com/auth/calendar.calendarlist.readonly":
+            "See the list of Google calendars you’re subscribed to",
+          "https://www.googleapis.com/auth/calendar.events.owned":
+            "See, create, change, and delete events on Google calendars you own",
+          "https://www.googleapis.com/auth/calendar.events.public.readonly": "See the events on public calendars",
+          "https://www.googleapis.com/auth/calendar.events": "View and edit events on all your calendars",
+          "https://www.googleapis.com/auth/calendar.freebusy": "View your availability in your calendars",
+          "https://www.googleapis.com/auth/calendar.events.readonly": "View events on all your calendars",
+          "https://www.googleapis.com/auth/calendar.events.freebusy":
+            "See the availability on Google calendars you have access to",
+          "https://www.googleapis.com/auth/calendar":
+            "See, edit, share, and permanently delete all the calendars you can access using Google Calendar",
+        },
+      },
+    },
+  },
+}

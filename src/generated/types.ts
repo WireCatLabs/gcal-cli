@@ -617,3 +617,40 @@ export type CalendarEventDateTime = {
   /** The date, in the format "yyyy-mm-dd", if this is an all-day event. */
   date?: string
 }
+
+/** What each operation answers, by its id. */
+export interface Responses {
+  "calendar.acl.delete": unknown
+  "calendar.acl.get": CalendarAclRule
+  "calendar.acl.insert": CalendarAclRule
+  "calendar.acl.list": CalendarAcl
+  "calendar.acl.patch": CalendarAclRule
+  "calendar.acl.update": CalendarAclRule
+  "calendar.calendarList.delete": unknown
+  "calendar.calendarList.get": CalendarCalendarListEntry
+  "calendar.calendarList.insert": CalendarCalendarListEntry
+  "calendar.calendarList.list": CalendarCalendarList
+  "calendar.calendarList.patch": CalendarCalendarListEntry
+  "calendar.calendarList.update": CalendarCalendarListEntry
+  "calendar.calendars.clear": unknown
+  "calendar.calendars.delete": unknown
+  "calendar.calendars.get": CalendarCalendar
+  "calendar.calendars.insert": CalendarCalendar
+  "calendar.calendars.patch": CalendarCalendar
+  "calendar.calendars.transferOwnership": unknown
+  "calendar.calendars.update": CalendarCalendar
+  "calendar.colors.get": CalendarColors
+  "calendar.events.delete": unknown
+  "calendar.events.get": CalendarEvent
+  "calendar.events.import": CalendarEvent
+  "calendar.events.insert": CalendarEvent
+  "calendar.events.instances": CalendarEvents
+  "calendar.events.list": CalendarEvents
+  "calendar.events.move": CalendarEvent
+  "calendar.events.patch": CalendarEvent
+  "calendar.events.quickAdd": CalendarEvent
+  "calendar.events.update": CalendarEvent
+  "calendar.freebusy.query": CalendarFreeBusyResponse
+  "calendar.settings.get": CalendarSetting
+  "calendar.settings.list": CalendarSettings
+}

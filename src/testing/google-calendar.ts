@@ -250,6 +250,7 @@ const INVALID_ERROR = {
 
 export const fakeGoogleCalendar = (extra: Record<string, unknown>[] = []) => {
   const requests: FakeRequest[] = []
+  let emptied = false
   const fetch = async (input: string | URL | Request, init: RequestInit = {}): Promise<Response> => {
     const url = new URL(String(input))
     const path = decodeURIComponent(url.pathname.slice(PREFIX.length))
@@ -282,6 +283,7 @@ export const fakeGoogleCalendar = (extra: Record<string, unknown>[] = []) => {
       if (token) return json({ kind: "calendar#events", items: [], nextSyncToken: token })
       if (!query.has("timeMin") || !query.has("timeMax"))
         return json({ error: { code: 400, message: "the fake expects a window" } }, 400)
+      if (emptied) return json({ kind: "calendar#events", items: [], nextSyncToken: "sync-fixture-emptied" })
       const page = query.get("pageToken")
       if (page !== null && page !== "events-page-2") return json(INVALID_ERROR, 400)
       return json(page === "events-page-2" ? { ...FULL_2, items: [...FULL_2.items, ...extra] } : FULL_1)
@@ -294,5 +296,8 @@ export const fakeGoogleCalendar = (extra: Record<string, unknown>[] = []) => {
       })
     return json({ error: { code: 404, message: "Not Found" } }, 404)
   }
-  return { fetch, requests }
+  const emptyCalendars = () => {
+    emptied = true
+  }
+  return { fetch, requests, emptyCalendars }
 }

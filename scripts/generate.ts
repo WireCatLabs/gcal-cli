@@ -12,6 +12,9 @@ import {
   writeArtifacts,
 } from "@wirecat/cli-base/codegen"
 
+// The generated files ship in the CLI: the stable runtime entry keeps a generator change from reaching them.
+const RUNTIME = "@wirecat/cli-base/codegen/runtime"
+
 const root = resolve(import.meta.dirname, "..")
 const webhook = "needs a public HTTPS address to receive Google's notifications, which a local CLI does not have"
 const { calendar, meet } = readDiscovery(`${root}/spec/google`)
@@ -109,8 +112,8 @@ const artifacts = generate(
   [
     typesGenerator({ path: "src/generated/types.ts" }),
     valibotGenerator({ path: "src/generated/schemas.ts", typesImport: "./types.js" }),
-    manifestGenerator({ path: "src/generated/manifest.ts" }),
-    definitionsGenerator({ path: "src/generated/definitions.ts" }),
+    manifestGenerator({ path: "src/generated/manifest.ts", coreImport: RUNTIME }),
+    definitionsGenerator({ path: "src/generated/definitions.ts", coreImport: RUNTIME }),
     coverageGenerator({
       path: "docs/dev/API_COVERAGE.md",
       title: "Google Calendar API coverage",
@@ -143,7 +146,7 @@ artifacts.push(
     [
       typesGenerator({ path: "src/generated/meet/types.ts" }),
       valibotGenerator({ path: "src/generated/meet/schemas.ts", typesImport: "./types.js" }),
-      manifestGenerator({ path: "src/generated/meet/manifest.ts" }),
+      manifestGenerator({ path: "src/generated/meet/manifest.ts", coreImport: RUNTIME }),
     ],
     { banner },
   ),

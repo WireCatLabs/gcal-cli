@@ -2,7 +2,7 @@
 // Source: spec/google/meet.json, verified by provenance.json
 // Run: pnpm generate
 
-import type { ManifestOperation } from "@wirecat/cli-base/codegen"
+import type { ManifestOperation, SecurityScheme } from "@wirecat/cli-base/codegen/runtime"
 
 export const operations: readonly ManifestOperation[] = [
   {
@@ -19,6 +19,14 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Gets a conference record by conference ID. For more information, see [Work with conferences](https://developers.google.com/workspace/meet/api/guides/conferences).",
     tags: ["meet"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/meetings.space.created",
+          "https://www.googleapis.com/auth/meetings.space.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "$.xgafv",
@@ -116,6 +124,14 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Lists the conference records. By default, ordered by start time and in descending order. For more information, see [Work with conferences](https://developers.google.com/workspace/meet/api/guides/conferences).",
     tags: ["meet"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/meetings.space.created",
+          "https://www.googleapis.com/auth/meetings.space.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "$.xgafv",
@@ -238,6 +254,14 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Lists the participants in a conference record. By default, ordered by join time and in descending order. This API supports `fields` as standard parameters like every other API. However, when the `fields` request parameter is omitted, this API defaults to `'participants/*, next_page_token'`. For more information, see [Work with participants](https://developers.google.com/workspace/meet/api/guides/participants).",
     tags: ["meet"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/meetings.space.created",
+          "https://www.googleapis.com/auth/meetings.space.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "$.xgafv",
@@ -370,6 +394,14 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Lists the recording resources from the conference record. By default, ordered by start time and in ascending order. For more information, see [Work with artifacts](https://developers.google.com/workspace/meet/api/guides/artifacts).",
     tags: ["meet"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/meetings.space.created",
+          "https://www.googleapis.com/auth/meetings.space.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "$.xgafv",
@@ -490,6 +522,14 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Lists the set of smart notes from the conference record. By default, ordered by start time and in ascending order. For more information, see [Work with artifacts](https://developers.google.com/workspace/meet/api/guides/artifacts).",
     tags: ["meet"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/meetings.space.created",
+          "https://www.googleapis.com/auth/meetings.space.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "$.xgafv",
@@ -610,6 +650,14 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Lists the structured transcript entries per transcript. By default, ordered by start time and in ascending order. For more information, see [Work with artifacts](https://developers.google.com/workspace/meet/api/guides/artifacts). Note: The transcript entries returned by the Google Meet API might not match the transcription found in the Google Docs transcript file. This can occur when 1) we have interleaved speakers within milliseconds, or 2) the Google Docs transcript file is modified after generation.",
     tags: ["meet"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/meetings.space.created",
+          "https://www.googleapis.com/auth/meetings.space.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "$.xgafv",
@@ -740,6 +788,14 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Lists the set of transcripts from the conference record. By default, ordered by start time and in ascending order. For more information, see [Work with artifacts](https://developers.google.com/workspace/meet/api/guides/artifacts).",
     tags: ["meet"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/meetings.space.created",
+          "https://www.googleapis.com/auth/meetings.space.readonly",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "$.xgafv",
@@ -860,6 +916,11 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Creates a space. For more information, see [Manage meeting spaces](https://developers.google.com/workspace/meet/api/guides/manage-meeting-spaces).",
     tags: ["meet"],
+    security: [
+      {
+        oauth2: ["https://www.googleapis.com/auth/meetings.space.created"],
+      },
+    ],
     parameters: [
       {
         name: "$.xgafv",
@@ -952,6 +1013,15 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Gets details about a meeting space. For more information, see [Manage meeting spaces](https://developers.google.com/workspace/meet/api/guides/manage-meeting-spaces). For an example, see [Get a meeting space](https://developers.google.com/workspace/meet/api/guides/meeting-spaces#get-meeting-space).",
     tags: ["meet"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/meetings.space.created",
+          "https://www.googleapis.com/auth/meetings.space.readonly",
+          "https://www.googleapis.com/auth/meetings.space.settings",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "$.xgafv",
@@ -1049,6 +1119,14 @@ export const operations: readonly ManifestOperation[] = [
     description:
       "Updates details about a meeting space. For more information, see [Manage meeting spaces](https://developers.google.com/workspace/meet/api/guides/manage-meeting-spaces).",
     tags: ["meet"],
+    security: [
+      {
+        oauth2: [
+          "https://www.googleapis.com/auth/meetings.space.created",
+          "https://www.googleapis.com/auth/meetings.space.settings",
+        ],
+      },
+    ],
     parameters: [
       {
         name: "$.xgafv",
@@ -1150,3 +1228,21 @@ export const operations: readonly ManifestOperation[] = [
     },
   },
 ]
+
+export const securitySchemes: Readonly<Record<string, SecurityScheme>> = {
+  oauth2: {
+    type: "oauth2",
+    flows: {
+      authorizationCode: {
+        scopes: {
+          "https://www.googleapis.com/auth/meetings.space.created":
+            "Create, edit, and see information about your Google Meet conferences created by the app.",
+          "https://www.googleapis.com/auth/meetings.space.readonly":
+            "Read information about any of your Google Meet conferences",
+          "https://www.googleapis.com/auth/meetings.space.settings":
+            "Edit, and see settings for all of your Google Meet calls.",
+        },
+      },
+    },
+  },
+}

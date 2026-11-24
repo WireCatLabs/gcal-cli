@@ -339,3 +339,17 @@ export type MeetUpdateMemberRequest = {
   /** Optional. Field mask used to specify the fields to be updated in the member. If update_mask isn't provided(not set, set with empty paths, or only has "" as paths), it defaults to update all fields provided with values in the request. Using "*" as update_mask will update all fields, including deleting fields not set in the request. In case of BatchUpdate, it must be absent or the same as the update_mask in BatchUpdateMembersRequest when UpdateMemberRequest is built as a child request of BatchUpdateMembersRequest. */
   updateMask?: string
 }
+
+/** What each operation answers, by its id. */
+export interface Responses {
+  "meet.conferenceRecords.get": MeetConferenceRecord
+  "meet.conferenceRecords.list": MeetListConferenceRecordsResponse
+  "meet.conferenceRecords.participants.list": MeetListParticipantsResponse
+  "meet.conferenceRecords.recordings.list": MeetListRecordingsResponse
+  "meet.conferenceRecords.smartNotes.list": MeetListSmartNotesResponse
+  "meet.conferenceRecords.transcripts.entries.list": MeetListTranscriptEntriesResponse
+  "meet.conferenceRecords.transcripts.list": MeetListTranscriptsResponse
+  "meet.spaces.create": MeetSpace
+  "meet.spaces.get": MeetSpace
+  "meet.spaces.patch": MeetSpace
+}
