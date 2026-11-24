@@ -354,7 +354,9 @@ describe("calendar commands over Google", () => {
     google.emptyCalendars()
     const held = await json("personal", "sync", "--rescan")
     expect(JSON.stringify(held.item)).toMatch(/sync --allow-deletions \d+/)
-    expect((await json("personal", "events", "list", "--limit", "1000")).items).toHaveLength(stored)
+    const kept = (await json("personal", "events", "list", "--limit", "1000")).items
+    expect(kept.filter(({ status }: { status: string }) => status === "cancelled")).toEqual([])
+    expect(kept).toHaveLength(stored)
     await json("personal", "sync", "--rescan", "--allow-deletions", "1000")
     const after = (await json("personal", "events", "list", "--limit", "1000")).items
     expect(after.map(({ status }: { status: string }) => status)).toEqual(Array(stored).fill("cancelled"))
