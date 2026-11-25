@@ -74,10 +74,11 @@ event=""
 deleted=false
 clean_up() {
   [[ -n $event && $deleted == false ]] || return 0
-  if gcal "$profile" events delete "$event" --no-notify --yes --json >/dev/null 2>&1; then
+  if gcal "$profile" events delete "$event" --calendar "$calendar" --no-notify --yes --json >/dev/null 2>&1; then
     echo "clean-up: $event deleted" >&2
   else
-    echo "clean-up FAILED: delete $event by hand: gcal $profile events delete $event --no-notify" >&2
+    echo "clean-up FAILED: delete $event by hand:" \
+      "gcal $profile events delete $event --calendar $calendar --no-notify" >&2
   fi
 }
 trap clean_up EXIT
@@ -99,18 +100,25 @@ echo "calendar: writable, not the primary"
 day=$(node -e 'console.log(new Date(Date.now() + 86_400_000).toISOString().slice(0, 10))')
 run gcal "$profile" events create "$calendar" --title "gcal write check" \
   --start-time "${day}T10:00" --end-time "${day}T11:00" --no-notify --yes --json || stop create "$failed"
-event=$(summary 'a.item.event ?? ""' <<<"$answer")
-[[ $event == event:* ]] ||
-  stop create "no local event id; delete Google event $(summary 'a.item.operation_id' <<<"$answer") by hand"
+created=$answer
+google_id() {
+  node -e '
+    try { console.log(JSON.parse(process.argv[1]).item.operation_id ?? "unknown") }
+    catch { console.log("unknown") }' "$created"
+}
+event=$(summary 'a.item.event ?? ""' <<<"$created" 2>/dev/null) ||
+  stop create "the create answer could not be read; delete Google event $(google_id) by hand"
+[[ $event == event:* ]] || stop create "no local event id; delete Google event $(google_id) by hand"
 echo "create: $event, Google id $(summary 'a.item.operation_id' <<<"$answer"), $(summary 'a.item.entry.status' <<<"$answer")"
 
-run gcal "$profile" events update "$event" --title "gcal write check, changed" --no-notify --yes --json ||
+run gcal "$profile" events update "$event" --calendar "$calendar" --title "gcal write check, changed" \
+  --no-notify --yes --json ||
   stop update "$failed"
 echo "update: $event, $(summary 'a.item.entry.status' <<<"$answer")"
 
 echo "respond: n/a, an event with no attendees has no invitation to answer"
 
-run gcal "$profile" events delete "$event" --no-notify --yes --json || stop delete "$failed"
+run gcal "$profile" events delete "$event" --calendar "$calendar" --no-notify --yes --json || stop delete "$failed"
 deleted=true
 echo "delete: $event, $(summary '`${a.item.removed} removed`' <<<"$answer")"
 (cd "$root" && pnpm exec cli-dev live record --script bin/gcal-write-check)
