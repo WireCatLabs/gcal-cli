@@ -178,7 +178,7 @@ describe("reading through the API", () => {
         fake,
       )
       expect([id, refused.code]).toEqual([id, 2])
-      expect(refused.err).toContain("api.bad-path-id")
+      expect(refused.err).toContain(id === "" ? "input.invalid" : "api.bad-path-id")
     }
     expect(toCalendar(fake.requests)).toEqual([])
   })
