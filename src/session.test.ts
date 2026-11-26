@@ -14,9 +14,10 @@ import { brokenKeyring, type KeyringStore, memoryKeyring, systemKeyring } from "
 import { openStore, storePath } from "@wirecat/cli-core/store"
 import type { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
-import { CALENDAR_READ_SCOPE, googleClient, moveOldSignInFile, sessionStorage } from "./google.js"
+import { CALENDAR_READ_SCOPE, googleClient, moveOldSignInFile, sessionStorage, storageOf } from "./google.js"
 import { ACLS_SCOPE, EVENTS_SCOPE, MEET_READ_SCOPE, MEET_WRITE_SCOPE } from "./grants.js"
 import { run } from "./program.js"
+import { savedAccount } from "./session.js"
 
 const ACCESS = "fixture-access-token-7Qm2"
 const REFRESHED = "fixture-refreshed-token-9Kd4"
@@ -143,7 +144,6 @@ describe("session start", () => {
       account: "owner@example.com",
       scopes: GRANTED.split(" "),
       grants: [],
-      credential_storage: "keyring",
     })
 
     // The entry reads the command's --json and opens no browser for it (WC-CMD-15).
@@ -214,7 +214,10 @@ describe("session start", () => {
     )
     expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
       scopes: expect.arrayContaining([EVENTS_SCOPE]),
+    })
+    expect(item((await gcal(["personal", "session", "status", "--check", "--json"], fake)).out)).toMatchObject({
       grants: ["write"],
+      verified: true,
     })
   })
 
@@ -396,20 +399,16 @@ describe("session status and end", () => {
     expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toEqual({
       profile: "personal",
       state: "missing",
-      account: null,
       verified: false,
     })
     expect(item((await gcal(["personal", "session", "end", "--json"])).out)).toMatchObject({ ended: false })
   })
 
-  it("session status and doctor give the time and the zone in use, for an agent that plans from now", async () => {
+  it("doctor gives the time and the zone in use, for an agent that plans from now", async () => {
     const { gcal } = harness()
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
     const before = Date.now()
-    for (const argv of [
-      ["personal", "session", "status", "--json"],
-      ["doctor", "--json"],
-    ]) {
+    for (const argv of [["doctor", "--json"]]) {
       const { meta } = JSON.parse((await gcal(argv)).out)
       expect(meta).toMatchObject({ timezone: zone, now_local: expect.stringMatching(/[+-]\d{2}:\d{2}$/) })
       expect(Date.parse(meta.now)).toBeGreaterThanOrEqual(before)
@@ -418,22 +417,18 @@ describe("session status and end", () => {
   })
 
   it("ends the sign-in but keeps the account the profile is", async () => {
-    const { gcal } = harness()
+    const { gcal, env } = harness()
     expect((await gcal(["personal", "session", "start", "--client-file", clientFile()])).code).toBe(0)
     expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
       state: "saved",
-      account: "owner@example.com",
       verified: false,
     })
-    expect(item((await gcal(["personal", "session", "end", "--json"])).out)).toEqual({
+    expect(item((await gcal(["personal", "session", "end", "--json"])).out)).toMatchObject({
       profile: "personal",
       ended: true,
-      cached_data: "retained",
     })
-    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
-      state: "missing",
-      account: "owner@example.com",
-    })
+    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({ state: "missing" })
+    expect(savedAccount(env, "personal")).toBe("owner@example.com")
   })
 
   const fakeSystemKeyring = (entries: Map<string, string>) => {
@@ -474,8 +469,8 @@ describe("session status and end", () => {
       const { gcal, env } = harness(systemKeyring)
       withOwnerSignIn(entries, env)
       const ended = await gcal(["personal", "session", "end", "--json"])
-      expect(item(ended.out)).toMatchObject({ profile: "personal", ended: false, kept: "keyring" })
-      expect(item(ended.out).why).toContain("still signed in")
+      expect(item(ended.out)).toMatchObject({ profile: "personal", ended: false })
+      expect(item(ended.out).why).toContain("still reads it")
       expect([...entries.keys()]).toEqual([OWNER_ENTRY])
     } finally {
       restore()
@@ -493,8 +488,8 @@ describe("session status and end", () => {
       expect(entries.size).toBe(2)
       expect(entries.get(OWNER_ENTRY)).toBe(owner)
       const ended = await gcal(["personal", "session", "end", "--json"])
-      expect(item(ended.out)).toMatchObject({ ended: true, kept: "keyring" })
-      expect(item(ended.out).why).toContain("still signed in")
+      expect(item(ended.out)).toMatchObject({ ended: false })
+      expect(item(ended.out).why).toContain("still reads it")
       expect([...entries.keys()]).toEqual([OWNER_ENTRY])
       expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({ state: "saved" })
     } finally {
@@ -516,7 +511,6 @@ describe("session status and end", () => {
     const of = (command: string) => runs.find((run) => run.command === command)
     expect(of("session start")).toMatchObject({ status: "success", operations: ["GET /v1/userinfo"] })
     expect(of("session status")).toMatchObject({ status: "success", requests: 1, operations: ["GET /v1/userinfo"] })
-    expect(of("session end")).toMatchObject({ status: "success" })
   })
 
   it("reads a keyring sign-in saved before the sign-in file existed, without a new sign-in", async () => {
@@ -533,7 +527,7 @@ describe("session status and end", () => {
     const keyring = memoryKeyring({ "gcal-cli:oauth:google:personal": JSON.stringify(entry) })
     const { gcal } = harness(keyring, "default")
     const status = await gcal(["personal", "session", "status", "--check", "--json"])
-    expect(item(status.out)).toMatchObject({ state: "saved", credential_storage: "keyring", verified: true })
+    expect(item(status.out)).toMatchObject({ state: "saved", account: "owner@example.com", verified: true })
   })
 
   it("with no keyring and no sign-in file, status and end name the unreachable keyring", async () => {
@@ -554,6 +548,7 @@ describe("session status and end", () => {
 
   it("refuses --check offline", async () => {
     const { gcal } = harness()
+    expect((await gcal(["personal", "session", "start", "--client-file", clientFile()])).code).toBe(0)
     const refused = await gcal(["--offline", "personal", "session", "status", "--check", "--json"])
     expect(failure(refused.err).reason).toBe("offline.refused")
   })
@@ -566,19 +561,18 @@ describe("session list", () => {
     const { gcal, env } = harness()
     writeFileSync(join(env.GCAL_CONFIG_DIR ?? "", "config.json"), JSON.stringify({ profiles: { work: {} } }))
     expect(items((await gcal(["session", "list", "--json"])).out)).toEqual([
-      { profile: "work", signed_in: false, account: null, credential_storage: null },
+      { profile: "work", signed_in: false, state: "missing" },
     ])
     expect((await gcal(["personal", "session", "start", "--client-file", clientFile()])).code).toBe(0)
     expect(items((await gcal(["session", "list", "--json"])).out)).toEqual([
-      { profile: "personal", signed_in: true, account: "owner@example.com", credential_storage: "keyring" },
-      { profile: "work", signed_in: false, account: null, credential_storage: null },
+      { profile: "personal", signed_in: true, state: "saved" },
+      { profile: "work", signed_in: false, state: "missing" },
     ])
     expect((await gcal(["personal", "session", "end"])).code).toBe(0)
     expect(items((await gcal(["session", "list", "--json"])).out)).toContainEqual({
       profile: "personal",
       signed_in: false,
-      account: "owner@example.com",
-      credential_storage: null,
+      state: "missing",
     })
   })
 })
@@ -687,19 +681,16 @@ describe("session start --credential-storage file", () => {
 
   it("falls back to the private file without asking and warns once where no keyring works", async () => {
     const { gcal, env } = harness(noKeyring)
-    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true)
     const started = await gcal(["personal", "session", "start", "--client-file", clientFile(), "--json"])
-    const warnings = stderr.mock.calls.filter(([text]) => String(text).includes("could not reach the OS keyring"))
-    stderr.mockRestore()
+    const warnings = started.err.split("\n").filter((line) => line.includes("could not reach the OS keyring"))
     expect(started.code).toBe(0)
-    expect(item(started.out)).toMatchObject({ signed_in: true, credential_storage: "file" })
+    expect(item(started.out)).toMatchObject({ signed_in: true })
+    expect(storageOf(env, "personal")).toBe("file")
     expect(warnings).toHaveLength(1)
     expect(JSON.parse(readFileSync(join(env.GCAL_CONFIG_DIR ?? "", "credentials.json"), "utf8"))).toHaveProperty([
       "oauth:google:personal",
     ])
-    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
-      credential_storage: "file",
-    })
+    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({ state: "saved" })
   })
 
   it("names the unreachable keyring for each profile of a run over several", async () => {
@@ -709,12 +700,9 @@ describe("session start --credential-storage file", () => {
     const listed = await gcal(["session", "list", "--json"])
     stderr.mockRestore()
     expect(listed.code).toBe(0)
-    const items = JSON.parse(listed.out).items as { signed_in: unknown; error?: string }[]
+    const items = JSON.parse(listed.out).items as { signed_in: unknown; state: string }[]
     expect(items.length).toBeGreaterThan(1)
-    for (const entry of items) {
-      expect(entry.signed_in).toBeNull()
-      expect(entry.error).toContain("keyring did not answer")
-    }
+    for (const entry of items) expect(entry).toMatchObject({ signed_in: null, state: "unknown" })
   })
 
   it("keeps the sign-in in a private file under the config folder when asked", async () => {
@@ -723,23 +711,22 @@ describe("session start --credential-storage file", () => {
     const start = ["personal", "session", "start", "--client-file", clientFile(), "--json"]
     const started = await gcal([...start, "--credential-storage", "file"], fake)
     expect(started.code).toBe(0)
-    expect(item(started.out)).toMatchObject({ signed_in: true, credential_storage: "file" })
+    expect(item(started.out)).toMatchObject({ signed_in: true })
     const file = join(env.GCAL_CONFIG_DIR ?? "", "credentials.json")
     if (process.platform !== "win32") expect(statSync(file).mode & 0o777).toBe(0o600)
     expect(JSON.parse(readFileSync(file, "utf8"))).toHaveProperty(["oauth:google:personal"])
     const status = await gcal(["personal", "session", "status", "--check", "--json"], fake)
-    expect(item(status.out)).toMatchObject({ state: "saved", verified: true, credential_storage: "file" })
+    expect(item(status.out)).toMatchObject({ state: "saved", verified: true })
+    expect(storageOf(env, "personal")).toBe("file")
     expect(item((await gcal(["doctor", "--json"])).out).credential_file).toEqual({
       path: file,
       found: true,
       profiles: ["personal"],
       private: true,
     })
-    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true)
-    expect((await gcal(["personal", "session", "end", "--json"])).code).toBe(0)
-    const warnings = stderr.mock.calls.filter(([text]) => String(text).includes("could not reach the OS keyring"))
-    stderr.mockRestore()
-    expect(warnings).toHaveLength(1)
+    const ended = await gcal(["personal", "session", "end", "--json"])
+    expect(ended.code).toBe(0)
+    expect(ended.err.split("\n").filter((line) => line.includes("could not reach the OS keyring"))).toHaveLength(1)
     expect(JSON.parse(readFileSync(file, "utf8"))).not.toHaveProperty(["oauth:google:personal"])
   })
 
@@ -748,15 +735,11 @@ describe("session start --credential-storage file", () => {
     const fake = google()
     const start = ["personal", "session", "start", "--client-file", clientFile(), "--json"]
     expect((await gcal([...start, "--credential-storage", "file"], fake)).code).toBe(0)
-    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
-      credential_storage: "file",
-    })
+    expect(storageOf(env, "personal")).toBe("file")
     expect((await gcal(start, fake)).code).toBe(0)
     const file = JSON.parse(readFileSync(join(env.GCAL_CONFIG_DIR ?? "", "credentials.json"), "utf8"))
     expect(file["oauth:google:personal"]).toBeUndefined()
-    expect(item((await gcal(["personal", "session", "status", "--json"])).out)).toMatchObject({
-      credential_storage: "keyring",
-    })
+    expect(storageOf(env, "personal")).toBe("keyring")
   })
 
   it("refuses a storage it does not know", async () => {

@@ -28,7 +28,7 @@ import { scheduleCommand } from "./commands/schedule.js"
 import { sessionCommand } from "./commands/session.js"
 import { configuration, OWNER_ONLY_SETTINGS } from "./config.js"
 import { FIRST_SCREEN, guide, placeInSections } from "./first-screen.js"
-import { holdsSignIn } from "./google.js"
+import { holdsSignIn, moveOldSignInFile } from "./google.js"
 import { IDENTITY, PACKAGE, SKILL } from "./identity.js"
 
 const update = appUpdate({
@@ -83,6 +83,10 @@ const readOnlyFlag = (program: Command) =>
     env[`${IDENTITY.envPrefix}_READ_ONLY`] = "1"
   })
 
+/** cli-core's session command reads the config folder's sign-in file only, so an older gcal's file moves first. */
+const moveSignInFile = (program: Command) =>
+  program.hook("preAction", () => moveOldSignInFile(environmentOf(program).env ?? process.env))
+
 export const definition = (): ProgramDefinition => {
   const meetings = meetingsMount()
   return {
@@ -91,6 +95,7 @@ export const definition = (): ProgramDefinition => {
     configure: (program) => {
       placeInSections(program)
       readOnlyFlag(program)
+      moveSignInFile(program)
       meetings.configure(program)
     },
     prepare: meetings.prepare,

@@ -54,11 +54,11 @@ gcal commands info [path]
 
 ## `gcal session`
 
-sign in to Google and manage this profile's sign-in
+sign in to Google in the browser and manage this profile's sign-in
 
 ### `gcal session start`
 
-sign in to Google in the browser; read-only unless you pass --grant write
+sign this profile in to Google in the browser; the account is checked before anything is kept, in the keyring or, with --credential-storage file, a private file
 
 **Changes something in the service.**
 
@@ -68,17 +68,18 @@ gcal session start [options]
 
 | Option | What it does |
 |---|---|
+| `--no-browser` | print the sign-in URL instead of opening a browser. |
+| `--credential-storage <storage>` | where the sign-in is kept: keyring, which falls back to a private file by itself, or file. Default: `keyring`. |
+| `--answer-stdin` | with --json and no terminal: print each question as a `needs` line on stderr and read its answer, one line, from stdin. |
 | `--client-file <file>` | your own Desktop app OAuth client JSON; without it, WireCat's app. |
 | `--client-id <id>` | your own Desktop app OAuth client ID, used instead of WireCat's; its secret comes from GCAL_GOOGLE_CLIENT_SECRET. |
-| `--no-browser` | print the sign-in URL instead of opening a browser. |
-| `--credential-storage <storage>` | where the sign-in is kept: keyring, which falls back to a private file, or file. Default: `keyring`. |
-| `--grant <scopes>` | also ask for these, comma-separated: write, sharing, meetings. |
+| `--grant <scopes>` | also ask for these, comma-separated: write (create, change and delete events, answer invitations), sharing (see and change who can see a calendar), meetings (read Google Meet calls, who joined, their transcripts and Drive files); write,meetings also makes Google Meet spaces and changes the ones gcal made. |
 
-**Example:** `gcal personal session start --client-file ~/client_secret.json`, `gcal personal session start --grant write,sharing`, `gcal personal session start --grant meetings`
+**Example:** `gcal personal session start`, `gcal personal session start --no-browser`, `gcal personal session start --json --answer-stdin`
 
 ### `gcal session status`
 
-show this profile's saved Google sign-in; tokens are never printed
+show this profile's sign-in and its scopes, never a token; --check asks Google whose it is
 
 ```sh
 gcal session status [options]
@@ -86,13 +87,13 @@ gcal session status [options]
 
 | Option | What it does |
 |---|---|
-| `--check` | ask Google whether the sign-in still works and which account it is. |
+| `--check` | ask Google whether the sign-in still works, and whose it is. |
 
 **Example:** `gcal personal session status`, `gcal personal session status --check --json`
 
 ### `gcal session end`
 
-sign this profile out of Google on this computer; stored calendar data stays
+forget this profile's sign-in on this computer; the grant stays in Google, and a run with moved folders never removes the owner's sign-in
 
 **Changes something on this computer only.**
 

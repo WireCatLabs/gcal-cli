@@ -30,6 +30,7 @@ Works with:
   linear                                Linear issues and projects, searchable with your other WireCat data
 
 Start here:   gcal personal session start  (any profile name works)
+              gcal session list            your profiles and their logged-in accounts
 Next:         gcal commands                every command, by section
               gcal guide                   scenarios: command sequences for common tasks
               gcal help options            output, offline, timeouts, dry run

@@ -2,7 +2,7 @@ import { chmodSync, constants, copyFileSync, existsSync, mkdirSync, rmSync } fro
 import { join } from "node:path"
 import { CliError, Credentials, isMovedRun, type KeyringStore, resolvePaths, systemKeyring } from "@wirecat/cli-base"
 import { type FetchLike, hostFetch } from "@wirecat/cli-base/http"
-import { type EventSink, providerRequest } from "@wirecat/cli-core/cli"
+import { type EventSink, providerRequest, withTimeLimit } from "@wirecat/cli-core/cli"
 import { googleApp } from "@wirecat/cli-core/constants"
 import {
   credentialStorage,
@@ -83,24 +83,10 @@ export const signInFilePath = (env: NodeJS.ProcessEnv): string => join(paths(env
 export const storageOf = (env: NodeJS.ProcessEnv, profile: string): CredentialStorage =>
   signInFile(env).read(oauthAccount("google", profile)) ? "file" : "keyring"
 
-/** After `--credential-storage file`: an older keyring copy must not outlive the file the owner chose. */
-export const forgetKeyringCopy = (env: NodeJS.ProcessEnv, profile: string, keyring?: KeyringStore): void => {
-  try {
-    new Credentials(credentialsOptions(env, "keyring", keyring)).remove(oauthAccount("google", profile))
-  } catch {
-    // No keyring on this computer: there is no copy to forget.
-  }
-}
-
-/** `file` only for `--credential-storage file`; otherwise the keyring, falling back to the file (WC-SECR-4). */
-export const sessionStorage = (
-  env: NodeJS.ProcessEnv,
-  profile: string,
-  keyring?: KeyringStore,
-  storage?: CredentialStorage,
-): TokenStorage =>
+/** The keyring, falling back to the file (WC-SECR-4); the entry `session start` keeps, read where it is. */
+export const sessionStorage = (env: NodeJS.ProcessEnv, profile: string, keyring?: KeyringStore): TokenStorage =>
   credentialStorage({
-    credentials: credentialsOptions(env, storage === "file" ? "file" : "auto", keyring),
+    credentials: credentialsOptions(env, "auto", keyring),
     account: oauthAccount("google", profile),
     codec: googleTokenCodec,
   })
@@ -113,8 +99,6 @@ export const holdsSignIn = (env: NodeJS.ProcessEnv, profile: string, keyring?: K
   sessionStorage(env, profile, keyring).read() !== undefined
 
 export interface KeeperOptions {
-  /** Where a new sign-in goes; a saved one is read and refreshed where it is. */
-  storage?: CredentialStorage | undefined
   env: NodeJS.ProcessEnv
   profile: string
   signInCommand: string
@@ -127,7 +111,7 @@ export interface KeeperOptions {
 export const sessionKeeper = (options: KeeperOptions): TokenKeeper =>
   tokenKeeper({
     provider: googleProvider(options.client),
-    storage: sessionStorage(options.env, options.profile, options.keyring, options.storage),
+    storage: sessionStorage(options.env, options.profile, options.keyring),
     lockDir: paths(options.env).config,
     fetch: options.fetch ?? googleFetch,
     signInCommand: options.signInCommand,
@@ -163,16 +147,12 @@ export const accountEmail = async (
   events?: EventSink,
 ) => {
   const answered = providerRequest("GET /v1/userinfo", events)
-  // Not AbortSignal.timeout: its timer holds the run's async context until the deadline (tg-cli #827).
-  const deadline = new AbortController()
-  const timer = setTimeout(() => deadline.abort(new DOMException("timed out", "TimeoutError")), 30_000)
-  timer.unref()
-  try {
+  return withTimeLimit(30_000, async (deadline) => {
     let response: Response
     try {
       response = await fetcher(USERINFO_URL, {
         headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
-        signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
+        signal: signal ? AbortSignal.any([signal, deadline]) : deadline,
         redirect: "error",
       })
     } catch (error) {
@@ -197,7 +177,5 @@ export const accountEmail = async (
         { reason: "sign-in.no-email" },
       )
     return email.toLowerCase()
-  } finally {
-    clearTimeout(timer)
-  }
+  })
 }

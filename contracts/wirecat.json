@@ -32,7 +32,7 @@
         "session",
         "start"
       ],
-      "summary": "sign in to Google in the browser; read-only unless you pass --grant write",
+      "summary": "sign in to Google in the browser",
       "effects": {
         "remote": "write",
         "local": "write"
@@ -43,7 +43,7 @@
         "session",
         "status"
       ],
-      "summary": "show this profile's saved Google sign-in; tokens are never printed",
+      "summary": "show this profile's sign-in; tokens are never printed",
       "effects": {
         "remote": "read",
         "local": "read"
@@ -54,7 +54,7 @@
         "session",
         "end"
       ],
-      "summary": "sign this profile out of Google on this computer; stored calendar data stays",
+      "summary": "sign this profile out on this computer",
       "effects": {
         "remote": "none",
         "local": "write"
