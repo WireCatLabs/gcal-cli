@@ -1,5 +1,5 @@
 import { CliError } from "@wirecat/cli-base"
-import type { ManifestOperation } from "@wirecat/cli-base/codegen"
+import type { ManifestOperation } from "@wirecat/cli-base/codegen/runtime"
 import { apiJson, apiPlainJson, checkApiBody, checkApiParameter, parseApiJson } from "@wirecat/cli-core/cli"
 import type * as v from "valibot"
 import { operations } from "./generated/manifest.js"

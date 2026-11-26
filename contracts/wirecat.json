@@ -1282,7 +1282,7 @@
         "schedule",
         "command"
       ],
-      "summary": "run gcal <args…> on a timer — reads save what they read, so this is how a…",
+      "summary": "run gcal <args…> on a timer — reads save what they read, so this is how the…",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -1695,6 +1695,44 @@
       "app": "gcal-cli",
       "env": "GCAL"
     },
-    "settings": null
+    "settings": null,
+    "accountRemove": {
+      "signOut": [
+        "{profile}",
+        "session",
+        "end",
+        "--record",
+        "--json"
+      ],
+      "remove": {
+        "minVersion": "0.0.0",
+        "keepData": [
+          "{profile}",
+          "account",
+          "remove",
+          "--keep-data",
+          "--record",
+          "--json"
+        ],
+        "deleteData": [
+          "{profile}",
+          "account",
+          "remove",
+          "--delete-data",
+          "--record",
+          "--json"
+        ],
+        "dryRun": "--dry-run",
+        "confirm": "--yes"
+      },
+      "removes": [
+        "signIn"
+      ],
+      "keeps": [
+        "settings",
+        "data",
+        "listed"
+      ]
+    }
   }
 }

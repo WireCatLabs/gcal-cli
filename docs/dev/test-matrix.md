@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**270 ✅ · 365 ⛔ · 0 ❌** — 115 commands, 520 options.
+**271 ✅ · 365 ⛔ · 0 ❌** — 115 commands, 521 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -38,6 +38,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `calendars busy` | `--hours` | ✅ |  |
 | `sync` |  | ✅ |  |
 | `sync` | `--rescan` | ✅ |  |
+| `sync` | `--allow-deletions` | ✅ |  |
 | `sync` | `--max-pages` | ✅ |  |
 | `sync` | `--embed` | ✅ |  |
 | `store status` |  | ✅ |  |

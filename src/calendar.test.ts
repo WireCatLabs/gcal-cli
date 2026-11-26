@@ -346,6 +346,22 @@ describe("calendar commands over Google", () => {
     expect(lists(google.requests).every(({ query }) => !query.has("syncToken") && query.has("timeMin"))).toBe(true)
   })
 
+  it("a full list that comes back empty is held, and --allow-deletions lets it through", async () => {
+    const { json, google } = harness()
+    await json("personal", "sync")
+    const stored = (await json("personal", "events", "list", "--limit", "1000")).items.length
+    expect(stored).toBeGreaterThan(0)
+    google.emptyCalendars()
+    const held = await json("personal", "sync", "--rescan")
+    expect(JSON.stringify(held.item)).toMatch(/sync --allow-deletions \d+/)
+    const kept = (await json("personal", "events", "list", "--limit", "1000")).items
+    expect(kept.filter(({ status }: { status: string }) => status === "cancelled")).toEqual([])
+    expect(kept).toHaveLength(stored)
+    await json("personal", "sync", "--rescan", "--allow-deletions", "1000")
+    const after = (await json("personal", "events", "list", "--limit", "1000")).items
+    expect(after.map(({ status }: { status: string }) => status)).toEqual(Array(stored).fill("cancelled"))
+  })
+
   it("search finds a synced event by its words", async () => {
     const { json } = harness()
     await json("personal", "sync")
