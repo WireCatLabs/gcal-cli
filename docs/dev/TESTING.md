@@ -29,7 +29,11 @@ How the tests run, and what they never touch. The rules are the handbook's
 - `bin/gcal-write-check <profile> <calendar-id>` is the owner's live check of the event writes against real Google: a
   create, an update and a delete on a test calendar, printing only ids and status. It refuses the account's primary
   calendar. A pass appends the release's line to `docs/dev/live-checks.txt`, which `bin/release` requires
-  (WC-REL-17); commit it in the release pull request. It is in the repository, not in the npm package.
+  (WC-REL-17); commit it in the release pull request. It is in the repository, not in the npm package. The test
+  target is profile `personal` and the group calendar
+  `d817bff9c457c09f2b4495db6da56091d7fc4988d94cf964618030e4156c41fb@group.calendar.google.com`, not the primary; an
+  agent may run the check there and nowhere else. Run it with `MESSAGING_STORE` set to a throwaway file while the
+  installed WireCat CLIs are on an older cli-core than this build: a newer store version would lock them out.
 - `bin/gcal-meet-check [--write] <profile>` is the owner's live check of Google Meet with the installed `gcal`: the
   live list, a sync, the store, one call in full, and with `--write` a room made and changed. It prints counts and
   step names only, never a name, a transcript line or a link. Sign in first with `--grant meetings` (`--grant
