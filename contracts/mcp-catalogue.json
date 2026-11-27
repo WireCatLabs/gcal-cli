@@ -1,6 +1,4 @@
 {
-  "session status": "read",
-  "session list": "read",
   "api list": "read",
   "api show": "read",
   "api calendar-acl-delete": "write",

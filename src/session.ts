@@ -1,22 +1,8 @@
 import { readFileSync } from "node:fs"
 import { CliError, type KeyringStore } from "@wirecat/cli-base"
-import { accountFileFor, type EventSink, profilesHere, rememberAccount } from "@wirecat/cli-core/cli"
-import type { OAuthClient } from "@wirecat/cli-core/oauth"
-import {
-  accountEmail,
-  CALENDAR_READ_SCOPE,
-  type CredentialStorage,
-  forgetKeyringCopy,
-  googleFetch,
-  holdsSignIn,
-  SIGN_IN_SCOPES,
-  sessionKeeper,
-  sessionStorage,
-  storageOf,
-} from "./google.js"
-import { GRANT_SCOPES, type Grant, grantMissing, grantsOf, MEET_WRITE_SCOPE, scopesFor } from "./grants.js"
+import { accountFileFor, type EventSink, profilesHere } from "@wirecat/cli-core/cli"
+import { googleFetch, sessionKeeper, sessionStorage } from "./google.js"
 import { IDENTITY } from "./identity.js"
-import { openGcalStore, PROVIDER } from "./store.js"
 
 interface Common {
   env: NodeJS.ProcessEnv
@@ -42,82 +28,6 @@ export const savedAccount = (env: NodeJS.ProcessEnv, profile: string): string | 
   }
 }
 
-const scopeMissing = () =>
-  new CliError("permission_error", "Google did not grant read access to Calendar", {
-    reason: "oauth.scope-missing",
-    grant: "read",
-  })
-
-export interface SignInOptions extends Common {
-  client: OAuthClient
-  grants?: readonly Grant[] | undefined
-  storage: CredentialStorage
-  openBrowser: (url: string) => Promise<void>
-  showUrl: (url: string) => void
-  timeoutMs?: number | undefined
-}
-
-export const signIn = async (options: SignInOptions) => {
-  const { env, profile } = options
-  const keeper = sessionKeeper(options)
-  let account = ""
-  const { scopes } = await keeper.signIn({
-    scopes: [...SIGN_IN_SCOPES, ...scopesFor(options.grants ?? [])],
-    openBrowser: options.openBrowser,
-    showUrl: options.showUrl,
-    ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
-    // Runs before anything is saved, so a refused account leaves the profile's sign-in as it was.
-    accept: async (tokens) => {
-      if (!tokens.scopes.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
-      // Google lets the account untick a scope it was asked for, and still signs in.
-      const grants = options.grants ?? []
-      const missing = grants.find((grant) => !tokens.scopes.includes(GRANT_SCOPES[grant]))
-      if (missing) throw grantMissing(missing, `Google did not grant the ${missing} permission`, grants)
-      if (scopesFor(grants).includes(MEET_WRITE_SCOPE) && !tokens.scopes.includes(MEET_WRITE_SCOPE))
-        throw grantMissing(
-          ["write", "meetings"],
-          "Google did not grant the permission to make Google Meet spaces",
-          grants,
-        )
-      if (!tokens.accessToken) throw new CliError("authentication_error", "Google returned no access token")
-      account = await accountEmail(tokens.accessToken, options.fetch ?? googleFetch, options.signal, options.events)
-      const previous = savedAccount(env, profile)
-      if (previous && previous !== account)
-        throw new CliError("authentication_error", "this profile belongs to another account; use a new profile", {
-          reason: "profile.wrong-account",
-        })
-      const other = profilesHere(IDENTITY, [], env).find(
-        (name) => name !== profile && savedAccount(env, name) === account,
-      )
-      if (other)
-        throw new CliError("validation_error", `this Google account is already signed in as profile ${other}`, {
-          reason: "profile.same-account",
-        })
-      return undefined
-    },
-  })
-  if (options.storage === "file") forgetKeyringCopy(env, profile, options.keyring)
-  const kept = storageOf(env, profile)
-  rememberAccount(IDENTITY, profile, account, env)
-  const store = await openGcalStore(env)
-  let closed: Promise<void> | undefined
-  const close = () => (closed ??= store.close())
-  options.trackCloseable?.({ close })
-  try {
-    await store.accounts.saveProfile(IDENTITY.command, profile, { provider: PROVIDER.name, account })
-  } finally {
-    await close()
-  }
-  return {
-    profile,
-    signed_in: true,
-    account,
-    scopes,
-    grants: grantsOf(scopes),
-    credential_storage: kept,
-  }
-}
-
 /** A profile's saved sign-in with the keeper that refreshes it, made with the client it was signed in with. */
 export const savedSession = (options: Common) => {
   const saved = sessionStorage(options.env, options.profile, options.keyring).read()
@@ -140,73 +50,9 @@ export const apiAccess = (options: Common) => {
   }
 }
 
-export const sessionStatus = async (options: Common & { check: boolean }) => {
-  const { env, profile } = options
-  const account = savedAccount(env, profile) ?? null
-  const session = savedSession(options)
-  if (!session) return { profile, state: "missing", account, verified: false }
-  const { saved, keeper } = session
-  const status = {
-    profile,
-    state: "saved",
-    account,
-    scopes: saved.tokens.scopes,
-    grants: grantsOf(saved.tokens.scopes),
-    credential_storage: storageOf(env, profile),
-    verified: false,
-  }
-  if (!options.check) return status
-  const tokens = await keeper.tokens()
-  if (!tokens.scopes.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
-  const live = await accountEmail(
-    tokens.accessToken ?? "",
-    options.fetch ?? googleFetch,
-    options.signal,
-    options.events,
-  )
-  if (account && live !== account)
-    throw new CliError("authentication_error", "the saved sign-in belongs to another account", {
-      reason: "profile.wrong-account",
-      next: "sign-in",
-    })
-  return { ...status, account: live, scopes: tokens.scopes, grants: grantsOf(tokens.scopes), verified: true }
-}
-
-export const signOut = async (options: Common) => {
-  const session = savedSession(options)
-  if (!session) return { profile: options.profile, ended: false, cached_data: "retained" }
-  const storage = storageOf(options.env, options.profile)
-  const { removed } = await session.keeper.signOut()
-  // A run with moved folders removes only its own keyring entry and then reads the owner's, which it never removes.
-  if (storage === "keyring" && savedSession(options))
-    return {
-      profile: options.profile,
-      ended: removed.includes("keyring"),
-      kept: "keyring",
-      why:
-        "this run has moved folders: it still reads the owner's sign-in in the system keyring, which every run of " +
-        "gcal shares and this run never removes, so it is still signed in",
-      cached_data: "retained",
-    }
-  return { profile: options.profile, ended: true, cached_data: "retained" }
-}
-
 /** Each profile on this computer that a sign-in tied to a Google account, with that account's address. */
 export const signedInAccounts = (env: NodeJS.ProcessEnv, configured: readonly string[]): [string, string][] =>
   profilesHere(IDENTITY, configured, env).flatMap((profile) => {
     const account = savedAccount(env, profile)
     return account === undefined ? [] : [[profile, account] as [string, string]]
-  })
-
-/** Every profile this computer knows, named in the config or signed in once, with where its sign-in is now. */
-export const profileSignIns = (env: NodeJS.ProcessEnv, configured: readonly string[], keyring?: KeyringStore) =>
-  profilesHere(IDENTITY, configured, env).map((profile) => {
-    const account = savedAccount(env, profile) ?? null
-    try {
-      const signedIn = holdsSignIn(env, profile, keyring)
-      return { profile, signed_in: signedIn, account, credential_storage: signedIn ? storageOf(env, profile) : null }
-    } catch (error) {
-      if (!(error instanceof CliError)) throw error
-      return { profile, signed_in: null, account, credential_storage: null, error: error.message }
-    }
   })

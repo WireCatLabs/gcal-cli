@@ -7,17 +7,18 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**271 ✅ · 365 ⛔ · 0 ❌** — 115 commands, 521 options.
+**271 ✅ · 366 ⛔ · 0 ❌** — 115 commands, 522 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
 | `commands` |  | ✅ |  |
 | `commands info` |  | ✅ |  |
 | `session start` |  | ✅ |  |
-| `session start` | `--client-file` | ✅ |  |
-| `session start` | `--client-id` | ✅ |  |
 | `session start` | `--no-browser` | ✅ |  |
 | `session start` | `--credential-storage` | ✅ |  |
+| `session start` | `--answer-stdin` | ⛔ | cli-core's oauthSessionCommand; its oauth-session tests answer the redirect on stdin |
+| `session start` | `--client-file` | ✅ |  |
+| `session start` | `--client-id` | ✅ |  |
 | `session start` | `--grant` | ✅ |  |
 | `session status` |  | ✅ |  |
 | `session status` | `--check` | ✅ |  |

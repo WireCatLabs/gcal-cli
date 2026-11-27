@@ -1,34 +1,30 @@
 import { CliError } from "@wirecat/cli-base"
-import { annotate } from "@wirecat/cli-base/commands"
-import { timezoneOf } from "@wirecat/cli-base/query"
-import { clockMeta } from "@wirecat/cli-base/standards"
 import {
   type BaseEnvironment,
-  baseContext,
-  commandWords,
   environmentOf,
   fromFile,
   type GlobalFlags,
-  itemOf,
-  LOCAL_READ,
-  LOCAL_WRITE,
-  listOf,
-  logsInOrOut,
+  oauthSessionCommand,
   outputFor,
-  profileFree,
-  REMOTE_READ,
-  REMOTE_WRITE,
-  refuseCommandName,
-  renderAnswer,
-  rootOf,
-  signInSteps,
+  profilesHere,
+  rememberAccount,
 } from "@wirecat/cli-core/cli"
-import { Command } from "commander"
+import { googleProvider, googleTokenCodec } from "@wirecat/cli-core/oauth"
+import { type Command, Option } from "commander"
 import { configuration } from "../config.js"
-import type { CredentialStorage } from "../google.js"
-import { GRANTS, type Grant } from "../grants.js"
+import {
+  accountEmail,
+  CALENDAR_READ_SCOPE,
+  googleClient,
+  googleFetch,
+  SIGN_IN_SCOPES,
+  sessionStorage,
+} from "../google.js"
+import { GRANT_SCOPES, GRANTS, type Grant, grantMissing, grantsOf, MEET_WRITE_SCOPE, scopesFor } from "../grants.js"
 import { IDENTITY } from "../identity.js"
-import { signInWords, worded } from "./words.js"
+import { savedAccount } from "../session.js"
+import { openGcalStore, PROVIDER } from "../store.js"
+import { inWords, signInWords, worded } from "./words.js"
 
 /** What a test hands `run()` in place of Google and the system browser. */
 export interface GcalEnvironment extends BaseEnvironment {
@@ -59,11 +55,6 @@ export const contextOf = (command: Command) => {
   }
 }
 
-const refuseOffline = (flags: GlobalFlags) => {
-  if (flags.offline)
-    throw new CliError("permission_error", "this needs Google; leave out --offline", { reason: "offline.refused" })
-}
-
 const isGrant = (value: string): value is Grant => GRANTS.some((grant) => grant === value)
 
 const grantList = (raw: string): Grant[] => {
@@ -74,168 +65,109 @@ const grantList = (raw: string): Grant[] => {
   return [...new Set(values.filter(isGrant))]
 }
 
-const CREDENTIAL_STORAGES: readonly CredentialStorage[] = ["keyring", "file"]
-
-const credentialStorage = (raw: string): CredentialStorage => {
-  const storage = CREDENTIAL_STORAGES.find((one) => one === raw)
-  if (!storage)
-    throw new CliError("validation_error", `--credential-storage takes ${CREDENTIAL_STORAGES.join(" or ")}; got ${raw}`)
-  return storage
+interface StartOptions {
+  clientFile?: string
+  clientId?: string
+  grant?: Grant[]
 }
 
-const answer = (command: Command, item: unknown) => renderAnswer(command, outputFor(command), itemOf(item))
+const START_OPTIONS = [
+  new Option("--client-file <file>", "your own Desktop app OAuth client JSON; without it, WireCat's app"),
+  new Option(
+    "--client-id <id>",
+    "your own Desktop app OAuth client ID, used instead of WireCat's; its secret comes from GCAL_GOOGLE_CLIENT_SECRET",
+  ),
+  new Option(
+    "--grant <scopes>",
+    "also ask for these, comma-separated: write (create, change and delete events, answer invitations), sharing " +
+      "(see and change who can see a calendar), meetings (read Google Meet calls, who joined, their transcripts and " +
+      "Drive files); write,meetings also makes Google Meet spaces and changes the ones gcal made",
+  ).argParser(grantList),
+]
 
-const startCommand = () =>
-  logsInOrOut(
-    annotate(new Command("start"), {
-      effects: REMOTE_WRITE,
-      lifetime: "interactive",
-      mcp: false,
-      examples: [
-        `${IDENTITY.command} personal session start --client-file ~/client_secret.json`,
-        `${IDENTITY.command} personal session start --grant write,sharing`,
-        `${IDENTITY.command} personal session start --grant meetings`,
-      ],
-    }),
-  )
-    .description("sign in to Google in the browser; read-only unless you pass --grant write")
-    .option("--client-file <file>", "your own Desktop app OAuth client JSON; without it, WireCat's app")
-    .option(
-      "--client-id <id>",
-      "your own Desktop app OAuth client ID, used instead of WireCat's; its secret comes from GCAL_GOOGLE_CLIENT_SECRET",
-    )
-    .option("--no-browser", "print the sign-in URL instead of opening a browser")
-    .option(
-      "--credential-storage <storage>",
-      "where the sign-in is kept: keyring, which falls back to a private file, or file",
-      credentialStorage,
-      "keyring",
-    )
-    .option("--grant <scopes>", "also ask for these, comma-separated: write, sharing, meetings", grantList)
-    .addHelpText(
-      "after",
-      "\n--grant write: create, change and delete events, and answer invitations\n" +
-        "--grant sharing: see and change who can see a calendar\n" +
-        "--grant meetings: read your Google Meet calls, who joined, their transcripts and Drive files\n" +
-        "--grant write,meetings: also make Google Meet spaces and change the ones gcal made\n" +
-        "--credential-storage file: only where no keyring works; the keyring is safer\n",
-    )
-    .action(async function (
-      this: Command,
-      args: {
-        clientFile?: string
-        clientId?: string
-        browser: boolean
-        grant?: Grant[]
-        credentialStorage: CredentialStorage
-      },
-    ) {
-      const { environment, flags, settings, common } = contextOf(this)
-      refuseCommandName(common.profile, commandWords(rootOf(this)), IDENTITY.command)
-      refuseOffline(flags)
-      const { googleClient } = await import("../google.js")
-      const configClientId = fromFile<string | undefined>(settings, "google_client_id", undefined).value
-      const client = await worded(common.profile, async () =>
-        googleClient(common.env, { file: args.clientFile, clientId: args.clientId, configClientId }),
-      )
-      const { streams } = outputFor(this)
-      if (!client.clientSecret)
-        streams.diagnostic(
-          "your Google app has no secret here, and Google refuses a Desktop app without one: set GCAL_GOOGLE_CLIENT_SECRET\n",
-        )
-      const steps = signInSteps({
-        diagnostic: (line) => streams.diagnostic(`${line}\n`),
-        json: flags.json === true || flags.jsonl === true || environment.tty === false,
-        answers: false,
-      })
-      const { signIn } = await import("../session.js")
-      const signedIn = await baseContext(this, configuration.resolveSettings).run((events) =>
-        worded(common.profile, () =>
-          signIn({
-            ...common,
-            events,
-            client,
-            grants: args.grant,
-            storage: args.credentialStorage,
-            openBrowser: async (url) => {
-              if (args.browser) await environment.openBrowser?.(url, this)
-            },
-            showUrl: (url) => {
-              steps.openUrl(
-                url,
-                args.grant?.length
-                  ? "Choose the Google account and allow read access to Calendar and the permissions it lists"
-                  : "Choose the Google account and allow read access to Calendar",
-              )
-              streams.diagnostic(`Open Google sign-in: ${url}\n`)
-            },
-          }),
-        ),
-      )
-      answer(this, signedIn)
-    })
-
-const statusCommand = () =>
-  annotate(new Command("status"), {
-    effects: REMOTE_READ,
-    examples: [
-      `${IDENTITY.command} personal session status`,
-      `${IDENTITY.command} personal session status --check --json`,
-    ],
+const scopeMissing = () =>
+  new CliError("permission_error", "Google did not grant read access to Calendar", {
+    reason: "oauth.scope-missing",
+    grant: "read",
   })
-    .description("show this profile's saved Google sign-in; tokens are never printed")
-    .option("--check", "ask Google whether the sign-in still works and which account it is")
-    .action(async function (this: Command, args: { check?: boolean }) {
-      const { flags, common } = contextOf(this)
-      if (args.check) refuseOffline(flags)
-      const { sessionStatus } = await import("../session.js")
-      const status = await baseContext(this, configuration.resolveSettings).run((events) =>
-        worded(common.profile, () => sessionStatus({ ...common, events, check: args.check === true })),
-      )
-      renderAnswer(this, outputFor(this), itemOf(status, { meta: clockMeta(Date.now(), timezoneOf()) }))
-    })
 
-const endCommand = () =>
-  logsInOrOut(
-    annotate(new Command("end"), {
-      effects: LOCAL_WRITE,
-      mcp: false,
-      examples: [`${IDENTITY.command} personal session end`],
-    }),
-  )
-    .description("sign this profile out of Google on this computer; stored calendar data stays")
-    .action(async function (this: Command) {
-      const { common } = contextOf(this)
-      const { signOut } = await import("../session.js")
-      answer(this, await baseContext(this, configuration.resolveSettings).run(() => signOut(common)))
-    })
+/** Google lets the account untick a scope it was asked for, and still signs in. */
+const refuseMissingScopes = (granted: readonly string[], grants: readonly Grant[]) => {
+  if (!granted.includes(CALENDAR_READ_SCOPE)) throw scopeMissing()
+  const missing = grants.find((grant) => !granted.includes(GRANT_SCOPES[grant]))
+  if (missing) throw grantMissing(missing, `Google did not grant the ${missing} permission`, grants)
+  if (scopesFor(grants).includes(MEET_WRITE_SCOPE) && !granted.includes(MEET_WRITE_SCOPE))
+    throw grantMissing(["write", "meetings"], "Google did not grant the permission to make Google Meet spaces", grants)
+}
 
-const listCommand = () =>
-  profileFree(
-    annotate(new Command("list"), {
-      effects: LOCAL_READ,
-      examples: [`${IDENTITY.command} session list`, `${IDENTITY.command} session list --json`],
-    }),
-  )
-    .summary("list the profiles here and whether each is signed in")
-    .description("list the profiles on this computer and whether each is signed in; picks none")
-    .action(async function (this: Command) {
-      const environment = environmentOf<GcalEnvironment>(this)
-      const env = environment.env ?? process.env
-      const { configuredProfiles } = configuration.resolveSettings({}, { env, needsProfile: false })
-      const { profileSignIns } = await import("../session.js")
-      const items = profileSignIns(env, configuredProfiles, environment.keyring)
-      renderAnswer(
-        this,
-        outputFor(this),
-        listOf("session list", { items, limit: Math.max(1, items.length), has_more: false }),
-      )
-    })
+const signingIn = (command: Command) => command.name() === "start"
 
 export const sessionCommand = (): Command =>
-  annotate(new Command("session"), { effects: LOCAL_READ })
-    .description("sign in to Google and manage this profile's sign-in")
-    .addCommand(startCommand())
-    .addCommand(statusCommand())
-    .addCommand(endCommand())
-    .addCommand(listCommand())
+  oauthSessionCommand({
+    app: IDENTITY,
+    resolveSettings: configuration.resolveSettings,
+    providerId: "google",
+    service: "Google",
+    codec: googleTokenCodec,
+    startOptions: START_OPTIONS,
+    preset: (command, steps) => {
+      const { settings, common } = contextOf(command)
+      const { clientFile, clientId, grant = [] } = command.opts<StartOptions>()
+      // A refresh or a revoke needs the client the profile signed in with, and its secret.
+      const saved = signingIn(command) ? undefined : sessionStorage(common.env, common.profile, common.keyring).read()
+      let client = saved?.client
+      if (!client) {
+        const configClientId = fromFile<string | undefined>(settings, "google_client_id", undefined).value
+        try {
+          client = googleClient(common.env, { file: clientFile, clientId, configClientId })
+        } catch (error) {
+          throw inWords(error, common.profile)
+        }
+      }
+      if (steps && !client.clientSecret)
+        outputFor(command).streams.diagnostic(
+          "your Google app has no secret here, and Google refuses a Desktop app without one: set GCAL_GOOGLE_CLIENT_SECRET\n",
+        )
+      return { provider: googleProvider(client), scopes: [...SIGN_IN_SCOPES, ...scopesFor(grant)], rotating: false }
+    },
+    verify: (command, accessToken, events, scopes) => {
+      const { common } = contextOf(command)
+      return worded(common.profile, async () => {
+        refuseMissingScopes(scopes, command.opts<StartOptions>().grant ?? [])
+        const account = await accountEmail(accessToken, common.fetch ?? googleFetch, common.signal, events)
+        const saved = savedAccount(common.env, common.profile)
+        if (!signingIn(command) && saved && saved !== account)
+          throw new CliError("authentication_error", "the saved sign-in belongs to another account", {
+            reason: "profile.wrong-account",
+            next: "sign-in",
+          })
+        return { id: account, account: { account, grants: grantsOf(scopes) } }
+      })
+    },
+    claim: (env, profile, account) => {
+      const previous = savedAccount(env, profile)
+      if (previous && previous !== account)
+        throw new CliError("authentication_error", "this profile belongs to another account; use a new profile", {
+          reason: "profile.wrong-account",
+        })
+      const other = profilesHere(IDENTITY, [], env).find(
+        (name) => name !== profile && savedAccount(env, name) === account,
+      )
+      if (other)
+        throw new CliError("validation_error", `this Google account is already signed in as profile ${other}`, {
+          reason: "profile.same-account",
+        })
+    },
+    afterSignIn: async (command, { env, profile, id }) => {
+      rememberAccount(IDENTITY, profile, id, env)
+      const store = await openGcalStore(env)
+      let closed: Promise<void> | undefined
+      const close = () => (closed ??= store.close())
+      environmentOf<GcalEnvironment>(command).trackCloseable?.({ close })
+      try {
+        await store.accounts.saveProfile(IDENTITY.command, profile, { provider: PROVIDER.name, account: id })
+      } finally {
+        await close()
+      }
+    },
+  })

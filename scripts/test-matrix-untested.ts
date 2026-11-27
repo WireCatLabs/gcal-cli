@@ -24,6 +24,11 @@ const SHARED_REPORTS = "cli-core's appDoctorCommand; its app-mcp-command test cr
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
+  {
+    command: "session start",
+    option: "--answer-stdin",
+    reason: "cli-core's oauthSessionCommand; its oauth-session tests answer the redirect on stdin",
+  },
   ...[
     { command: "schedule pause" },
     { command: "schedule resume" },

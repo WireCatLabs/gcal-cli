@@ -61,17 +61,17 @@ gcal personal session end               # forget the sign-in on this computer
 gcal session list                       # every profile here, and whether each holds a sign-in
 ```
 
-`session status` gives the account's email address, the permissions Google granted (`scopes`, and `grants` in
-`--grant`'s words), `state`: `saved` or `missing`, and `credential_storage`: `keyring` or `file`. With `--check`,
-`verified: true` means Google accepted the sign-in just now. `session end` removes the sign-in from where it is kept;
-it keeps which account the profile is, and your stored calendar data. In a run with moved folders it removes only that
-run's own sign-in: the answer then says `kept: "keyring"`, because the run still reads your usual sign-in, and
-`session status` still shows it. `session list` takes no profile and picks none:
-it lists the profiles named in the settings or signed in once, each with `signed_in`, `account` and
-`credential_storage`. It reads the keyring, never the network.
+`session status` gives the permissions Google granted (`scopes`), when the access token runs out (`expires_at`) and
+`state`: `saved` or `missing`. With `--check`, it asks Google and adds the account's email address and `grants`, the
+permissions in `--grant`'s words; `verified: true` means Google accepted the sign-in just now. `session end` removes
+the sign-in from where it is kept; it keeps which account the profile is, and your stored calendar data. In a run with
+moved folders it removes only that run's own sign-in: the answer then says `ended: false` and `why`, because the run
+still reads your usual sign-in, and `session status` still shows it. `session list` takes no profile and picks none:
+it lists the profiles named in the settings or signed in once, each with `signed_in` and `state`. It reads the
+keyring, never the network.
 
 On a computer where the keyring does not work, such as a server without a desktop, `session start` keeps the sign-in
-in a file by itself, says so once on stderr, and answers `credential_storage: "file"`. It never asks. The file is
+in a file by itself and says so once on stderr. It never asks. The file is
 `credentials.json` in `gcal`'s config folder, readable by you only. `gcal doctor` shows its path and the profiles in it.
 You can also choose the file outright, though the keyring is safer and we do not recommend it:
 
