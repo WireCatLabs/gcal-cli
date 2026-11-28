@@ -1616,6 +1616,7 @@
       ]
     },
     "mcpServer": {
+      "port": 8754,
       "start": [
         "mcp",
         "server",

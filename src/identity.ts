@@ -26,6 +26,8 @@ export const IDENTITY: AppIdentity = {
 export const DESKTOP: ManifestIdentity & { hosts: readonly string[] } = {
   ...IDENTITY,
   docs: "https://github.com/WireCatLabs/gcal-cli#readme",
+  // One port per WireCat tool, so two servers never collide (wirecat-desktop docs/dev/cli-registry.md).
+  mcpPort: 8754,
   tagline: "Google Calendar events, searchable on your computer",
   syncs: "calendar events and Google Meet calls",
   signIn: {
