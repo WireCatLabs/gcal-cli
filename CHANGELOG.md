@@ -427,10 +427,10 @@ Notable changes to `@wirecat/gcal-cli`. One section per version, newest first.
 - **A misspelled profile lists the profiles you have.** `gcal persona events list` said only "profile persona has no
   Google account yet; run gcal persona session start", which invited a sign-in under the typo. When other profiles
   exist, it now says `no profile named "persona" — profiles here: personal, work` before the sign-in hint, and
-  `details.profiles` lists them. The code and reason stay `authentication_error` and `profile.not-signed-in`.
+  `details.profiles` lists them. The code and reason are `authentication_error` and `oauth.missing`.
 - **Google's Calendar usage limit is no longer called a short rate limit.** Google's `quotaExceeded` said "retry the
   command" and was marked safe to retry; Google's guide points to the usage limits, not a retry. It is now
-  `google.usage-limit`, not retryable, and links [Google's error
+  `provider.usage-limit`, not retryable, and links [Google's error
   guide](https://developers.google.com/workspace/calendar/api/guides/errors).
 - **A change only the organizer may make says so.** Google's `forbiddenForNonOrganizer` was "Google denied this
   operation; check access to the calendar". It is now `event.organizer-only`: only the organizer can change this,

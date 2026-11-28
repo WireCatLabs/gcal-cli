@@ -1,6 +1,28 @@
-# Use it
+# Everyday use
 
-This page explains how a command is built, and how an agent uses the tool. Read it before your first command.
+Keep your calendars on your computer and let your agent read, search and book for you. Here you sign in, keep the
+copy current, and see what you and your agent can do with it: list your week across accounts, find a time that suits
+everyone, prepare for a meeting, keep your Google Meet calls and change events without mailing anyone by accident.
+
+Every command starts with a profile, a name you choose for one Google account (`personal` on this page). The event
+numbers and ids in the examples are made up: use the ones your own `events list` gives.
+
+**On this page:**
+
+1. [The profile comes first](#the-profile-comes-first)
+2. [Sign in to Google](#sign-in-to-google)
+3. [Sync your calendars](#sync-your-calendars)
+4. [Follow a calendar feed](#follow-a-calendar-feed)
+5. [Read your events](#read-your-events)
+6. [Prepare for a meeting](#prepare-for-a-meeting)
+7. [Google Meet](#google-meet)
+8. [Get reminded before a meeting](#get-reminded-before-a-meeting)
+9. [Export and import iCalendar files](#export-and-import-icalendar-files)
+10. [When people are free](#when-people-are-free)
+11. [Call the Google Calendar API](#call-the-google-calendar-api)
+12. [Change events](#change-events)
+13. [Output for scripts](#output-for-scripts)
+14. [Agents](#agents)
 
 ## The profile comes first
 
@@ -296,7 +318,8 @@ this and `events list` into a meeting brief or a daily or weekly digest.
 ## Google Meet
 
 Every Google Meet call has a time, so `gcal` keeps your calls beside your calendar. There is no separate Google Meet
-tool. Sign in with `--grant meetings` first.
+tool. Sign in with `--grant meetings` first. [Google Meet calls](https://wirecat.dev/en/docs/google-meet) shows how to
+keep the transcripts and search them with your other notes.
 
 ```sh
 gcal personal session start --grant meetings
@@ -309,14 +332,14 @@ gcal personal search all "budget"                    # transcripts beside events
 
 - **What a call is.** Google keeps a record for each call in a meeting room. `gcal` keeps it as a meeting: when it
   started and ended, who joined, the transcript, and the Drive files Google made: the transcript Doc, the recording
-  and Gemini's notes, by their Drive file id. drive-cli reads those files; `gcal` asks for no Drive permission.
+  and Gemini's notes, by their Drive file id. The `drive` tool reads those files; `gcal` asks for no Drive access.
 - **Linked to the event.** A call joins its calendar event by the room's link (`meet.google.com/abc-defg-hij`). Meet
   gives a call no title, so the event carries it.
 - **Live and stored at once.** `meetings list` and `meetings show` ask Google and keep what it returns, then answer
   from the store. Each item says where it was found: `found_in` is `server`, `archive` or `both`. `--offline` and
   `--backend archive` read the store only. `meetings show` takes the stored number, the `meeting:` ref, or Google's id
   of the call (`provider_id`).
-- **Only your own calls are listed.** Google lists only the calls you organized. A call you joined opens by its id
+- **Only your own calls are listed.** Google lists only the calls you organised. A call you joined opens by its id
   with `meetings show`.
 - **30 days.** Google deletes a call's record, its participants and its transcript 30 days after the call. Sync at
   least every few weeks. After 30 days the call stays in the store, and its transcript Doc stays in Drive.
@@ -347,8 +370,8 @@ gcal personal meetings update spaces/jQCFfuBOdN5z --setting moderation=true
 - `--setting access_type=open|trusted|restricted`: who joins without knocking.
 - `--setting moderation|auto_recording|auto_transcription|auto_smart_notes=true|false`: host controls, and what
   Google records, transcribes and notes in every call of the room.
-- Both ask first; `--yes` answers for a script. The answer's `meeting.id` is the room's id for `meetings update`, and
-  `meeting.join_url` its link. Google lets `gcal` change only the rooms it made.
+- Both ask first at a terminal, and run without a question over MCP; `--yes` answers for a script. The answer's
+  `meeting.id` is the room's id for `meetings update`, and `meeting.join_url` its link. Google lets `gcal` change only the rooms it made.
 
 ## Get reminded before a meeting
 
@@ -562,14 +585,14 @@ UID. Google mails nobody about an imported event.
 gcal personal events import Team planning.ics
 ```
 
-- It asks first, because one import writes a whole file of events; `--yes` answers for a script, and `--dry-run`
-  shows it without sending anything. Its key is `events.import` (see [permissions](configuration.md#permissions)).
+- At a terminal it asks first, because one import writes a whole file of events. Over MCP it runs without a
+  question. `--yes` answers for a script, and `--dry-run` shows it without sending anything. Its key is
+  `events.import` (see [permissions](configuration.md#permissions)).
 - A time with a time zone (`TZID`) keeps that zone; a time with no zone is read in yours. A zone Google does not know,
   such as Outlook's `W. Europe Standard Time`, is skipped with its reason, and so is a changed occurrence of a
   repeating event (`RECURRENCE-ID`) and an event with no UID. The answer lists them under `skipped`.
 - At most 500 events and 10 MB in one file. If Google refuses an event part way, the error names the UIDs imported
-  before it. Running the import again sends every event again under its UID; Google's reference does not say what it
-  does with a UID the calendar already holds.
+  before it. Run an import once per file: a second run sends every event again.
 
 ## When people are free
 
@@ -588,7 +611,7 @@ gcal personal calendars busy starts_at>=today ends_at<=today calendar:3 --durati
   `calendar:` every calendar that syncs is asked.
 - `--duration-minutes` adds `slots`: the stretches at least that long that are free for everyone, inside working
   hours (`--hours`, 09:00-17:00 by default) from Monday to Friday, in your time zone.
-- Google shows a person's busy times only when their calendar is shared with you or your organization. Anyone it
+- Google shows a person's busy times only when their calendar is shared with you or your organisation. Anyone it
   will not show has an `error` and is listed in `unknown`: a slot is free only for the others.
 
 Every command reads only the profile's own Google account. An event's text comes from whoever sent the invitation, so
@@ -623,19 +646,19 @@ A profile signed in without `--grant write` reads only:
   read access. The methods that change calendars, the calendar list or settings, `calendars.transferOwnership`
   included, need a permission `gcal` does not ask for.
 - `calendars.transferOwnership` also needs a Google Workspace administrator with the Manage Calendars privilege and
-  `--use-admin-access true`. It moves a secondary calendar between users of one organization only.
+  `--use-admin-access true`. It moves a secondary calendar between users of one organisation only.
 - A method that changes data and is easy to undo, such as `events.insert` or `events.patch`, runs without a question.
-  A method that deletes, and sharing a calendar, ask first; `--yes` answers for a script. `calendars.clear` (all
-  events of the main calendar), `calendars.delete` and `calendars.transferOwnership` are refused until you allow them
-  in the profile's [permissions](configuration.md#permissions).
+  At a terminal a method that deletes, and sharing a calendar, ask first; over MCP they run without a question.
+  `--yes` answers for a script. `calendars.clear` (all events of the main calendar), `calendars.delete` and
+  `calendars.transferOwnership` are refused until you allow them in the profile's
+  [permissions](configuration.md#permissions).
 - Google's change notifications (`watch` and `channels.stop`) are not offered. They need a public web address, and
   a program on your computer does not have one.
 
 ## Change events
 
 After `session start --grant write`, `events create | update | delete | move | respond | import` change Google Calendar
-and the store together. A calendar is named by its id from `calendars list`, such as `3` below, or by its name. They are cli-core's shared calendar
-writes; Google is reached through the same generated methods as `gcal api`.
+and the store together. A calendar is named by its id from `calendars list`, such as `3` below, or by its name.
 
 ```sh
 gcal personal events create 3 --title "Planning" --start-time 2026-11-02T10:00 --end-time 2026-11-02T11:00
@@ -655,9 +678,9 @@ gcal personal events delete event:42 --no-notify
 gcal personal events delete event:42 --following --no-notify
 ```
 
-- Creating, changing, moving and answering go ahead without a question. A delete asks first; `--yes` answers for a
-  script. `--dry-run` shows any write without making it. To be asked before the others too, set their keys to `ask`
-  (see [permissions](configuration.md#permissions)).
+- Creating, changing, moving and answering go ahead without a question. At a terminal a delete asks first; over MCP it
+  runs without a question. `--yes` answers for a script. `--dry-run` shows any write without making it. To be asked
+  before the others too, set their keys to `ask` (see [permissions](configuration.md#permissions)).
 - With attendees other than you, say whether Google mails them: `--notify` or `--no-notify`. `--notify` is refused
   until you allow `events.notify` (see [permissions](configuration.md#permissions)).
 - A change carries the version the last sync saw. If the event changed in Google since, the write stops with
@@ -671,7 +694,7 @@ gcal personal events delete event:42 --following --no-notify
 - `update --following` ends the series just before the occurrence and starts a new series there with your change,
   keeping the attendees. A series that ends after a number of times (`COUNT`) needs `--repeat` for the new part. If
   ending the old series fails, the error names the new series' id; repeat with `--operation-id <id>`. `delete --following` only
-  ends the series, and asks first like any delete.
+  ends the series, and asks first at a terminal like any delete.
 - `move --to-calendar <id>` moves an event, keeping its id, to another calendar of the same account that you can
   write to. An occurrence moves only with its whole series (`--series`). Google moves only ordinary events, not
   focus time, out of office, working location or birthdays.
@@ -721,7 +744,9 @@ HTTPS tunnel: [step by step](remote.md). `mcp config` prints the entry for any o
 walks through it.
 
 The server offers every command, the ones that write included. The profile's permissions decide what runs; see
-[settings](configuration.md#permissions). That includes sharing a calendar (`acl`): an agent can do it without a question. Deleting a whole calendar
+[settings](configuration.md#permissions). After `--grant sharing`, an agent over MCP shares a calendar without asking
+you, unless `permissions.api.calendar.acl` is `deny`: sharing is `ask` by default, and over MCP nobody is there to answer, so
+`ask` lets it run. Deleting a whole calendar
 (`calendars.delete`) and giving it to another account (`calendars.transferOwnership`) are denied until you allow them. Two commands are never offered to an agent:
 `api call`, and `calendars.clear`, which empties a calendar. You run those yourself, in a terminal. Nor are the
 commands that set up the sign-in and the agent link: `session start` and `session end`, and `mcp serve`, `mcp add`,

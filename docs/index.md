@@ -35,7 +35,8 @@ last call with her?". `gcal` asks Google for read-only access, and it changes yo
 - **`personal` is a name you choose.** It names one Google account, and it is the first word of every command that
   reads or changes an account. Add `work` later. No command picks an account for you.
 - **At a terminal a delete asks first. Over MCP it does not.** MCP is the way apps such as Claude Desktop call a tool,
-  and nobody sits there to answer. Set what an agent must not do to read only or refuse before you connect it.
+  and nobody sits there to answer. The same holds for sharing a calendar once you sign in with `--grant sharing`. Set
+  what an agent must not do to read only or refuse before you connect it.
 - **The copy covers a year back and three months ahead.** Each later sync asks Google only for what changed. Google's
   own search reaches events outside that span.
 - **Only the calendars you own sync at first.** `calendars list` shows the rest, and you add the ones you want.
@@ -74,13 +75,16 @@ Google Calendar connector).
 ## What it can do
 
 - **Read:** events from every account in one list, the clashes, what changed since a date, and one event with its
-  attendees and Drive files. [Usage](usage.md)
+  attendees and Drive files. [Read your events](usage.md#read-your-events)
 - **Find a time and book:** free and busy times, create, move and cancel events, answer invitations, add a Meet link.
-  [Usage](usage.md)
-- **Search:** by words, by meaning, or with Google's own search. [Usage](usage.md)
-- **Google Meet:** who joined and the transcript, linked to the calendar event. [Usage](usage.md)
+  [When people are free](usage.md#when-people-are-free), [change events](usage.md#change-events)
+- **Search:** by words, by meaning, or with Google's own search.
+  [Search everything at once](usage.md#search-everything-at-once)
+- **Google Meet:** who joined and the transcript, linked to the calendar event. [Google Meet](usage.md#google-meet),
+  [Google Meet calls](https://wirecat.dev/en/docs/google-meet)
 - **Feeds and files:** follow a holiday or other `.ics` calendar, and export events to an `.ics` file.
-  [Usage](usage.md)
+  [Follow a calendar feed](usage.md#follow-a-calendar-feed),
+  [export and import](usage.md#export-and-import-icalendar-files)
 - **From anywhere:** ChatGPT or Claude in the browser or on your phone, through your own tunnel.
   [Remote connection](remote.md)
 
@@ -98,7 +102,7 @@ Google Calendar connector).
 Paste this into your agent:
 
 ```text prompt
-Install gcal with npm install -g @wirecat/gcal-cli. Help me sign in read-only with gcal personal session start, sync, and show what clashes this week.
+Use gcal CLI. Install it with npm install -g @wirecat/gcal-cli, help me sign in read-only with gcal personal session start, sync, and show what clashes this week.
 ```
 
 Or in a terminal:
@@ -124,7 +128,7 @@ nothing. You need Node.js 22.16 or a later 22.x, or Node.js 24 or later, or Bun.
 | Task | Guide |
 |---|---|
 | Install and sign in | [Installation](installation.md) |
-| Read, search and book | [Usage](usage.md) |
+| Read, search and book | [Everyday use](usage.md) |
 | Use it from ChatGPT or Claude in the browser | [Remote connection](remote.md) |
 | Decide what an agent may do | [Configuration](configuration.md) |
 | An exact command | [Commands](commands.md) |

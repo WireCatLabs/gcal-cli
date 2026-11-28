@@ -11,14 +11,17 @@ nothing more. The table is in [sign in to Google](usage.md#sign-in-to-google).
 Google Meet participant names and transcripts are written by other people. `gcal` marks them untrusted for an agent,
 and keeps the Drive files Google made by their id only: it never downloads them.
 
-An agent connected through `gcal <profile> mcp serve` can change who sees your calendar without asking you. After
-`--grant sharing` it can share a calendar with any address, make it public, or remove someone. It can also call the
-method that gives a calendar to another account; that one works only for a Google Workspace administrator, and only
-when the sign-in has a permission `gcal` does not ask for. Over MCP no one is there to answer a question, so `ask`
-lets these run. An agent cannot have Google mail the person it shares with: that needs `sharing.notify`, which is
-`deny`. It can still share in silence, with `--send-notifications false`. To keep sharing with you, run
-`gcal personal config set permissions.api.calendar.acl deny`, or sign in without `--grant sharing`. Emptying a
-calendar is never offered to an agent.
+After `--grant sharing`, an agent over MCP shares your calendar without asking you, unless
+`permissions.api.calendar.acl` is `deny`. Sharing is `ask` by default, and over MCP no one is there to answer the
+question, so `ask` lets it run. An agent connected through `gcal personal mcp serve` can then share a calendar with
+any address, make it public, or remove someone. An agent cannot
+have Google mail the person it shares with: that needs `sharing.notify`, which is `deny`. It can still share in
+silence, with `--send-notifications false`. To decide every share yourself, run
+`gcal personal config set permissions.api.calendar.acl deny`, or sign in without `--grant sharing`.
+
+Giving a calendar to another account and deleting a whole calendar are `deny` until you allow them. Giving one away
+also works only for a Google Workspace administrator, and only when the sign-in has a permission `gcal` does not ask
+for. Emptying a calendar is never offered to an agent.
 
 `events remind -- <program>` runs a program of yours on this computer, once per meeting that starts soon. It is
 `deny` until you run `gcal personal config set permissions.events.remind.hook allow`; `--yes` does not lift it, and

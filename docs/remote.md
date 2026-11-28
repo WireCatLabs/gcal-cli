@@ -1,23 +1,22 @@
 # ChatGPT or Claude in the browser
 
-Use this page when you want an AI app that runs in the browser or on your phone, for example ChatGPT or Claude, to
-read your Google Calendar through `gcal`. Such an app cannot start `gcal` on your computer, so you give it an internet
-address instead. At the end, the app is connected to `gcal` through a private HTTPS address, it can do only what your
-profile permits, and you know how to stop it or take its access back.
+Ask ChatGPT or Claude about your calendar from the browser or your phone, with your own copy of it on your computer.
+Such an app cannot start `gcal` on your computer, so you give it an internet address instead. At the end, the app is
+connected to `gcal` through a private HTTPS address, it can do only what your profile permits, and you know how to
+stop it or take its access back.
 
-Terms used on this page:
+The app talks to `gcal` over MCP (Model Context Protocol), the standard way an AI app calls outside tools. For an app
+on your own computer, such as Claude Desktop, see [agents](usage.md#agents) instead. A tunnel gives your computer the
+public address, and a one-time login code from your terminal makes sure only you connect an app.
 
-- **MCP** (Model Context Protocol) is the standard way an AI app calls outside tools. `gcal personal mcp serve` is
-  the MCP server that comes with `gcal`; for an app on your own computer, see [agents](usage.md#agents).
-- **Remote connection** means the app connects from its own servers, over the internet, to the address you give it.
-  `gcal personal mcp serve --http` serves the same tools over HTTP on `127.0.0.1` for this.
-- **HTTPS tunnel** is a program that gives a port on your computer a public HTTPS address. This page uses
-  [Tailscale Funnel](https://tailscale.com/docs/features/tailscale-funnel); Cloudflare Tunnel also works. You do not
-  need to buy a domain for Funnel.
-- **Public URL** is that address, for example `https://laptop.tail1234.ts.net`. You pass it to `gcal` as
-  `--public-url`, and the app gets it with `/mcp` at the end.
-- **Login code** is a one-time code that `gcal` prints in your terminal. The app's login page asks for it, so only a
-  person who sees that terminal can connect an app.
+**On this page:**
+
+1. [Before you start](#before-you-start)
+2. [Start the tunnel and server](#start-the-tunnel-and-server)
+3. [Connect the app](#connect-the-app)
+4. [Permissions for this server process](#permissions-for-this-server-process)
+5. [Stop or revoke access](#stop-or-revoke-access)
+6. [If it does not work](#if-it-does-not-work)
 
 ```text
 ChatGPT / Claude ──internet──▶ Tailscale Funnel ──▶ gcal personal mcp serve --http (login) ──▶ Google Calendar
@@ -42,23 +41,26 @@ connection keeps working as before.
   [OpenAI connection guide](https://developers.openai.com/api/docs/guides/custom-mcp-server) or
   [Claude connector guide](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
 
-The setup steps for each operating system have not all been tried on that system. If a step does not work,
-[open an issue](https://github.com/WireCatLabs/gcal-cli/issues).
+If a step does not work, [open an issue](https://github.com/WireCatLabs/gcal-cli/issues).
 
 ## Start the tunnel and server
 
 Install `gcal` and sign in to Google first ([installation](installation.md)). Use the same operating system user and
 profile for setup and for the MCP server.
 
-Install [Tailscale](https://tailscale.com/download), sign in, and enable
-[Funnel](https://tailscale.com/docs/features/tailscale-funnel): MagicDNS, HTTPS certificates and Funnel permission must
-be enabled in your tailnet (your Tailscale network). The first Funnel command can print an approval link.
+Start a tunnel, a program that gives a port on your computer a public HTTPS address. These steps use
+[Tailscale Funnel](https://tailscale.com/docs/features/tailscale-funnel), which needs no domain of your own;
+[Cloudflare Tunnel](#alternative-cloudflare-tunnel) also works. Install [Tailscale](https://tailscale.com/download),
+sign in, and enable Funnel: MagicDNS, HTTPS certificates and Funnel permission must be enabled in your tailnet (your
+Tailscale network). The first Funnel command can print an approval link.
 
 Keep two terminal windows open. The first runs the tunnel. Copy the HTTPS address it prints into the second window,
-without `/mcp`. Keep an explicit public port such as `:8443` in it.
+without `/mcp`: it is the public URL you pass to `gcal` as `--public-url`. Keep an explicit public port such as
+`:8443` in it.
 
-The server listens on `127.0.0.1:8765` (`--port` changes it) and prints a login code. It never needs administrator
-rights; only the tunnel may need them.
+`gcal personal mcp serve --http` serves the same tools as over stdin and stdout, over HTTP on `127.0.0.1:8765`
+(`--port` changes it), and prints a login code, a one-time code the app's login page asks for. It never needs
+administrator rights; only the tunnel may need them.
 
 On Linux, first window:
 

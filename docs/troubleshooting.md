@@ -1,7 +1,16 @@
 # When something goes wrong
 
-Start with the symptom, run the check, then retry the command. Keep the error code and the profile name for a
-support request.
+A sign-in failed, a calendar is missing or a command was refused. Most fixes take a minute: find what you see, run
+the fix, then run your command again. If it now answers without an error, the fix worked.
+
+**On this page:**
+
+1. [Setup and settings](#setup-and-settings)
+2. [Sync and missing events](#sync-and-missing-events)
+3. [Sign-in problems](#sign-in-problems)
+4. [If it still does not work](#if-it-still-does-not-work)
+
+## Setup and settings
 
 | Symptom | What to do |
 | --- | --- |
@@ -13,6 +22,17 @@ support request.
 | `profile.wrong-account` or `profile.same-account` | Each Google account has one profile. Use the profile that account already has, or a new profile name for a new account. |
 | `oauth.not-saved` | The sign-in file (`credentials.json` in the config folder, used by `--credential-storage file` and whenever the keyring fails) exists but cannot be read as a sign-in file. Move it aside and sign in again. |
 | A write is refused | The profile's permissions or `GCAL_READ_ONLY` stop it; see [settings](configuration.md#permissions). |
+
+## Sync and missing events
+
+| Symptom | What to do |
+| --- | --- |
+| A calendar shared with you is missing | Only the calendars you own sync at first. Run `gcal personal calendars list`, find the calendar's id, then `gcal personal calendars sync 3` with that id. The next `sync` copies its events. |
+| An event older than a year or more than three months ahead is missing | The copy covers only that span. Search Google itself: `gcal personal search events --backend server quarterly review`. |
+| The sync answers `state: "partial"` | A big first sync goes on over several runs. Run the command the answer ends with, the same `sync` again, until the state is no longer `partial`. Nothing is lost between runs. |
+| The sync answers `meta.complete: false` with a `sync.partial` issue | One calendar or feed failed and the others were saved. `hint` names the failed ones. Run `sync` again; it is safe. |
+| `calendars busy` lists a person under `unknown` | Their calendar is not shared with you or your organisation, so Google does not show their busy times. Ask them to share it, or book from the slots of the others. |
+| A new event does not show in `events list` | The list reads the copy on your computer. Run `gcal personal sync`, then list again. |
 
 ## Sign-in problems
 
@@ -38,4 +58,8 @@ A row that says "in the browser" is Google's page; the other texts are what `gca
 | "the Google Calendar API is turned off for this OAuth project" | Sign-in worked, but the project's Calendar API is off. [Turn it on](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com) in the project of your client, wait a few minutes, and run the command again. |
 | "Google sign-in was refused (HTTP 400); run gcal personal session start again" (`oauth.expired`) a week after sign-in | Your app is in **Testing**, where a sign-in ends 7 days after consent ([Google's note](https://developers.google.com/identity/protocols/oauth2#expiration)). Run `session start` again. To stop this, publish the app: see [step 4](installation.md#4-audience). |
 
-Never paste a token, a password or private content into a support request.
+## If it still does not work
+
+Run `gcal doctor` and keep its answer, the error code and the profile name, then
+[open an issue](https://github.com/WireCatLabs/gcal-cli/issues). Never paste a token, a password or private content
+into a support request.
