@@ -10,7 +10,7 @@ steps=(
   "sync-again: sync, and every calendar's round is changes, not full"
   "embed: sync --embed, skipped when no meaning model is downloaded"
   "search: --offline search events <word> (counts)"
-  "memo: memo search all <word> (counts), when memo is installed"
+  "wcat: wcat search all <word> (counts), when wcat is installed"
 )
 
 dry_run=false
@@ -116,10 +116,11 @@ fi
 run search gcal "$profile" --offline search events "$word" --json || stop search "$failed"
 echo "search: $(summary '`${(a.item?.hits ?? a.items ?? []).length} events found`' <<<"$answer")"
 
-if command -v memo >/dev/null; then
-  run memo memo search all "$word" --json || stop memo "$failed"
-  echo "memo: $(summary '`${(a.items ?? a.item?.hits ?? a.item?.items ?? []).length} results`' <<<"$answer")"
+# Every WireCat CLI writes a `wcat` launcher, so only `wcat-wirecat` shows that wcat itself is installed.
+if command -v wcat-wirecat >/dev/null; then
+  run wcat wcat search all "$word" --json || stop wcat "$failed"
+  echo "wcat: $(summary '`${(a.items ?? a.item?.hits ?? a.item?.items ?? []).length} results`' <<<"$answer")"
 else
-  echo "memo: skipped, memo is not installed"
+  echo "wcat: skipped, wcat is not installed"
 fi
 echo "all steps passed"

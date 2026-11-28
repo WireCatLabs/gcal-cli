@@ -277,7 +277,7 @@ named, as in `events list`: a provider (`telegram`), a profile (`gcal:work`), a 
 
 Meeting transcripts, such as the ones `zm` stores, are read only when `--source` names a meeting account, for
 example `--source gcal,zoom`. Without it the answer says `meetings` was not searched, in `meta.issues`, and
-`meta.complete` is `false`. Mail is not read: `memo search mail` searches it, and `--only mail` says so. When
+`meta.complete` is `false`. Mail is not read: `wcat search mail` searches it, and `--only mail` says so. When
 `GCAL_PROFILE_LOCK` is set, `search all` reads only that profile's calendar and refuses `--source`. Each hit names,
 under `untrusted`, the fields someone else wrote: a message's text and sender, an event's title.
 

@@ -155,7 +155,7 @@ More: [use it](https://wirecat.dev/en/docs/gcal/usage) · [all commands](https:/
 ### With your other sources
 
 `gcal` keeps what it reads in the same local database as the other WireCat tools, such as Telegram and MAX.
-`gcal personal search all` finds a word in events, messages and notes at once. Mail has its own search in memo.
+`gcal personal search all` finds a word in events, messages and notes at once. Mail has its own search in `wcat`.
 `gcal personal people link email:ana@example.com telegram:12345` records that two accounts are one person.
 
 More: [WireCat](https://wirecat.dev)
