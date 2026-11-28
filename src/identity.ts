@@ -33,6 +33,14 @@ export const DESKTOP: ManifestIdentity & { hosts: readonly string[] } = {
   signIn: {
     gives: "Lets your agent read your Google calendars, and change events when you allow it.",
     asks: "Google asks you to sign in and allow read-only access to your calendars.",
+    methods: [
+      {
+        id: "browser",
+        label: "Browser",
+        words: ["{profile}", "session", "start", "--json"],
+        clientFile: "--client-file",
+      },
+    ],
   },
   hosts: [
     "accounts.google.com",
