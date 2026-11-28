@@ -16,7 +16,7 @@ describe.skipIf(process.platform === "win32")("bin/gcal-live-check", () => {
         .split("\n")
         .filter(Boolean)
         .map((line) => line.split(":")[0]),
-    ).toEqual(["session", "calendars", "sync", "sync-again", "embed", "search", "memo"])
+    ).toEqual(["session", "calendars", "sync", "sync-again", "embed", "search", "wcat"])
   })
 
   it("refuses to run without a profile and a word; it never picks a profile", () => {
