@@ -191,8 +191,8 @@ More: [settings and permissions](https://wirecat.dev/en/docs/gcal/configuration)
 
 No command, error, log or run record shows a token or the client secret. A meeting's passcode or PIN is never
 stored, and a join link is kept without its query string. Meet participant names and transcripts are marked as
-untrusted for an agent. An agent connected over MCP can share a calendar without asking you, so
-`gcal personal config set permissions.api.calendar.acl deny` stops that.
+untrusted for an agent. After `--grant sharing`, an agent connected over MCP shares a calendar without asking you. To decide every share
+yourself, run `gcal personal config set permissions.api.calendar.acl deny`.
 
 More: [security](https://wirecat.dev/en/docs/gcal/security) · Report a vulnerability:
 [SECURITY.md](https://github.com/WireCatLabs/gcal-cli/blob/main/SECURITY.md)

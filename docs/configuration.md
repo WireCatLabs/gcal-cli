@@ -1,7 +1,8 @@
 # Settings
 
-Settings live in one file, `config.json`, in the folder `gcal doctor` shows. Each profile has its own part,
-and `defaults` apply to every profile. This page lists how to see and change them.
+Decide what an agent may change in your calendar, and which Google app you sign in with. Settings live in one file,
+`config.json`, in the folder `gcal doctor` shows. Each profile has its own part, and `defaults` apply to every
+profile.
 
 ```sh
 gcal personal config show
@@ -50,8 +51,9 @@ Without a setting of yours:
 - A method that deletes, such as `calendar.events.delete` or `calendar.calendarList.delete`, is `ask`. At a terminal
   `gcal` asks before it calls Google; in a script, add `--yes`. Over MCP there is no one to ask, so `ask` lets the
   command run.
-- Sharing a calendar (`calendar.acl.insert`, `patch`, `update`, `delete`) is `ask`. Over MCP that means an agent can
-  share your calendar with anyone without a question. Set `permissions.api.calendar.acl deny` to stop it.
+- Sharing a calendar (`calendar.acl.insert`, `patch`, `update`, `delete`) is `ask`. Over MCP, after `--grant
+  sharing`, an agent therefore shares your calendar with anyone without asking you. Set `permissions.api.calendar.acl deny` to decide every share
+  yourself.
 - Deleting a whole calendar (`calendar.calendars.delete`) and giving it to another account
   (`calendar.calendars.transferOwnership`) are `deny`: neither can be undone. Set the key to `ask` or `allow` to let
   them run.
@@ -66,31 +68,53 @@ Without a setting of yours:
 - `events.delete.series`, deleting every occurrence of a repeating event (`events delete --series`), is `deny`. A
   series update whose new `--repeat` rule ends it sooner (a new `COUNT` or an earlier `UNTIL`) needs it too.
 
-An event write also answers to the key of the Google method it calls, once you set that key: `api.calendar.events.insert`
-for `create`, `api.calendar.events.patch` for `respond`, `api.calendar.events.patch` and `api.calendar.events.update`
-for `update` (a switch between timed and all-day sends the whole event), `api.calendar.events.delete` for `delete`,
-`api.calendar.events.move` for `move`. So `permissions.api readonly` stops the event writes too, and
-`permissions.api.calendar.events.insert ask` makes `events create` ask. The built-in `ask` of
-`api.calendar.events.delete` holds for the `api` commands only: `events delete` asks under its own key. One question
-covers every key of one write.
-
-The `api` commands answer to the same keys. An events method also needs the key of the `events` command that does
-the same work, reads too: `events.list` for `calendar.events.list` and `instances`, `events.show` for `get`,
-`events.create` for `insert` and `quickAdd`, `events.import` for `import` (so it asks, as `events import` does),
-`events.update` for `patch` and `update`, `events.delete` for `delete` and for a patch to `cancelled`, `events.move`
-for `move`. `gcal api show <method>` lists them under `also_checks`. A method that has Google mail the attendees (`--send-updates` other than
-`none`, or `--send-notifications true`) also needs `events.notify`. Deleting an event, or patching it to `cancelled`,
-also needs `events.delete.series` when the event repeats: `gcal` reads the event from Google first to find out.
-Sharing a calendar (`calendar.acl.insert`, `patch`, `update`) also needs `sharing.notify` unless the call passes
-`--send-notifications false` (`"sendNotifications": false` in `api call --params`); `gcal` never adds it for you.
-Removing access (`calendar.acl.delete`) mails nobody, so it needs no extra key.
-`--dry-run` lists every key a call checks, with its level, and calls nothing.
+To stop every change in Google Calendar, set `permissions.api readonly`. It stops `events create`, `update`, `move`,
+`respond` and `delete` too, because each of them calls a Google method. Each `events` command also has its own key,
+such as `events.create`, and a write asks you once even when several of its keys say `ask`.
 
 ```sh
 gcal personal config set permissions.events.notify allow     # let --notify mail attendees
 gcal personal config set permissions.sharing.notify allow    # let a share mail the person it is shared with
 gcal personal config set permissions.events.create ask       # be asked before each new event
 ```
+
+`--dry-run` lists every key a call checks, with its level, and calls nothing. `gcal api show calendar.events.insert`
+lists the `events` keys a method also checks, under `also_checks`.
+
+An `events` command checks the key of each Google method it calls, but only once you set that key. The built-in `ask`
+of `api.calendar.events.delete` holds for the `api` commands only: `events delete` asks under its own key,
+`events.delete`.
+
+| `events` command | Google method keys it also checks |
+| --- | --- |
+| `create` | `api.calendar.events.insert` (`quickAdd` for `--text`) |
+| `update` | `api.calendar.events.patch`, and `api.calendar.events.update` when a switch between timed and all-day sends the whole event |
+| `respond` | `api.calendar.events.patch` |
+| `import` | `api.calendar.events.import` |
+| `delete` | `api.calendar.events.delete` |
+| `move` | `api.calendar.events.move` |
+
+An `api` command checks the key of the `events` command that does the same work, reads included:
+
+| Google method | `events` key it also checks |
+| --- | --- |
+| `calendar.events.list`, `instances` | `events.list` |
+| `calendar.events.get` | `events.show` |
+| `calendar.events.insert`, `quickAdd` | `events.create` |
+| `calendar.events.import` | `events.import`, so it asks as `events import` does |
+| `calendar.events.patch`, `update` | `events.update` |
+| `calendar.events.delete`, and a patch to `cancelled` | `events.delete` |
+| `calendar.events.move` | `events.move` |
+
+A few calls need one more key:
+
+- A method that has Google mail the attendees (`--send-updates` other than `none`, or `--send-notifications true`)
+  also needs `events.notify`.
+- Deleting an event, or patching it to `cancelled`, also needs `events.delete.series` when the event repeats: `gcal`
+  reads the event from Google first to find out.
+- Sharing a calendar (`calendar.acl.insert`, `patch`, `update`) also needs `sharing.notify` unless the call passes
+  `--send-notifications false` (`"sendNotifications": false` in `api call --params`); `gcal` never adds it for you.
+  Removing access (`calendar.acl.delete`) mails nobody, so it needs no extra key.
 
 These defaults only become stricter against a broader key: `permissions.api allow` keeps both the question and the
 `deny`. To change one, set that method's own key, such as `permissions.api.calendar.calendars.clear ask`. A key that

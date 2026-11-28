@@ -28,8 +28,8 @@ project of your own. `gcal doctor --json` then shows `oauth_client.client` as `w
 gcal personal session start
 ```
 
-Making a shared Google app public for Calendar is complex, so Google may refuse the sign-in with WireCat's app. If it
-does, use your own app below. Otherwise allow read access to Calendar when Google asks.
+Allow read access to Calendar when Google asks. Google may refuse the sign-in through WireCat's app, because a Google
+app shared by many people needs Google's review for Calendar. If it does, use your own app.
 
 **Your own app.** Use one when Google refuses WireCat's app, or when you would rather not sign in through it.
 [Make your own Google app](#make-your-own-google-app) once, in about ten minutes, then pass its file:
